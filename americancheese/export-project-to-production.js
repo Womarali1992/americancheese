@@ -125,38 +125,34 @@ async function exportProject(projectName) {
     sql += `  structured_context = EXCLUDED.structured_context;\n\n`;
     
     // Get the new project ID (will be auto-generated, but we need to reference it)
-    sql += `-- Get the project ID (adjust if needed)\n`;
+    sql += `-- Insert related data using DO block\n`;
     sql += `DO $$\n`;
     sql += `DECLARE\n`;
     sql += `  new_project_id INTEGER;\n`;
+    sql += `  cat_id_map JSONB := '{}'::JSONB;\n`;
+    sql += `  curr_cat_id INTEGER;\n`;
     sql += `BEGIN\n`;
     sql += `  SELECT id INTO new_project_id FROM projects WHERE name = '${project.name.replace(/'/g, "''")}' LIMIT 1;\n\n`;
     
     // Insert project categories
     if (projectCategories.length > 0) {
       sql += `  -- Insert project categories\n`;
-      sql += `  DECLARE\n`;
-      sql += `    cat_id_map JSONB := '{}'::JSONB;\n`;
-      sql += `    curr_cat_id INTEGER;\n`;
-      sql += `  BEGIN\n`;
       
       // First pass: Insert tier1 categories
       projectCategories.filter(c => c.type === 'tier1').forEach(cat => {
-        sql += `    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)\n`;
-        sql += `    VALUES (new_project_id, '${cat.name.replace(/'/g, "''")}', '${cat.type}', ${cat.description ? `'${cat.description.replace(/'/g, "''")}'` : 'NULL'}, NULL, ${cat.sort_order || 0}, ${cat.color ? `'${cat.color}'` : 'NULL'})\n`;
-        sql += `    RETURNING id INTO curr_cat_id;\n`;
-        sql += `    cat_id_map := cat_id_map || jsonb_build_object('${cat.id}', curr_cat_id);\n\n`;
+        sql += `  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)\n`;
+        sql += `  VALUES (new_project_id, '${cat.name.replace(/'/g, "''")}', '${cat.type}', ${cat.description ? `'${cat.description.replace(/'/g, "''")}'` : 'NULL'}, NULL, ${cat.sort_order || 0}, ${cat.color ? `'${cat.color}'` : 'NULL'})\n`;
+        sql += `  RETURNING id INTO curr_cat_id;\n`;
+        sql += `  cat_id_map := cat_id_map || jsonb_build_object('${cat.id}', curr_cat_id);\n\n`;
       });
 
       // Second pass: Insert tier2 categories
       projectCategories.filter(c => c.type === 'tier2').forEach(cat => {
-        sql += `    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)\n`;
-        sql += `    VALUES (new_project_id, '${cat.name.replace(/'/g, "''")}', '${cat.type}', ${cat.description ? `'${cat.description.replace(/'/g, "''")}'` : 'NULL'}, (cat_id_map->>'${cat.parent_id}')::integer, ${cat.sort_order || 0}, ${cat.color ? `'${cat.color}'` : 'NULL'})\n`;
-        sql += `    RETURNING id INTO curr_cat_id;\n`;
-        sql += `    cat_id_map := cat_id_map || jsonb_build_object('${cat.id}', curr_cat_id);\n\n`;
+        sql += `  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)\n`;
+        sql += `  VALUES (new_project_id, '${cat.name.replace(/'/g, "''")}', '${cat.type}', ${cat.description ? `'${cat.description.replace(/'/g, "''")}'` : 'NULL'}, (cat_id_map->>'${cat.parent_id}')::integer, ${cat.sort_order || 0}, ${cat.color ? `'${cat.color}'` : 'NULL'})\n`;
+        sql += `  RETURNING id INTO curr_cat_id;\n`;
+        sql += `  cat_id_map := cat_id_map || jsonb_build_object('${cat.id}', curr_cat_id);\n\n`;
       });
-      
-      sql += `  END;\n\n`;
     }
 
     // Insert tasks
@@ -207,6 +203,9 @@ async function exportProject(projectName) {
       });
       sql += `\n`;
     }
+
+    // Close the DO block
+    sql += `END $$;\n`;
     
     // Write SQL file
     const filename = `export-${project.name.toLowerCase().replace(/\s+/g, '-')}.sql`;

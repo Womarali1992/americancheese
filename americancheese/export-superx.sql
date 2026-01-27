@@ -1,5 +1,5 @@
 -- Export of project: SuperX (ID: 12)
--- Generated: 2026-01-27T18:06:36.077Z
+-- Generated: 2026-01-27T18:21:38.232Z
 
 -- Insert project
 INSERT INTO projects (id, name, location, start_date, end_date, description, status, progress, hidden_categories, selected_templates, color_theme, use_global_theme, preset_id, structured_context)
@@ -33,129 +33,125 @@ VALUES (
   preset_id = EXCLUDED.preset_id,
   structured_context = EXCLUDED.structured_context;
 
--- Get the project ID (adjust if needed)
+-- Insert related data using DO block
 DO $$
 DECLARE
   new_project_id INTEGER;
+  cat_id_map JSONB := '{}'::JSONB;
+  curr_cat_id INTEGER;
 BEGIN
   SELECT id INTO new_project_id FROM projects WHERE name = 'SuperX' LIMIT 1;
 
   -- Insert project categories
-  DECLARE
-    cat_id_map JSONB := '{}'::JSONB;
-    curr_cat_id INTEGER;
-  BEGIN
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'Research', 'tier1', 'Layer 1: The foundation. WHO we talk to, WHAT they struggle with, HOW they talk about it. Do this once, use forever.', NULL, 1, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('79', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'Research', 'tier1', 'Layer 1: The foundation. WHO we talk to, WHAT they struggle with, HOW they talk about it. Do this once, use forever.', NULL, 1, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('79', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'Components', 'tier1', 'Layer 2: Modular building blocks. Mix and match to create content. Tested and refined over time.', NULL, 2, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('80', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'Components', 'tier1', 'Layer 2: Modular building blocks. Mix and match to create content. Tested and refined over time.', NULL, 2, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('80', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'Assembly', 'tier1', 'Layer 3: Components become campaigns. Research becomes content. This is where it all comes together.', NULL, 3, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('81', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'Assembly', 'tier1', 'Layer 3: Components become campaigns. Research becomes content. This is where it all comes together.', NULL, 3, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('81', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'Executed Deliverables', 'tier1', 'The output. Actual posts ready to go live, organized by week. From planning to published.', NULL, 4, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('94', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'Executed Deliverables', 'tier1', 'The output. Actual posts ready to go live, organized by week. From planning to published.', NULL, 4, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('94', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'Hooks', 'tier2', 'First 3 seconds. Pattern interrupts, questions, pain callouts, curiosity gaps. 100+ hooks by persona.', (cat_id_map->>'80')::integer, 5, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('86', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'Hooks', 'tier2', 'First 3 seconds. Pattern interrupts, questions, pain callouts, curiosity gaps. 100+ hooks by persona.', (cat_id_map->>'80')::integer, 5, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('86', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'Core Messages', 'tier2', 'Message frameworks - PAS, Before/After, Myth vs Reality, Lists, Stories. The structure between hook and CTA.', (cat_id_map->>'80')::integer, 6, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('87', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'Core Messages', 'tier2', 'Message frameworks - PAS, Before/After, Myth vs Reality, Lists, Stories. The structure between hook and CTA.', (cat_id_map->>'80')::integer, 6, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('87', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'CTAs', 'tier2', 'Calls to action - soft, medium, hard. By persona and pillar. DM keywords, engagement asks, conversion triggers.', (cat_id_map->>'80')::integer, 7, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('88', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'CTAs', 'tier2', 'Calls to action - soft, medium, hard. By persona and pillar. DM keywords, engagement asks, conversion triggers.', (cat_id_map->>'80')::integer, 7, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('88', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'Format Templates', 'tier2', 'Platform-specific structures. Carousels, Reels, TikToks, Stories, Shorts. Fill-in-the-blank templates.', (cat_id_map->>'80')::integer, 8, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('89', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'Format Templates', 'tier2', 'Platform-specific structures. Carousels, Reels, TikToks, Stories, Shorts. Fill-in-the-blank templates.', (cat_id_map->>'80')::integer, 8, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('89', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'Campaign Building', 'tier2', 'Campaign frameworks, content calendar generation, pillar ratios, weekly themes.', (cat_id_map->>'81')::integer, 9, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('90', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'Campaign Building', 'tier2', 'Campaign frameworks, content calendar generation, pillar ratios, weekly themes.', (cat_id_map->>'81')::integer, 9, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('90', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'Content Production', 'tier2', 'Filming, editing, graphics, captions. The actual creation process and SOPs.', (cat_id_map->>'81')::integer, 10, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('91', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'Content Production', 'tier2', 'Filming, editing, graphics, captions. The actual creation process and SOPs.', (cat_id_map->>'81')::integer, 10, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('91', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'Distribution', 'tier2', 'Posting schedules, cross-platform strategy, hashtag research, engagement tactics.', (cat_id_map->>'81')::integer, 11, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('92', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'Distribution', 'tier2', 'Posting schedules, cross-platform strategy, hashtag research, engagement tactics.', (cat_id_map->>'81')::integer, 11, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('92', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'Performance Tracking', 'tier2', 'Analytics, what worked, what didnt, hook performance, CTA conversion rates.', (cat_id_map->>'81')::integer, 12, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('93', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'Performance Tracking', 'tier2', 'Analytics, what worked, what didnt, hook performance, CTA conversion rates.', (cat_id_map->>'81')::integer, 12, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('93', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'Scheduled Posts', 'tier2', 'Posts in the queue waiting to be assigned to specific weeks.', (cat_id_map->>'94')::integer, 1, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('95', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'Scheduled Posts', 'tier2', 'Posts in the queue waiting to be assigned to specific weeks.', (cat_id_map->>'94')::integer, 1, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('95', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'Week 1 (Feb 1 - 7)', 'tier2', '14 posts: Feb 1-7. Launch week content - 2 posts per day across TikTok and YouTube.', (cat_id_map->>'94')::integer, 13, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('96', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'Week 1 (Feb 1 - 7)', 'tier2', '14 posts: Feb 1-7. Launch week content - 2 posts per day across TikTok and YouTube.', (cat_id_map->>'94')::integer, 13, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('96', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'Week 2 (Feb 8 - 14)', 'tier2', '14 posts: Feb 8-14. Week 2 content - continuing momentum with varied pillars and personas.', (cat_id_map->>'94')::integer, 14, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('97', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'Week 2 (Feb 8 - 14)', 'tier2', '14 posts: Feb 8-14. Week 2 content - continuing momentum with varied pillars and personas.', (cat_id_map->>'94')::integer, 14, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('97', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'WHO: Customer Profiles', 'tier2', 'Deep persona research - demographics, psychographics, goals, fears, objections, and online behavior. Build detailed profiles of First-Timers, Relocators, Budget-Conscious renters, and Young Professionals. Know them better than they know themselves.', (cat_id_map->>'79')::integer, 1, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('99', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'WHO: Customer Profiles', 'tier2', 'Deep persona research - demographics, psychographics, goals, fears, objections, and online behavior. Build detailed profiles of First-Timers, Relocators, Budget-Conscious renters, and Young Professionals. Know them better than they know themselves.', (cat_id_map->>'79')::integer, 1, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('99', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'WHAT: Problems & Pain', 'tier2', 'Pain points in their exact words. Real quotes from Reddit, reviews, and forums about search frustrations, pricing confusion, safety fears, scam anxiety, and decision overwhelm. This is the emotional fuel for hooks and content.', (cat_id_map->>'79')::integer, 2, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('100', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'WHAT: Problems & Pain', 'tier2', 'Pain points in their exact words. Real quotes from Reddit, reviews, and forums about search frustrations, pricing confusion, safety fears, scam anxiety, and decision overwhelm. This is the emotional fuel for hooks and content.', (cat_id_map->>'79')::integer, 2, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('100', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'HOW: Language & Culture', 'tier2', 'The words they actually use. Houston slang, emotional trigger words, neighborhood vibes, generational differences, platform-specific tone, and words to avoid. Speak their language, not marketing speak.', (cat_id_map->>'79')::integer, 3, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('101', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'HOW: Language & Culture', 'tier2', 'The words they actually use. Houston slang, emotional trigger words, neighborhood vibes, generational differences, platform-specific tone, and words to avoid. Speak their language, not marketing speak.', (cat_id_map->>'79')::integer, 3, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('101', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'WHERE: Market & Competition', 'tier2', 'Competitive intelligence and market context. Competitor content audits, top-performing posts, content gaps to exploit, influencer landscape, platform demographics, search trends, and Reddit/forum intelligence.', (cat_id_map->>'79')::integer, 4, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('102', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'WHERE: Market & Competition', 'tier2', 'Competitive intelligence and market context. Competitor content audits, top-performing posts, content gaps to exploit, influencer landscape, platform demographics, search trends, and Reddit/forum intelligence.', (cat_id_map->>'79')::integer, 4, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('102', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'WHY: Solution Mapping', 'tier2', 'How HTXapt solves each pain point. The bridge between problem and product. Map every fear, frustration, and objection to a specific way we help. This is how content converts — showing the solution, not just the pain.', (cat_id_map->>'79')::integer, 5, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('103', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'WHY: Solution Mapping', 'tier2', 'How HTXapt solves each pain point. The bridge between problem and product. Map every fear, frustration, and objection to a specific way we help. This is how content converts — showing the solution, not just the pain.', (cat_id_map->>'79')::integer, 5, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('103', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'WHEN: Timing & Triggers', 'tier2', 'What makes someone START searching? Life events (job change, graduation, breakup, lease ending), seasonal patterns, urgency levels. Know when to reach them and what triggers action so content hits at the right moment.', (cat_id_map->>'79')::integer, 6, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('104', curr_cat_id);
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'WHEN: Timing & Triggers', 'tier2', 'What makes someone START searching? Life events (job change, graduation, breakup, lease ending), seasonal patterns, urgency levels. Know when to reach them and what triggers action so content hits at the right moment.', (cat_id_map->>'79')::integer, 6, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('104', curr_cat_id);
 
-    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
-    VALUES (new_project_id, 'Strategic Angles', 'tier2', 'The 12 solution angles that connect pain to product. Each angle has its own hooks, messaging, and CTAs. Rotate through angles to keep content fresh while staying on-message. Convenience, Trust, Local Expertise, Money, Time, Advocacy, Guidance, Safety, Lifestyle, Stress Relief, Remote Support, Exclusive Access.', (cat_id_map->>'80')::integer, 1, NULL)
-    RETURNING id INTO curr_cat_id;
-    cat_id_map := cat_id_map || jsonb_build_object('105', curr_cat_id);
-
-  END;
+  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)
+  VALUES (new_project_id, 'Strategic Angles', 'tier2', 'The 12 solution angles that connect pain to product. Each angle has its own hooks, messaging, and CTAs. Rotate through angles to keep content fresh while staying on-message. Convenience, Trust, Local Expertise, Money, Time, Advocacy, Guidance, Safety, Lifestyle, Stress Relief, Remote Support, Exclusive Access.', (cat_id_map->>'80')::integer, 1, NULL)
+  RETURNING id INTO curr_cat_id;
+  cat_id_map := cat_id_map || jsonb_build_object('105', curr_cat_id);
 
   -- Insert tasks
   INSERT INTO tasks (title, description, project_id, tier1_category, tier2_category, category, materials_needed, start_date, end_date, status, assigned_to, completed, contact_ids, material_ids, template_id, estimated_cost, actual_cost, parent_task_id, sort_order, calendar_active, calendar_start_date, calendar_end_date, calendar_start_time, calendar_end_time, start_time, end_time)
@@ -25879,3 +25875,4 @@ Test V1 vs V3 first. V1 is directive, V3 gives permission. If V3 wins, permissio
   FROM tasks WHERE project_id = new_project_id AND title = (SELECT title FROM tasks WHERE id = 776) LIMIT 1
   ON CONFLICT DO NOTHING;
 
+END $$;

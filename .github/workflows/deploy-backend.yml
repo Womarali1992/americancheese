@@ -69,28 +69,7 @@ jobs:
           # Create realestateos database if it doesn't exist
           sudo -u postgres psql -c "CREATE DATABASE realestateos;" 2>/dev/null || echo "Database realestateos already exists"
 
-          # Run data migration
-          echo "Running data migration..."
-          sudo -u postgres psql -d realestateos -f export-superx.sql
-          echo "Projects in database:"
-          sudo -u postgres psql -d realestateos -c "SELECT id, name FROM projects;" || true
-
-          # Run database verification
-          echo "Verifying database state..."
-          export DB_HOST=localhost
-          export DB_PORT=5432
-          export DB_NAME=realestateos
-          export DB_USER=postgres
-          export DB_PASSWORD=richman
-          node check-db-state.js || echo "Verification script failed"
-
-          # Run database fixes
-          echo "Running database fixes..."
-          sudo -u postgres psql -d realestateos -c "UPDATE tasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
-          sudo -u postgres psql -d realestateos -c "UPDATE subtasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
-          echo "Database fixes applied"
-
-          # Create production .env with individual DB variables (app uses these, not DATABASE_URL)
+          # Create production .env FIRST (needed for db:push)
           echo "NODE_ENV=production" > .env
           echo "PORT=5001" >> .env
           echo "DB_HOST=localhost" >> .env
@@ -103,9 +82,31 @@ jobs:
           chmod 600 .env
           echo "Production .env configured with realestateos database"
 
-          # Run database schema push (creates missing tables/columns)
-          echo "Pushing database schema..."
-          npm run db:push 2>&1 || echo "db:push had issues"
+          # Run database schema push FIRST (creates tables)
+          echo "Pushing database schema to create tables..."
+          npm run db:push 2>&1
+          echo "Schema push complete"
+
+          # NOW run data migration (tables exist)
+          echo "Running data migration..."
+          sudo -u postgres psql -d realestateos -f export-superx.sql 2>&1
+          echo "Projects in database after migration:"
+          sudo -u postgres psql -d realestateos -c "SELECT id, name FROM projects;" || true
+
+          # Run database fixes
+          echo "Running database fixes..."
+          sudo -u postgres psql -d realestateos -c "UPDATE tasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
+          sudo -u postgres psql -d realestateos -c "UPDATE subtasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
+          echo "Database fixes applied"
+
+          # Run database verification
+          echo "Verifying database state..."
+          export DB_HOST=localhost
+          export DB_PORT=5432
+          export DB_NAME=realestateos
+          export DB_USER=postgres
+          export DB_PASSWORD=richman
+          node check-db-state.js || echo "Verification script failed"
 
           # Stop any existing PM2 process
           pm2 delete americancheese 2>/dev/null || true
