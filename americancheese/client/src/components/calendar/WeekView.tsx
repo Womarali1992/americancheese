@@ -41,15 +41,21 @@ export function WeekView({
   }, [currentDate]);
 
   // Group tasks by date for efficient lookup
+  // Uses calendarStartDate/calendarEndDate when available (actual schedule),
+  // falls back to startDate/endDate (planned schedule)
   const tasksByDate = useMemo(() => {
     const map = new Map<string, Task[]>();
 
     tasks.forEach((task) => {
-      if (!task.startDate || !task.endDate) return;
+      // Use calendar dates if available (actual schedule), otherwise use task dates (planned schedule)
+      const effectiveStartDate = task.calendarStartDate || task.startDate;
+      const effectiveEndDate = task.calendarEndDate || task.endDate;
+
+      if (!effectiveStartDate || !effectiveEndDate) return;
 
       try {
-        const start = parseISO(task.startDate);
-        const end = parseISO(task.endDate);
+        const start = parseISO(effectiveStartDate);
+        const end = parseISO(effectiveEndDate);
 
         // Add task to each day it spans
         weekDays.forEach((day) => {
@@ -71,15 +77,21 @@ export function WeekView({
   }, [tasks, weekDays]);
 
   // Group subtasks by date for efficient lookup
+  // Uses calendarStartDate/calendarEndDate when available (actual schedule),
+  // falls back to startDate/endDate (planned schedule)
   const subtasksByDate = useMemo(() => {
     const map = new Map<string, Subtask[]>();
 
     subtasks.forEach((subtask) => {
-      if (!subtask.startDate || !subtask.endDate) return;
+      // Use calendar dates if available (actual schedule), otherwise use subtask dates (planned schedule)
+      const effectiveStartDate = subtask.calendarStartDate || subtask.startDate;
+      const effectiveEndDate = subtask.calendarEndDate || subtask.endDate;
+
+      if (!effectiveStartDate || !effectiveEndDate) return;
 
       try {
-        const start = parseISO(subtask.startDate);
-        const end = parseISO(subtask.endDate);
+        const start = parseISO(effectiveStartDate);
+        const end = parseISO(effectiveEndDate);
 
         // Add subtask to each day it spans
         weekDays.forEach((day) => {

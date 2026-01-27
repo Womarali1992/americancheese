@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { format, parseISO } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DropdownMenu,
@@ -15,7 +16,39 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useColors } from "@/lib/colors";
 import { ExternalLink, ChevronRight, Loader2, Plus, Check, Calendar } from "lucide-react";
+import { TaskTitleWithTime, TaskTimeDisplay } from "@/components/task/TaskTimeDisplay";
 import type { Task, Subtask } from "@shared/schema";
+
+// Format time from 24h to 12h format (e.g., "16:00" -> "4pm")
+function formatTime12h(time: string | null | undefined): string {
+  if (!time) return "";
+  const [hours, minutes] = time.split(":").map(Number);
+  const period = hours >= 12 ? "pm" : "am";
+  const hour12 = hours % 12 || 12;
+  // Only show minutes if they're not :00
+  if (minutes === 0) {
+    return `${hour12}${period}`;
+  }
+  return `${hour12}:${minutes.toString().padStart(2, "0")}${period}`;
+}
+
+// Format the calendar schedule prefix (e.g., "4pm Fri Feb 14,")
+function getCalendarSchedulePrefix(task: Task): string {
+  if (!task.calendarStartDate) return "";
+
+  try {
+    const date = parseISO(task.calendarStartDate);
+    const timeStr = formatTime12h(task.calendarStartTime);
+    const dateStr = format(date, "EEE MMM d"); // "Fri Feb 14"
+
+    if (timeStr) {
+      return `${timeStr} ${dateStr},`;
+    }
+    return `${dateStr},`;
+  } catch {
+    return "";
+  }
+}
 
 interface TaskPopoverProps {
   task: Task;
@@ -183,9 +216,25 @@ export function TaskPopover({
               borderLeft: `3px solid ${color}`,
               color: color
             }}
-            title={`${task.title} (${task.startDate} - ${task.endDate})`}
+            title={`${task.title}${task.calendarStartTime ? ` @ ${task.calendarStartTime}` : ''} (${task.calendarStartDate || task.startDate} - ${task.calendarEndDate || task.endDate})`}
           >
-            {task.title}
+            {(() => {
+              const schedulePrefix = getCalendarSchedulePrefix(task);
+              return schedulePrefix ? (
+                <span className="truncate">
+                  <span className="font-semibold">{schedulePrefix}</span>{" "}
+                  {task.title}
+                </span>
+              ) : (
+                <TaskTitleWithTime
+                  title={task.title}
+                  startTime={task.startTime}
+                  endTime={task.endTime}
+                  compact
+                  titleClassName="truncate"
+                />
+              );
+            })()}
           </button>
         )}
       </PopoverTrigger>
@@ -198,7 +247,12 @@ export function TaskPopover({
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-sm text-gray-900 truncate">
-                {task.title}
+                <TaskTitleWithTime
+                  title={task.title}
+                  startTime={task.startTime}
+                  endTime={task.endTime}
+                  titleClassName="truncate"
+                />
               </h3>
               <p className="text-xs text-gray-500 mt-0.5">
                 {task.startDate} - {task.endDate}

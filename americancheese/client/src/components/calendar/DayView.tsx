@@ -6,6 +6,7 @@ import { SubtaskBar } from "./SubtaskBar";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Calendar } from "lucide-react";
 import { useColors } from "@/lib/colors";
+import { TaskTitleWithTime, TaskTimeDisplay } from "@/components/task/TaskTimeDisplay";
 import type { Task, Subtask } from "@shared/schema";
 
 interface DayViewProps {
@@ -26,13 +27,19 @@ export function DayView({
   onAddTask
 }: DayViewProps) {
   // Filter tasks for the selected day
+  // Uses calendarStartDate/calendarEndDate when available (actual schedule),
+  // falls back to startDate/endDate (planned schedule)
   const dayTasks = useMemo(() => {
     return tasks.filter((task) => {
-      if (!task.startDate || !task.endDate) return false;
+      // Use calendar dates if available (actual schedule), otherwise use task dates (planned schedule)
+      const effectiveStartDate = task.calendarStartDate || task.startDate;
+      const effectiveEndDate = task.calendarEndDate || task.endDate;
+
+      if (!effectiveStartDate || !effectiveEndDate) return false;
 
       try {
-        const start = parseISO(task.startDate);
-        const end = parseISO(task.endDate);
+        const start = parseISO(effectiveStartDate);
+        const end = parseISO(effectiveEndDate);
         return isWithinInterval(selectedDate, { start, end }) ||
                isSameDay(selectedDate, start) ||
                isSameDay(selectedDate, end);
@@ -43,13 +50,19 @@ export function DayView({
   }, [tasks, selectedDate]);
 
   // Filter subtasks for the selected day
+  // Uses calendarStartDate/calendarEndDate when available (actual schedule),
+  // falls back to startDate/endDate (planned schedule)
   const daySubtasks = useMemo(() => {
     return subtasks.filter((subtask) => {
-      if (!subtask.startDate || !subtask.endDate) return false;
+      // Use calendar dates if available (actual schedule), otherwise use subtask dates (planned schedule)
+      const effectiveStartDate = subtask.calendarStartDate || subtask.startDate;
+      const effectiveEndDate = subtask.calendarEndDate || subtask.endDate;
+
+      if (!effectiveStartDate || !effectiveEndDate) return false;
 
       try {
-        const start = parseISO(subtask.startDate);
-        const end = parseISO(subtask.endDate);
+        const start = parseISO(effectiveStartDate);
+        const end = parseISO(effectiveEndDate);
         return isWithinInterval(selectedDate, { start, end }) ||
                isSameDay(selectedDate, start) ||
                isSameDay(selectedDate, end);
@@ -179,7 +192,14 @@ function DayViewTaskCard({ task }: { task: Task }) {
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <h4 className="font-medium text-gray-900 truncate">{task.title}</h4>
+            <h4 className="font-medium text-gray-900 truncate">
+              <TaskTitleWithTime
+                title={task.title}
+                startTime={task.startTime}
+                endTime={task.endTime}
+                titleClassName="truncate"
+              />
+            </h4>
             {task.description && (
               <p className="text-sm text-gray-500 mt-1 line-clamp-2">
                 {task.description}
@@ -277,7 +297,12 @@ function DayViewSubtaskCard({
                 subtask.completed && "line-through"
               )}
             >
-              {subtask.title}
+              <TaskTitleWithTime
+                title={subtask.title}
+                startTime={subtask.startTime}
+                endTime={subtask.endTime}
+                titleClassName="truncate"
+              />
             </h4>
           </div>
           {subtask.description && (

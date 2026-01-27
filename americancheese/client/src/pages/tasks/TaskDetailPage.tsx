@@ -96,6 +96,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { ItemDetailPopup } from '@/components/task/ItemDetailPopup';
 import { EditTaskDialog } from './EditTaskDialog';
+import { ScheduleTaskDialog } from '@/components/calendar/ScheduleTaskDialog';
 import { ContextEditor } from '@/components/context';
 import { ContextData, createEmptyContext } from '../../../../shared/context-types';
 import {
@@ -120,6 +121,7 @@ export default function TaskDetailPage() {
   const [isMaterialsDialogOpen, setIsMaterialsDialogOpen] = useState(false);
   const [isLaborDialogOpen, setIsLaborDialogOpen] = useState(false);
   const [isAttachmentsDialogOpen, setIsAttachmentsDialogOpen] = useState(false);
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const [projectContext, setProjectContext] = useState<ContextData | null>(null);
@@ -777,7 +779,7 @@ export default function TaskDetailPage() {
                   </Select>
                 </div>
 
-                {/* Calendar Toggle Button */}
+                {/* Calendar Schedule Button */}
                 <Button
                   variant="outline"
                   size="default"
@@ -787,8 +789,8 @@ export default function TaskDetailPage() {
                       ? "border-cyan-200 text-cyan-700 hover:bg-cyan-50 hover:text-cyan-900 hover:border-cyan-300"
                       : "border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300"
                   )}
-                  onClick={handleCalendarToggle}
-                  title={(task.calendarActive ?? false) ? "Hide from calendar" : "Show on calendar"}
+                  onClick={() => setIsScheduleDialogOpen(true)}
+                  title={(task.calendarActive ?? false) ? "Edit calendar schedule" : "Schedule on calendar"}
                 >
                   <Calendar className={cn(
                     "mr-2 h-4 w-4",
@@ -923,6 +925,13 @@ export default function TaskDetailPage() {
           task={{ ...task, completed: Boolean(task.completed), category: task.category || '', tier1Category: task.tier1Category || '', tier2Category: task.tier2Category || '' } as any}
         />
       )}
+
+      {/* Schedule Task on Calendar dialog */}
+      <ScheduleTaskDialog
+        open={isScheduleDialogOpen}
+        onOpenChange={setIsScheduleDialogOpen}
+        task={task}
+      />
 
       {/* Material detail popup */}
       {selectedMaterial && (

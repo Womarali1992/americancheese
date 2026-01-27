@@ -72,6 +72,8 @@ export { db };
 
 // Import migrations
 import { addSelectedTemplatesField } from './migrations/add-selected-templates.js';
+import { addTaskTimeFields } from './migrations/add-task-time-fields.js';
+import { addCalendarScheduleFields } from './migrations/add-calendar-schedule-fields.js';
 
 // Export a function to initialize the database and create tables
 export async function initDatabase() {
@@ -262,6 +264,8 @@ export async function initDatabase() {
     
     // Run migrations
     await addSelectedTemplatesField(queryClient);
+    await addTaskTimeFields(queryClient);
+    await addCalendarScheduleFields(queryClient);
 
     console.log('Database initialization complete.');
   } catch (error) {

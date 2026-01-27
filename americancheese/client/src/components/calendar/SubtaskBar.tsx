@@ -1,11 +1,43 @@
-import { useState } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useColors } from "@/lib/colors";
 import { Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TaskTitleWithTime } from "@/components/task/TaskTimeDisplay";
 import type { Subtask, Task } from "@shared/schema";
+
+// Format time from 24h to 12h format (e.g., "16:00" -> "4pm")
+function formatTime12h(time: string | null | undefined): string {
+  if (!time) return "";
+  const [hours, minutes] = time.split(":").map(Number);
+  const period = hours >= 12 ? "pm" : "am";
+  const hour12 = hours % 12 || 12;
+  // Only show minutes if they're not :00
+  if (minutes === 0) {
+    return `${hour12}${period}`;
+  }
+  return `${hour12}:${minutes.toString().padStart(2, "0")}${period}`;
+}
+
+// Format the calendar schedule prefix (e.g., "4pm Fri Feb 14,")
+function getCalendarSchedulePrefix(subtask: Subtask): string {
+  if (!subtask.calendarStartDate) return "";
+
+  try {
+    const date = parseISO(subtask.calendarStartDate);
+    const timeStr = formatTime12h(subtask.calendarStartTime);
+    const dateStr = format(date, "EEE MMM d"); // "Fri Feb 14"
+
+    if (timeStr) {
+      return `${timeStr} ${dateStr},`;
+    }
+    return `${dateStr},`;
+  } catch {
+    return "";
+  }
+}
 
 interface SubtaskBarProps {
   subtask: Subtask;
@@ -89,9 +121,29 @@ export function SubtaskBar({
           borderLeft: `3px solid ${color}`,
           color: color
         }}
-        title={`${codeNumber}: ${subtask.title}${parentTask ? ` (from ${parentTask.title})` : ""}`}
+        title={`${codeNumber}: ${subtask.title}${subtask.calendarStartTime ? ` @ ${subtask.calendarStartTime}` : ""}${parentTask ? ` (from ${parentTask.title})` : ""}`}
       >
-        <span className="font-medium">{codeNumber}</span> {subtask.title}
+        {(() => {
+          const schedulePrefix = getCalendarSchedulePrefix(subtask);
+          return schedulePrefix ? (
+            <span className="truncate">
+              <span className="font-semibold">{schedulePrefix}</span>{" "}
+              <span className="font-medium">{codeNumber}</span>{" "}
+              {subtask.title}
+            </span>
+          ) : (
+            <>
+              <span className="font-medium">{codeNumber}</span>{" "}
+              <TaskTitleWithTime
+                title={subtask.title}
+                startTime={subtask.startTime}
+                endTime={subtask.endTime}
+                compact
+                titleClassName="truncate"
+              />
+            </>
+          );
+        })()}
       </button>
       <Button
         variant="ghost"

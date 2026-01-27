@@ -118,6 +118,8 @@ export const tasks = pgTable("tasks", {
   materialsNeeded: text("materials_needed"), // List of materials needed for the task
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
+  startTime: text("start_time"), // Time in "HH:MM" format (null for all-day tasks)
+  endTime: text("end_time"), // Time in "HH:MM" format (null for all-day tasks)
   status: text("status").notNull().default("not_started"),
   assignedTo: text("assigned_to"),
   completed: boolean("completed").default(false),
@@ -129,8 +131,13 @@ export const tasks = pgTable("tasks", {
   // Subtask support
   parentTaskId: integer("parent_task_id"), // Reference to parent task for subtasks
   sortOrder: integer("sort_order").default(0), // Order of subtasks within a parent task
-  // Calendar visibility
+  // Calendar visibility and scheduling
   calendarActive: boolean("calendar_active").default(false), // Whether to show this task on the calendar
+  // Actual schedule dates (separate from planned task dates)
+  calendarStartDate: date("calendar_start_date"), // When task is actually scheduled to start on calendar
+  calendarEndDate: date("calendar_end_date"), // When task is actually scheduled to end on calendar
+  calendarStartTime: text("calendar_start_time"), // Time in "HH:MM" format for calendar
+  calendarEndTime: text("calendar_end_time"), // Time in "HH:MM" format for calendar
 });
 
 // Subtasks Schema - dedicated table for better organization
@@ -144,11 +151,18 @@ export const subtasks = pgTable("subtasks", {
   assignedTo: text("assigned_to"),
   startDate: date("start_date"),
   endDate: date("end_date"),
+  startTime: text("start_time"), // Time in "HH:MM" format (null for all-day subtasks)
+  endTime: text("end_time"), // Time in "HH:MM" format (null for all-day subtasks)
   status: text("status").notNull().default("not_started"),
   estimatedCost: doublePrecision("estimated_cost"),
   actualCost: doublePrecision("actual_cost"),
-  // Calendar visibility
+  // Calendar visibility and scheduling
   calendarActive: boolean("calendar_active").default(false), // Whether to show this subtask on the calendar
+  // Actual schedule dates (separate from planned subtask dates)
+  calendarStartDate: date("calendar_start_date"), // When subtask is actually scheduled to start on calendar
+  calendarEndDate: date("calendar_end_date"), // When subtask is actually scheduled to end on calendar
+  calendarStartTime: text("calendar_start_time"), // Time in "HH:MM" format for calendar
+  calendarEndTime: text("calendar_end_time"), // Time in "HH:MM" format for calendar
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({

@@ -137,6 +137,8 @@ export default function CalendarPage() {
   }, [currentDate, view]);
 
   // Filter tasks based on project selection, calendarActive flag, and visible date range
+  // Uses calendarStartDate/calendarEndDate when available (actual schedule),
+  // falls back to startDate/endDate (planned schedule)
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
       // Hide tasks only if explicitly set to calendarActive = false
@@ -148,12 +150,16 @@ export default function CalendarPage() {
         return false;
       }
 
+      // Use calendar dates if available (actual schedule), otherwise use task dates (planned schedule)
+      const effectiveStartDate = task.calendarStartDate || task.startDate;
+      const effectiveEndDate = task.calendarEndDate || task.endDate;
+
       // Filter by date range
-      if (!task.startDate || !task.endDate) return false;
+      if (!effectiveStartDate || !effectiveEndDate) return false;
 
       try {
-        const taskStart = parseISO(task.startDate);
-        const taskEnd = parseISO(task.endDate);
+        const taskStart = parseISO(effectiveStartDate);
+        const taskEnd = parseISO(effectiveEndDate);
 
         // Check if task overlaps with visible range
         return (
@@ -168,6 +174,8 @@ export default function CalendarPage() {
   }, [tasks, selectedProjectId, dateRange]);
 
   // Filter subtasks based on project selection, calendarActive flag, and visible date range
+  // Uses calendarStartDate/calendarEndDate when available (actual schedule),
+  // falls back to startDate/endDate (planned schedule)
   const filteredSubtasks = useMemo(() => {
     return subtasks.filter((subtask) => {
       // Hide subtasks only if explicitly set to calendarActive = false
@@ -182,12 +190,16 @@ export default function CalendarPage() {
         return false;
       }
 
+      // Use calendar dates if available (actual schedule), otherwise use subtask dates (planned schedule)
+      const effectiveStartDate = subtask.calendarStartDate || subtask.startDate;
+      const effectiveEndDate = subtask.calendarEndDate || subtask.endDate;
+
       // Subtasks need dates to appear on calendar
-      if (!subtask.startDate || !subtask.endDate) return false;
+      if (!effectiveStartDate || !effectiveEndDate) return false;
 
       try {
-        const subtaskStart = parseISO(subtask.startDate);
-        const subtaskEnd = parseISO(subtask.endDate);
+        const subtaskStart = parseISO(effectiveStartDate);
+        const subtaskEnd = parseISO(effectiveEndDate);
 
         // Check if subtask overlaps with visible range
         return (
