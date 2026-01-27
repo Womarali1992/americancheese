@@ -127,15 +127,21 @@ jobs:
           echo "Recent PM2 logs:"
           pm2 logs americancheese --lines 50 --nostream 2>/dev/null || true
 
-          # Fix Nginx to proxy to port 5001 for sitesetups
-          echo "Checking Nginx config for sitesetups..."
-          if grep -q "proxy_pass http://localhost:5000" /etc/nginx/sites-available/americancheese 2>/dev/null; then
-            echo "Fixing Nginx to use port 5001..."
-            sudo sed -i 's/proxy_pass http:\/\/localhost:5000/proxy_pass http:\/\/localhost:5001/g' /etc/nginx/sites-available/americancheese
+          # Fix Nginx to proxy to port 5001 for all relevant configs
+          echo "Checking Nginx configs..."
+          for config in /etc/nginx/sites-enabled/*; do
+            if grep -q "proxy_pass http://localhost:5000" "$config" 2>/dev/null; then
+              echo "Fixing Nginx config: $config to use port 5001..."
+              sudo sed -i 's/proxy_pass http:\/\/localhost:5000/proxy_pass http:\/\/localhost:5001/g' "$config"
+              NGINX_RELOAD=true
+            fi
+          done
+          
+          if [ "$NGINX_RELOAD" = true ]; then
             sudo nginx -t && sudo systemctl reload nginx
-            echo "Nginx updated to port 5001"
+            echo "Nginx reloaded with port 5001"
           else
-            echo "Nginx config already correct or not found"
+            echo "No Nginx configs needed updating"
           fi
 
           echo "Deployment complete!"
