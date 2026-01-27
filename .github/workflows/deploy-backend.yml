@@ -63,29 +63,37 @@ jobs:
           # Build the application
           npm run build
 
-          # Run data migration (ignore errors)
-          echo "Running data migration..."
-          sudo -u postgres psql -d americancheese -f migrate_to_production.sql || true
-          echo "Projects in database:"
-          sudo -u postgres psql -d americancheese -c "SELECT id, name FROM projects;" || true
-          
-          # Run database fixes
-          echo "Running database fixes..."
-          sudo -u postgres psql -d americancheese -c "UPDATE tasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
-          sudo -u postgres psql -d americancheese -c "UPDATE subtasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
-          echo "Database fixes applied"
-
           # Configure production database credentials
           echo "Setting up production database..."
           sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'SiteSetups2026Prod';" || echo "Password already set"
-          
-          # Create production .env with correct DATABASE_URL
+
+          # Create sitesetups database if it doesn't exist
+          sudo -u postgres psql -c "CREATE DATABASE sitesetups;" 2>/dev/null || echo "Database sitesetups already exists"
+
+          # Run data migration (ignore errors)
+          echo "Running data migration..."
+          sudo -u postgres psql -d sitesetups -f migrate_to_production.sql || true
+          echo "Projects in database:"
+          sudo -u postgres psql -d sitesetups -c "SELECT id, name FROM projects;" || true
+
+          # Run database fixes
+          echo "Running database fixes..."
+          sudo -u postgres psql -d sitesetups -c "UPDATE tasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
+          sudo -u postgres psql -d sitesetups -c "UPDATE subtasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
+          echo "Database fixes applied"
+
+          # Create production .env with individual DB variables (app uses these, not DATABASE_URL)
           echo "NODE_ENV=production" > .env
           echo "PORT=5001" >> .env
-          echo "DATABASE_URL=postgresql://postgres:SiteSetups2026Prod@localhost:5432/americancheese" >> .env
+          echo "DB_HOST=localhost" >> .env
+          echo "DB_PORT=5432" >> .env
+          echo "DB_NAME=sitesetups" >> .env
+          echo "DB_USER=postgres" >> .env
+          echo "DB_PASSWORD=SiteSetups2026Prod" >> .env
+          echo "DATABASE_URL=postgresql://postgres:SiteSetups2026Prod@localhost:5432/sitesetups" >> .env
           echo "SESSION_SECRET=$(openssl rand -hex 32)" >> .env
           chmod 600 .env
-          echo "Production .env configured"
+          echo "Production .env configured with sitesetups database"
 
           # Run database schema push (creates missing tables/columns)
           echo "Pushing database schema..."
@@ -104,8 +112,8 @@ jobs:
 
           # Check database connection and show projects
           echo "Testing database connection..."
-          echo "=== PROJECTS IN DATABASE ==="
-          sudo -u postgres psql -d americancheese -c "SELECT id, name FROM projects ORDER BY id;" || echo "DB query failed!"
+          echo "=== PROJECTS IN SITESETUPS DATABASE ==="
+          sudo -u postgres psql -d sitesetups -c "SELECT id, name FROM projects ORDER BY id;" || echo "DB query failed!"
           echo "=== END PROJECTS ==="
           
           # Check if app is running on port 5001
