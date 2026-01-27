@@ -1,13 +1,14 @@
 -- Export of project: SuperX (ID: 12)
--- Generated: 2026-01-27T17:39:25.764Z
+-- Generated: 2026-01-27T17:43:03.229Z
 
 -- Insert project
-INSERT INTO projects (name, location, start_date, end_date, description, status, progress, hidden_categories, selected_templates, color_theme, use_global_theme, preset_id, structured_context)
+INSERT INTO projects (id, name, location, start_date, end_date, description, status, progress, hidden_categories, selected_templates, color_theme, use_global_theme, preset_id, structured_context)
 VALUES (
+  12,
   'SuperX',
   'Houston, TX',
-  'null',
-  'null',
+  NULL,
+  NULL,
   'Modular content system. Research → Components → Assembly. Layer 1: Deep customer research. Layer 2: Reusable content components (hooks, messages, CTAs, formats). Layer 3: Campaign assembly from components.',
   'active',
   0,

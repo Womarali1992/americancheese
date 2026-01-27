@@ -81,12 +81,13 @@ async function exportProject(projectName) {
     
     // Insert project (using ON CONFLICT to handle if it already exists)
     sql += `-- Insert project\n`;
-    sql += `INSERT INTO projects (name, location, start_date, end_date, description, status, progress, hidden_categories, selected_templates, color_theme, use_global_theme, preset_id, structured_context)\n`;
+    sql += `INSERT INTO projects (id, name, location, start_date, end_date, description, status, progress, hidden_categories, selected_templates, color_theme, use_global_theme, preset_id, structured_context)\n`;
     sql += `VALUES (\n`;
+    sql += `  ${project.id},\n`;
     sql += `  '${project.name.replace(/'/g, "''")}',\n`;
     sql += `  '${(project.location || '').replace(/'/g, "''")}',\n`;
-    sql += `  '${project.start_date}',\n`;
-    sql += `  '${project.end_date}',\n`;
+    sql += `  ${project.start_date ? `'${project.start_date}'` : 'NULL'},\n`;
+    sql += `  ${project.end_date ? `'${project.end_date}'` : 'NULL'},\n`;
     sql += `  ${project.description ? `'${project.description.replace(/'/g, "''")}'` : 'NULL'},\n`;
     sql += `  '${project.status || 'active'}',\n`;
     sql += `  ${project.progress || 0},\n`;
@@ -143,8 +144,8 @@ async function exportProject(projectName) {
         sql += `    ${task.tier2_category ? `'${task.tier2_category.replace(/'/g, "''")}'` : 'NULL'},\n`;
         sql += `    '${task.category || 'other'}',\n`;
         sql += `    ${task.materials_needed ? `'${task.materials_needed.replace(/'/g, "''")}'` : 'NULL'},\n`;
-        sql += `    '${task.start_date}',\n`;
-        sql += `    '${task.end_date}',\n`;
+        sql += `    ${task.start_date ? `'${task.start_date}'` : 'NULL'},\n`;
+        sql += `    ${task.end_date ? `'${task.end_date}'` : 'NULL'},\n`;
         sql += `    '${task.status || 'not_started'}',\n`;
         sql += `    ${task.assigned_to ? `'${task.assigned_to.replace(/'/g, "''")}'` : 'NULL'},\n`;
         sql += `    ${task.completed || false},\n`;
