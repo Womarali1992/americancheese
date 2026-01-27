@@ -75,6 +75,10 @@ jobs:
           echo "Projects in database:"
           sudo -u postgres psql -d realestateos -c "SELECT id, name FROM projects;" || true
 
+          # Run database verification
+          echo "Verifying database state..."
+          node check-db-state.js || echo "Verification script failed"
+
           # Run database fixes
           echo "Running database fixes..."
           sudo -u postgres psql -d realestateos -c "UPDATE tasks SET calendar_active = false WHERE calendar_active IS NULL;" || true

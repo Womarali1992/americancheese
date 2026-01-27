@@ -135,12 +135,28 @@ async function exportProject(projectName) {
     // Insert project categories
     if (projectCategories.length > 0) {
       sql += `  -- Insert project categories\n`;
-      projectCategories.forEach(cat => {
-        sql += `  INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)\n`;
-        sql += `  VALUES (new_project_id, '${cat.name.replace(/'/g, "''")}', '${cat.type}', ${cat.description ? `'${cat.description.replace(/'/g, "''")}'` : 'NULL'}, ${cat.parent_id || 'NULL'}, ${cat.sort_order || 0}, ${cat.color ? `'${cat.color}'` : 'NULL'})\n`;
-        sql += `  ON CONFLICT DO NOTHING;\n`;
+      sql += `  DECLARE\n`;
+      sql += `    cat_id_map JSONB := '{}'::JSONB;\n`;
+      sql += `    curr_cat_id INTEGER;\n`;
+      sql += `  BEGIN\n`;
+      
+      // First pass: Insert tier1 categories
+      projectCategories.filter(c => c.type === 'tier1').forEach(cat => {
+        sql += `    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)\n`;
+        sql += `    VALUES (new_project_id, '${cat.name.replace(/'/g, "''")}', '${cat.type}', ${cat.description ? `'${cat.description.replace(/'/g, "''")}'` : 'NULL'}, NULL, ${cat.sort_order || 0}, ${cat.color ? `'${cat.color}'` : 'NULL'})\n`;
+        sql += `    RETURNING id INTO curr_cat_id;\n`;
+        sql += `    cat_id_map := cat_id_map || jsonb_build_object('${cat.id}', curr_cat_id);\n\n`;
       });
-      sql += `\n`;
+
+      // Second pass: Insert tier2 categories
+      projectCategories.filter(c => c.type === 'tier2').forEach(cat => {
+        sql += `    INSERT INTO project_categories (project_id, name, type, description, parent_id, sort_order, color)\n`;
+        sql += `    VALUES (new_project_id, '${cat.name.replace(/'/g, "''")}', '${cat.type}', ${cat.description ? `'${cat.description.replace(/'/g, "''")}'` : 'NULL'}, (cat_id_map->>'${cat.parent_id}')::integer, ${cat.sort_order || 0}, ${cat.color ? `'${cat.color}'` : 'NULL'})\n`;
+        sql += `    RETURNING id INTO curr_cat_id;\n`;
+        sql += `    cat_id_map := cat_id_map || jsonb_build_object('${cat.id}', curr_cat_id);\n\n`;
+      });
+      
+      sql += `  END;\n\n`;
     }
 
     // Insert tasks
