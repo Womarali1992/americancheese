@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown, AlertTriangle, Flag, MessageCircle, Copy, GripVertical, CheckCircle } from 'lucide-react';
+import { X, Link, Unlink, MousePointer, Plus, Minus, ArrowDown, AlertTriangle, Flag, MessageCircle, Copy, GripVertical, CheckCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -53,6 +53,7 @@ export function CommentableDescription({
   const [flaggedSections, setFlaggedSections] = useState<Set<number>>(new Set());
   const [isDragging, setIsDragging] = useState(false);
   const [dragSuccess, setDragSuccess] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Split description into sections using the specified regex
   // Combining sections is a permanent text change - after save, the description
@@ -152,15 +153,8 @@ export function CommentableDescription({
             setFlaggedSections(validFlaggedIndices);
           }
 
-          // Don't automatically correct indices on load - only log if there's a mismatch
-          // This preserves the user's intended combined sections even if section count changed
-          if (validCombinedIndices.size !== combinedIndices.length ||
-              !combinedIndices.every((idx: number) => validCombinedIndices.has(idx))) {
-            console.log('Section indices were adjusted during validation. Original:', combinedIndices, 'Adjusted:', Array.from(validCombinedIndices));
-          }
-
           return {
-            combined: validCombinedIndices,
+            combined: new Set<number>(), // Always empty - combining is permanent
             caution: validCautionIndices,
             flagged: validFlaggedIndices
           };
@@ -1346,10 +1340,20 @@ export function CommentableDescription({
 
       <div className="mb-4">
         <div className="flex items-start justify-between mb-2 gap-4">
-          <h3 
-            className="text-lg font-semibold text-gray-900 flex-shrink-0 cursor-grab active:cursor-grabbing"
-            draggable={true}
-            onDragStart={(e) => {
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+              title={isCollapsed ? "Expand sections" : "Collapse sections"}
+            >
+              {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+            <h3
+              className="text-lg font-semibold text-gray-900 cursor-grab active:cursor-grabbing"
+              draggable={true}
+              onDragStart={(e) => {
               e.stopPropagation();
               // Always drag full subtask when dragging from title
               let exportContent = description;
@@ -1383,6 +1387,7 @@ export function CommentableDescription({
           >
             {title}
           </h3>
+          </div>
           
           {/* Section combination controls */}
           <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end min-w-0">
@@ -1491,9 +1496,17 @@ export function CommentableDescription({
         </p>
       </div>
 
-      <div className="space-y-2">
-        {sections.map((section, index) => renderSection(section, index))}
-      </div>
+      {!isCollapsed && (
+        <div className="space-y-2">
+          {sections.map((section, index) => renderSection(section, index))}
+        </div>
+      )}
+
+      {isCollapsed && (
+        <div className="text-sm text-gray-500 italic py-4">
+          Description collapsed. Click the chevron to expand.
+        </div>
+      )}
 
       {/* Comment functionality removed - handled by SubtaskComments component */}
     </div>
