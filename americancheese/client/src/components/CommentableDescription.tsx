@@ -131,14 +131,11 @@ export function CommentableDescription({
       const response = await fetch(`/api/section-states/${entityType}/${entityId}/${fieldName}`);
       if (response.ok) {
         const sectionState = await response.json();
-        if (sectionState && sectionState.combinedSections) {
-          const combinedIndices = sectionState.combinedSections.map((idx: string) => parseInt(idx));
-          const validCombinedIndices = validateSectionIndices(new Set(combinedIndices));
-          setCombinedSections(validCombinedIndices);
+        if (sectionState) {
+          // DO NOT load combinedSections - combining is a permanent text change
+          // Only load caution and flagged markers which are UI metadata
           setSectionStateId(sectionState.id);
           console.log('Loaded section state from database:', sectionState);
-          console.log('Combined section indices from DB:', combinedIndices);
-          console.log('Valid combined section indices after validation:', Array.from(validCombinedIndices));
 
           // Also restore caution and flagged sections if they exist
           let validCautionIndices = new Set<number>();
@@ -184,13 +181,15 @@ export function CommentableDescription({
   };
 
   // Save section state to database
+  // NOTE: combinedSections is NOT saved because combining is a permanent text change
+  // Only save caution and flagged markers which are UI metadata
   const saveSectionState = async (newCombinedSections: Set<number>, cautionSections: Set<number> = new Set(), flaggedSections: Set<number> = new Set()) => {
     try {
       const sectionStateData = {
         entityType,
         entityId,
         fieldName,
-        combinedSections: Array.from(newCombinedSections).map(String),
+        combinedSections: [], // Always empty - combining is permanent text change
         cautionSections: Array.from(cautionSections).map(String),
         flaggedSections: Array.from(flaggedSections).map(String)
       };
