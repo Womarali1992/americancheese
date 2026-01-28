@@ -96,14 +96,15 @@ export default function ProjectsPage() {
 
   const handleExportProject = async (projectId: number, projectName: string) => {
     try {
-      const response = await fetch(`/api/projects/${projectId}/export`);
+      // Export as JSON (v2.0 format with categories)
+      const response = await fetch(`/api/projects/${projectId}/export?format=json`);
       if (!response.ok) throw new Error('Export failed');
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${projectName.replace(/[^a-zA-Z0-9]/g, '_')}_export.csv`;
+      a.download = `${projectName.replace(/[^a-zA-Z0-9]/g, '_')}_export.json`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -111,7 +112,7 @@ export default function ProjectsPage() {
 
       toast({
         title: "Success",
-        description: "Project exported successfully",
+        description: "Project exported successfully (JSON format with categories)",
       });
     } catch (error) {
       toast({
@@ -144,9 +145,12 @@ export default function ProjectsPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
 
+      const categoriesMsg = result.stats.categories
+        ? `, ${result.stats.categories.tier1 || 0} tier1 and ${result.stats.categories.tier2 || 0} tier2 categories`
+        : '';
       toast({
         title: "Success",
-        description: `Project "${result.project.name}" imported successfully with ${result.stats.tasks} tasks, ${result.stats.materials} materials, ${result.stats.labor} labor entries`,
+        description: `Project "${result.project.name}" imported with ${result.stats.tasks} tasks, ${result.stats.materials} materials${categoriesMsg}`,
       });
 
       setImportDialogOpen(false);
@@ -478,7 +482,7 @@ export default function ProjectsPage() {
               </p>
               <Input
                 type="file"
-                accept=".csv"
+                accept=".json,.csv"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) handleImportProject(file);

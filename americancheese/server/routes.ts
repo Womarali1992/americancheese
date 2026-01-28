@@ -519,10 +519,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return str;
   };
 
-  // Export project to CSV
+  // Export project to JSON (default) or CSV (legacy)
   app.get("/api/projects/:id/export", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      const format = (req.query.format as string)?.toLowerCase() || 'json';
+
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid project ID" });
       }
@@ -538,6 +540,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const projectMaterials = await storage.getMaterialsByProject(id);
       const projectLabor = await storage.getLaborByProject(id);
       const allContacts = await storage.getContacts();
+
+      // Get project categories (NEW - critical for proper import)
+      const projectCats = await db
+        .select()
+        .from(projectCategories)
+        .where(eq(projectCategories.projectId, id))
+        .orderBy(
+          sql`case when ${projectCategories.type} = 'tier1' then 0 else 1 end`,
+          projectCategories.sortOrder,
+          projectCategories.name
+        );
 
       // Get subtasks and checklist items for all tasks
       const subtasksMap: Map<number, any[]> = new Map();
@@ -565,6 +578,162 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const projectContacts = allContacts.filter(c => contactIds.has(c.id));
 
+      // JSON Export (new default)
+      if (format === 'json') {
+        // Separate tier1 and tier2 categories
+        const tier1Categories = projectCats.filter(c => c.type === 'tier1');
+        const tier2Categories = projectCats.filter(c => c.type === 'tier2');
+
+        // Build tier2 with parent names for easier reconstruction
+        const tier2WithParentNames = tier2Categories.map(t2 => {
+          const parent = tier1Categories.find(t1 => t1.id === t2.parentId);
+          return {
+            ...t2,
+            parentName: parent?.name || null
+          };
+        });
+
+        // Build subtasks and checklist arrays
+        const allSubtasks: any[] = [];
+        const allChecklistItems: any[] = [];
+
+        for (const task of projectTasks) {
+          const taskSubtasks = subtasksMap.get(task.id) || [];
+          allSubtasks.push(...taskSubtasks);
+
+          const taskChecklist = checklistMap.get(task.id) || [];
+          allChecklistItems.push(...taskChecklist);
+        }
+
+        const exportData = {
+          version: "2.0",
+          exportDate: new Date().toISOString(),
+          project: {
+            name: project.name,
+            location: project.location,
+            description: project.description,
+            status: project.status,
+            progress: project.progress,
+            startDate: project.startDate,
+            endDate: project.endDate,
+            colorTheme: project.colorTheme,
+            useGlobalTheme: project.useGlobalTheme,
+            presetId: project.presetId,
+          },
+          categories: {
+            tier1: tier1Categories.map(c => ({
+              id: c.id,
+              name: c.name,
+              type: c.type,
+              color: c.color,
+              description: c.description,
+              sortOrder: c.sortOrder,
+            })),
+            tier2: tier2WithParentNames.map(c => ({
+              id: c.id,
+              name: c.name,
+              type: c.type,
+              parentId: c.parentId,
+              parentName: c.parentName,
+              color: c.color,
+              description: c.description,
+              sortOrder: c.sortOrder,
+            })),
+          },
+          tasks: projectTasks.map(t => ({
+            id: t.id,
+            title: t.title,
+            description: t.description,
+            status: t.status,
+            tier1Category: t.tier1Category,
+            tier2Category: t.tier2Category,
+            startDate: t.startDate,
+            endDate: t.endDate,
+            startTime: t.startTime,
+            endTime: t.endTime,
+            completed: t.completed,
+            estimatedCost: t.estimatedCost,
+            actualCost: t.actualCost,
+            assignedTo: t.assignedTo,
+            contactIds: t.contactIds,
+            materialsNeeded: t.materialsNeeded,
+          })),
+          subtasks: allSubtasks.map(s => ({
+            id: s.id,
+            parentTaskId: s.parentTaskId,
+            title: s.title,
+            description: s.description,
+            status: s.status,
+            completed: s.completed,
+            startDate: s.startDate,
+            endDate: s.endDate,
+            startTime: s.startTime,
+            endTime: s.endTime,
+            estimatedCost: s.estimatedCost,
+            actualCost: s.actualCost,
+            assignedTo: s.assignedTo,
+          })),
+          checklistItems: allChecklistItems.map(c => ({
+            id: c.id,
+            taskId: c.taskId,
+            title: c.title,
+            description: c.description,
+            completed: c.completed,
+            section: c.section,
+            assignedTo: c.assignedTo,
+            dueDate: c.dueDate,
+          })),
+          materials: projectMaterials.map(m => ({
+            id: m.id,
+            name: m.name,
+            type: m.type,
+            tier2Category: m.tier2Category,
+            quantity: m.quantity,
+            unit: m.unit,
+            cost: m.cost,
+            supplier: m.supplier,
+            status: m.status,
+            details: m.details,
+            section: m.section,
+            materialSize: m.materialSize,
+          })),
+          labor: projectLabor.map(l => ({
+            id: l.id,
+            taskId: l.taskId,
+            fullName: l.fullName,
+            company: l.company,
+            tier1Category: l.tier1Category,
+            tier2Category: l.tier2Category,
+            workDate: l.workDate,
+            startDate: l.startDate,
+            endDate: l.endDate,
+            totalHours: l.totalHours,
+            laborCost: l.laborCost,
+            workDescription: l.workDescription,
+            status: l.status,
+            email: l.email,
+            phone: l.phone,
+          })),
+          contacts: projectContacts.map(c => ({
+            id: c.id,
+            name: c.name,
+            role: c.role,
+            company: c.company,
+            email: c.email,
+            phone: c.phone,
+            type: c.type,
+            category: c.category,
+          })),
+        };
+
+        const filename = `${project.name.replace(/[^a-zA-Z0-9]/g, '_')}_export.json`;
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.send(JSON.stringify(exportData, null, 2));
+        return;
+      }
+
+      // CSV Export (legacy format)
       // CSV Headers
       const headers = [
         'Type', 'ID', 'ParentID', 'ProjectID', 'Name', 'Description', 'Status',
@@ -671,14 +840,313 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Import project from CSV
+  // Import project from JSON (v2.0) or CSV (legacy)
   app.post("/api/projects/import", upload.single('file'), async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      const csvContent = req.file.buffer.toString('utf-8');
+      const fileContent = req.file.buffer.toString('utf-8');
+      const filename = req.file.originalname || '';
+      const isJson = filename.endsWith('.json') || fileContent.trim().startsWith('{');
+
+      // JSON Import (v2.0 format with categories)
+      if (isJson) {
+        console.log('[Import] Detected JSON format');
+
+        // Remove BOM if present
+        const cleanContent = fileContent.replace(/^\uFEFF/, '');
+        const data = JSON.parse(cleanContent);
+
+        if (!data.project) {
+          return res.status(400).json({ message: "Invalid JSON format: missing project data" });
+        }
+
+        console.log('[Import] JSON version:', data.version || '1.0');
+        console.log('[Import] Project name:', data.project.name);
+
+        // ID mappings
+        const taskIdMap = new Map<number, number>();
+        const contactIdMap = new Map<number, number>();
+        const tier1CategoryIdMap = new Map<number, number>();
+
+        // Create contacts first (dedupe by email)
+        if (data.contacts && data.contacts.length > 0) {
+          console.log('[Import] Creating contacts:', data.contacts.length);
+          for (const contactData of data.contacts) {
+            const existingContacts = await storage.getContacts();
+            const existingContact = existingContacts.find(c =>
+              c.email && contactData.email && c.email.toLowerCase() === contactData.email.toLowerCase()
+            );
+
+            if (existingContact) {
+              contactIdMap.set(contactData.id, existingContact.id);
+            } else {
+              const newContact = await storage.createContact({
+                name: contactData.name || 'Unknown',
+                role: contactData.role || 'Other',
+                company: contactData.company || '',
+                email: contactData.email || '',
+                phone: contactData.phone || '',
+                type: contactData.type || 'contractor',
+                category: contactData.category || 'other',
+              });
+              contactIdMap.set(contactData.id, newContact.id);
+            }
+          }
+        }
+
+        // Create project
+        const addSuffix = req.query.addSuffix !== 'false';
+        const newProject = await storage.createProject({
+          name: addSuffix ? data.project.name + ' (Imported)' : data.project.name,
+          location: data.project.location || '',
+          description: data.project.description || '',
+          status: data.project.status || 'active',
+          progress: data.project.progress || 0,
+          startDate: data.project.startDate ? new Date(data.project.startDate) : null,
+          endDate: data.project.endDate ? new Date(data.project.endDate) : null,
+          colorTheme: data.project.colorTheme || null,
+          useGlobalTheme: data.project.useGlobalTheme ?? true,
+          presetId: data.project.presetId || null,
+        });
+
+        console.log('[Import] Created project:', newProject.id, newProject.name);
+
+        // Create project categories (NEW - critical for proper task categorization)
+        if (data.categories) {
+          // Create tier1 categories first
+          if (data.categories.tier1 && data.categories.tier1.length > 0) {
+            console.log('[Import] Creating tier1 categories:', data.categories.tier1.length);
+            for (const cat of data.categories.tier1) {
+              const [newCat] = await db.insert(projectCategories).values({
+                projectId: newProject.id,
+                name: cat.name,
+                type: 'tier1',
+                color: cat.color || null,
+                description: cat.description || null,
+                sortOrder: cat.sortOrder || 0,
+              }).returning();
+              tier1CategoryIdMap.set(cat.id, newCat.id);
+              console.log(`[Import] Created tier1 category: ${cat.name} (old: ${cat.id} -> new: ${newCat.id})`);
+            }
+          }
+
+          // Create tier2 categories with correct parent mapping
+          if (data.categories.tier2 && data.categories.tier2.length > 0) {
+            console.log('[Import] Creating tier2 categories:', data.categories.tier2.length);
+            for (const cat of data.categories.tier2) {
+              // Find new parent ID using parentName or mapped parentId
+              let newParentId = null;
+              if (cat.parentName) {
+                // Find tier1 by name in the new project
+                const parentCat = await db
+                  .select()
+                  .from(projectCategories)
+                  .where(and(
+                    eq(projectCategories.projectId, newProject.id),
+                    eq(projectCategories.type, 'tier1'),
+                    eq(projectCategories.name, cat.parentName)
+                  ))
+                  .limit(1);
+                if (parentCat.length > 0) {
+                  newParentId = parentCat[0].id;
+                }
+              } else if (cat.parentId) {
+                newParentId = tier1CategoryIdMap.get(cat.parentId) || null;
+              }
+
+              const [newCat] = await db.insert(projectCategories).values({
+                projectId: newProject.id,
+                name: cat.name,
+                type: 'tier2',
+                parentId: newParentId,
+                color: cat.color || null,
+                description: cat.description || null,
+                sortOrder: cat.sortOrder || 0,
+              }).returning();
+              console.log(`[Import] Created tier2 category: ${cat.name} (parent: ${cat.parentName || cat.parentId})`);
+            }
+          }
+        }
+
+        // Create tasks
+        if (data.tasks && data.tasks.length > 0) {
+          console.log('[Import] Creating tasks:', data.tasks.length);
+          const today = new Date();
+          const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+          for (const taskData of data.tasks) {
+            // Map old contact IDs to new ones
+            let newContactIds: number[] = [];
+            if (taskData.contactIds) {
+              const oldIds = Array.isArray(taskData.contactIds) ? taskData.contactIds : [];
+              newContactIds = oldIds.map((oldId: number) => contactIdMap.get(oldId) || oldId).filter(Boolean);
+            }
+
+            const newTask = await storage.createTask({
+              projectId: newProject.id,
+              title: taskData.title || 'Untitled Task',
+              description: taskData.description || '',
+              status: taskData.status || 'not_started',
+              tier1Category: taskData.tier1Category || null,
+              tier2Category: taskData.tier2Category || null,
+              startDate: taskData.startDate ? new Date(taskData.startDate) : today,
+              endDate: taskData.endDate ? new Date(taskData.endDate) : nextWeek,
+              startTime: taskData.startTime || null,
+              endTime: taskData.endTime || null,
+              completed: taskData.completed || false,
+              estimatedCost: taskData.estimatedCost || null,
+              actualCost: taskData.actualCost || null,
+              assignedTo: taskData.assignedTo || null,
+              contactIds: newContactIds,
+              materialsNeeded: taskData.materialsNeeded || null,
+            });
+
+            taskIdMap.set(taskData.id, newTask.id);
+          }
+        }
+
+        // Create subtasks
+        if (data.subtasks && data.subtasks.length > 0) {
+          console.log('[Import] Creating subtasks:', data.subtasks.length);
+          const today = new Date();
+          const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+          for (const subtaskData of data.subtasks) {
+            const newParentId = taskIdMap.get(subtaskData.parentTaskId);
+            if (newParentId) {
+              await storage.createSubtask({
+                parentTaskId: newParentId,
+                title: subtaskData.title || 'Untitled Subtask',
+                description: subtaskData.description || '',
+                status: subtaskData.status || 'not_started',
+                completed: subtaskData.completed || false,
+                startDate: subtaskData.startDate ? new Date(subtaskData.startDate) : today,
+                endDate: subtaskData.endDate ? new Date(subtaskData.endDate) : nextWeek,
+                startTime: subtaskData.startTime || null,
+                endTime: subtaskData.endTime || null,
+                estimatedCost: subtaskData.estimatedCost || null,
+                actualCost: subtaskData.actualCost || null,
+                assignedTo: subtaskData.assignedTo || null,
+              });
+            }
+          }
+        }
+
+        // Create checklist items
+        if (data.checklistItems && data.checklistItems.length > 0) {
+          console.log('[Import] Creating checklist items:', data.checklistItems.length);
+          for (const itemData of data.checklistItems) {
+            const newTaskId = taskIdMap.get(itemData.taskId);
+            if (newTaskId) {
+              await storage.createChecklistItem({
+                taskId: newTaskId,
+                title: itemData.title || 'Untitled Item',
+                description: itemData.description || '',
+                completed: itemData.completed || false,
+                section: itemData.section || null,
+                assignedTo: itemData.assignedTo || null,
+                dueDate: itemData.dueDate ? new Date(itemData.dueDate) : null,
+              });
+            }
+          }
+        }
+
+        // Create materials
+        if (data.materials && data.materials.length > 0) {
+          console.log('[Import] Creating materials:', data.materials.length);
+          for (const materialData of data.materials) {
+            await storage.createMaterial({
+              projectId: newProject.id,
+              name: materialData.name || 'Untitled Material',
+              type: materialData.type || 'other',
+              tier2Category: materialData.tier2Category || null,
+              quantity: materialData.quantity || 0,
+              unit: materialData.unit || 'each',
+              cost: materialData.cost || null,
+              supplier: materialData.supplier || null,
+              status: materialData.status || 'ordered',
+              details: materialData.details || null,
+              section: materialData.section || null,
+              materialSize: materialData.materialSize || null,
+            });
+          }
+        }
+
+        // Create labor entries
+        if (data.labor && data.labor.length > 0) {
+          console.log('[Import] Creating labor entries:', data.labor.length);
+          for (const laborData of data.labor) {
+            const newTaskId = laborData.taskId ? taskIdMap.get(laborData.taskId) : null;
+
+            // Find or create contact for labor
+            let contactId = null;
+            if (laborData.fullName) {
+              const existingContacts = await storage.getContacts();
+              const existingContact = existingContacts.find(c => c.name === laborData.fullName);
+              if (existingContact) {
+                contactId = existingContact.id;
+              } else {
+                const newContact = await storage.createContact({
+                  name: laborData.fullName,
+                  role: 'Worker',
+                  company: laborData.company || '',
+                  email: laborData.email || '',
+                  phone: laborData.phone || '',
+                  type: 'contractor',
+                  category: laborData.tier2Category || 'other',
+                });
+                contactId = newContact.id;
+              }
+            }
+
+            if (contactId) {
+              await storage.createLabor({
+                projectId: newProject.id,
+                taskId: newTaskId || null,
+                contactId: contactId,
+                fullName: laborData.fullName || '',
+                company: laborData.company || '',
+                tier1Category: laborData.tier1Category || null,
+                tier2Category: laborData.tier2Category || null,
+                workDate: laborData.workDate ? new Date(laborData.workDate) : new Date(),
+                startDate: laborData.startDate ? new Date(laborData.startDate) : new Date(),
+                endDate: laborData.endDate ? new Date(laborData.endDate) : new Date(),
+                totalHours: laborData.totalHours || null,
+                laborCost: laborData.laborCost || null,
+                workDescription: laborData.workDescription || null,
+                status: laborData.status || 'pending',
+                email: laborData.email || null,
+                phone: laborData.phone || null,
+              });
+            }
+          }
+        }
+
+        res.status(201).json({
+          message: "Project imported successfully",
+          project: newProject,
+          stats: {
+            tasks: data.tasks?.length || 0,
+            subtasks: data.subtasks?.length || 0,
+            materials: data.materials?.length || 0,
+            labor: data.labor?.length || 0,
+            contacts: data.contacts?.length || 0,
+            checklistItems: data.checklistItems?.length || 0,
+            categories: {
+              tier1: data.categories?.tier1?.length || 0,
+              tier2: data.categories?.tier2?.length || 0,
+            }
+          }
+        });
+        return;
+      }
+
+      // CSV Import (legacy format)
+      console.log('[Import] Detected CSV format (legacy)');
+      const csvContent = fileContent;
       // Handle both Windows (\r\n) and Unix (\n) line endings
       const lines = csvContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(line => line.trim());
 
@@ -767,6 +1235,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         startDate: projectData.StartDate ? new Date(projectData.StartDate) : null,
         endDate: projectData.EndDate ? new Date(projectData.EndDate) : null,
       });
+
+      // For CSV imports, auto-create categories from task tier1/tier2 values
+      const tier1Set = new Set<string>();
+      const tier2Map = new Map<string, string>(); // tier2 -> tier1
+      for (const taskData of taskRecords) {
+        if (taskData.Tier1Category) tier1Set.add(taskData.Tier1Category);
+        if (taskData.Tier2Category && taskData.Tier1Category) {
+          tier2Map.set(taskData.Tier2Category, taskData.Tier1Category);
+        }
+      }
+
+      // Create tier1 categories from CSV data
+      const tier1IdMap = new Map<string, number>();
+      let sortOrder = 0;
+      for (const tier1Name of tier1Set) {
+        const [newCat] = await db.insert(projectCategories).values({
+          projectId: newProject.id,
+          name: tier1Name,
+          type: 'tier1',
+          sortOrder: sortOrder++,
+        }).returning();
+        tier1IdMap.set(tier1Name, newCat.id);
+        console.log(`[Import] Auto-created tier1 category: ${tier1Name}`);
+      }
+
+      // Create tier2 categories from CSV data
+      sortOrder = 0;
+      for (const [tier2Name, tier1Name] of tier2Map) {
+        const parentId = tier1IdMap.get(tier1Name);
+        await db.insert(projectCategories).values({
+          projectId: newProject.id,
+          name: tier2Name,
+          type: 'tier2',
+          parentId: parentId || null,
+          sortOrder: sortOrder++,
+        }).returning();
+        console.log(`[Import] Auto-created tier2 category: ${tier2Name} (parent: ${tier1Name})`);
+      }
 
       // Create tasks
       let tasksCreated = 0;
@@ -925,6 +1431,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           labor: laborRecords.length,
           contacts: contactRecords.length,
           checklist: checklistRecords.length,
+          categories: {
+            tier1: tier1Set.size,
+            tier2: tier2Map.size,
+          }
         }
       });
 

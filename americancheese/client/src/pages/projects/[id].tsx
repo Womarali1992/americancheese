@@ -270,14 +270,15 @@ export default function ProjectDetailPage() {
   // Handle export project
   const handleExportProject = async () => {
     try {
-      const response = await fetch(`/api/projects/${projectId}/export`);
+      // Export as JSON (v2.0 format with categories)
+      const response = await fetch(`/api/projects/${projectId}/export?format=json`);
       if (!response.ok) throw new Error('Export failed');
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${project.name.replace(/[^a-zA-Z0-9]/g, '_')}_export.csv`;
+      a.download = `${project.name.replace(/[^a-zA-Z0-9]/g, '_')}_export.json`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -285,7 +286,7 @@ export default function ProjectDetailPage() {
 
       toast({
         title: "Success",
-        description: "Project exported successfully",
+        description: "Project exported successfully (JSON format with categories)",
       });
     } catch (error) {
       toast({
