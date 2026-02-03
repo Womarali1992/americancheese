@@ -32,7 +32,7 @@ import {
   EnhancedSelectItem,
   EnhancedSelectRichTrigger,
 } from "@/components/ui/enhanced-select";
-import { X, Home, Building2, Code, FileX, Check, Palette, ChevronDown, FileCode2 } from "lucide-react";
+import { Home, Building2, Code, FileX, Check, Palette, ChevronDown, FileCode2 } from "lucide-react";
 import { getPresetOptions } from "@shared/presets.ts";
 import { COLOR_THEMES } from "@/lib/color-themes";
 import {
@@ -46,12 +46,10 @@ import { ContextData, createEmptyContext } from "@shared/context-types";
 // Schema for the form
 const projectFormSchema = z.object({
   name: z.string().min(1, "Project name is required"),
-  location: z.string().min(1, "Location is required"),
+  location: z.string().optional(),
   startDate: z.string().optional(),
-  endDate: z.string().optional(),
   description: z.string().optional(),
   presetId: z.string().min(1, "Preset selection is required"),
-  teamMembers: z.array(z.string()).optional(),
   useGlobalTheme: z.boolean().default(true),
   colorTheme: z.string().optional(),
   structuredContext: z.string().optional(), // JSON stringified AI context
@@ -93,11 +91,6 @@ export function CreateProjectDialog({
   onOpenChange,
 }: CreateProjectDialogProps) {
   const { toast } = useToast();
-  const [teamMembers, setTeamMembers] = React.useState<string[]>([
-    "John Doe",
-    "Sarah Smith",
-  ]);
-  const [newMember, setNewMember] = React.useState("");
   const [contextOpen, setContextOpen] = React.useState(false);
   const [contextData, setContextData] = React.useState<ContextData | null>(null);
 
@@ -147,10 +140,8 @@ export function CreateProjectDialog({
       name: "",
       location: "",
       startDate: "",
-      endDate: "",
       description: "",
       presetId: "none",
-      teamMembers: teamMembers,
       useGlobalTheme: false,
       colorTheme: defaultTheme,
       structuredContext: "",
@@ -170,7 +161,7 @@ export function CreateProjectDialog({
       const requestData = {
         ...data,
         startDate: data.startDate ? new Date(data.startDate) : null,
-        endDate: data.endDate ? new Date(data.endDate) : null,
+        endDate: null,
         status: "active",
         progress: 0,
         presetId: data.presetId,
@@ -268,24 +259,6 @@ export function CreateProjectDialog({
     }
   }
 
-  const removeMember = (member: string) => {
-    setTeamMembers(teamMembers.filter((m) => m !== member));
-  };
-
-  const addMember = () => {
-    if (newMember && !teamMembers.includes(newMember)) {
-      setTeamMembers([...teamMembers, newMember]);
-      setNewMember("");
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addMember();
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg" aria-describedby="create-project-description">
@@ -315,13 +288,51 @@ export function CreateProjectDialog({
 
             <FormField
               control={form.control}
-              name="location"
+              name="presetId"
+              render={({ field }) => {
+                const selectedPreset = availablePresets.find(p => p.value === field.value);
+                return (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-slate-700">Category Preset</FormLabel>
+                    <EnhancedSelect onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                      <FormControl>
+                        <EnhancedSelectRichTrigger
+                          title={selectedPreset?.label || "Select a preset"}
+                          subtitle={selectedPreset?.description || "Choose a category preset for your project"}
+                          icon={selectedPreset ? getPresetIcon(selectedPreset.value) : undefined}
+                        />
+                      </FormControl>
+                      <EnhancedSelectContent>
+                        {availablePresets.map((preset) => (
+                          <EnhancedSelectItem key={preset.value} value={preset.value}>
+                            <div className="flex items-start gap-3">
+                              <div className="flex-shrink-0 mt-0.5 text-slate-500">
+                                {getPresetIcon(preset.value)}
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <span className="font-medium text-sm text-slate-900">{preset.label}</span>
+                                <span className="text-xs text-slate-500 leading-tight">{preset.description}</span>
+                              </div>
+                            </div>
+                          </EnhancedSelectItem>
+                        ))}
+                      </EnhancedSelectContent>
+                    </EnhancedSelect>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+
+            <FormField
+              control={form.control}
+              name="startDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-slate-700">Location</FormLabel>
+                  <FormLabel className="text-sm font-medium text-slate-700">Start Date</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter address"
+                      type="date"
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg"
                       {...field}
                     />
@@ -330,44 +341,6 @@ export function CreateProjectDialog({
                 </FormItem>
               )}
             />
-
-            <div className="flex gap-4">
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem className="w-1/2">
-                    <FormLabel className="text-sm font-medium text-slate-700">Start Date</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="endDate"
-                render={({ field }) => (
-                  <FormItem className="w-1/2">
-                    <FormLabel className="text-sm font-medium text-slate-700">Estimated Completion</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
 
             <FormField
               control={form.control}
@@ -422,44 +395,6 @@ export function CreateProjectDialog({
               </CollapsibleContent>
             </Collapsible>
 
-            <FormField
-              control={form.control}
-              name="presetId"
-              render={({ field }) => {
-                const selectedPreset = availablePresets.find(p => p.value === field.value);
-                return (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-slate-700">Category Preset</FormLabel>
-                    <EnhancedSelect onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
-                      <FormControl>
-                        <EnhancedSelectRichTrigger
-                          title={selectedPreset?.label || "Select a preset"}
-                          subtitle={selectedPreset?.description || "Choose a category preset for your project"}
-                          icon={selectedPreset ? getPresetIcon(selectedPreset.value) : undefined}
-                        />
-                      </FormControl>
-                      <EnhancedSelectContent>
-                        {availablePresets.map((preset) => (
-                          <EnhancedSelectItem key={preset.value} value={preset.value}>
-                            <div className="flex items-start gap-3">
-                              <div className="flex-shrink-0 mt-0.5 text-slate-500">
-                                {getPresetIcon(preset.value)}
-                              </div>
-                              <div className="flex flex-col min-w-0">
-                                <span className="font-medium text-sm text-slate-900">{preset.label}</span>
-                                <span className="text-xs text-slate-500 leading-tight">{preset.description}</span>
-                              </div>
-                            </div>
-                          </EnhancedSelectItem>
-                        ))}
-                      </EnhancedSelectContent>
-                    </EnhancedSelect>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
-
             {/* Theme Settings */}
             <FormField
               control={form.control}
@@ -509,33 +444,6 @@ export function CreateProjectDialog({
                 </FormItem>
               )}
             />
-
-            <div>
-              <FormLabel className="block text-sm font-medium text-slate-700 mb-1">Assign Team Members</FormLabel>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {teamMembers.map((member, index) => (
-                  <Badge key={index} variant="secondary" className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm flex items-center">
-                    {member}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => removeMember(member)}
-                      className="ml-1 text-slate-500 h-auto p-0 px-1"
-                    >
-                      <X size={14} />
-                    </Button>
-                  </Badge>
-                ))}
-              </div>
-              <Input
-                placeholder="Type a name to add..."
-                value={newMember}
-                onChange={(e) => setNewMember(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onBlur={addMember}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-              />
-            </div>
 
             <DialogFooter className="sm:justify-end border-t border-slate-200 pt-4 mt-4 gap-2">
               <Button
