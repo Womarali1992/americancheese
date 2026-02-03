@@ -9,10 +9,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { apiRequest } from '@/lib/queryClient';
-import { Progress } from '@/components/ui/progress';
-import { getStatusBgColor } from '@/lib/unified-color-system';
+import { useToast } from '@/hooks/use-toast';
 
 interface TaskAttachment {
   id: number;
@@ -70,6 +70,7 @@ export function TaskAttachmentsPanel({ task, className = '' }: TaskAttachmentsPa
   const [activeTab, setActiveTab] = useState<string>('all');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Fetch attachments for this task
   const { data: attachments = [], isLoading } = useQuery<TaskAttachment[]>({
@@ -79,8 +80,9 @@ export function TaskAttachmentsPanel({ task, className = '' }: TaskAttachmentsPa
   // Debug logging
   console.log(`TaskAttachmentsPanel for task ${task.id}: Found ${attachments.length} attachments`, attachments);
 
-  // Set up react-hook-form
+  // Set up react-hook-form with zodResolver
   const form = useForm<AttachmentFormValues>({
+    resolver: zodResolver(attachmentSchema),
     defaultValues: {
       fileName: '',
       fileType: '',
@@ -93,13 +95,27 @@ export function TaskAttachmentsPanel({ task, className = '' }: TaskAttachmentsPa
 
   const uploadMutation = useMutation({
     mutationFn: async (data: AttachmentFormValues) => {
-      return apiRequest(`/api/tasks/${task.id}/attachments`, 'POST', data);
+      console.log('Uploading attachment:', { taskId: task.id, fileName: data.fileName, fileSize: data.fileSize });
+      const response = await apiRequest(`/api/tasks/${task.id}/attachments`, 'POST', data);
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tasks/${task.id}/attachments`] });
       setUploadDialogOpen(false);
       form.reset();
       setSelectedFile(null);
+      toast({
+        title: 'Attachment uploaded',
+        description: 'The file has been uploaded successfully.',
+      });
+    },
+    onError: (error: Error) => {
+      console.error('Upload failed:', error);
+      toast({
+        title: 'Upload failed',
+        description: error.message || 'Failed to upload the attachment. Please try again.',
+        variant: 'destructive',
+      });
     }
   });
 
