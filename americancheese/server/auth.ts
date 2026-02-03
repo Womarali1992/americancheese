@@ -1,62 +1,76 @@
 import { Request, Response, NextFunction } from 'express';
 import session from 'express-session';
 import MemoryStore from 'memorystore';
+import bcrypt from 'bcrypt';
+import crypto from 'crypto';
+import { db } from './db';
+import { users, registerUserSchema, loginUserSchema } from '../shared/schema';
+import { eq } from 'drizzle-orm';
 
-// Very simple auth for a prototype app - DON'T use this in production
-// Instead, use a proper authentication system with secure password hashing
+// Extend express-session types
+declare module 'express-session' {
+  interface SessionData {
+    authenticated: boolean;
+    userId: number;
+    userEmail: string;
+    userName: string;
+    token: string;
+    loginTime: Date;
+  }
+}
 
-// Password for authentication
-export const ADMIN_PASSWORD = 'richman';
+// Constants
+const SALT_ROUNDS = 10;
+const TOKEN_EXPIRY_MS = 86400000; // 24 hours
 
-// Authentication token that will be returned after login
-// In a real app, this would be dynamically generated per user and stored securely
-export const AUTH_TOKEN = 'cm-app-auth-token-123456';
-
-// Create a map to store authenticated users
-const authenticatedUsers = new Map<string, boolean>();
-
-// Create memory store for sessions (needed for express-session middleware)
+// Create memory store for sessions
 const MemoryStoreSession = MemoryStore(session);
 
-// Configure session middleware with simplest possible settings
+// Store for auth tokens (in production, use Redis or database)
+const tokenStore = new Map<string, { userId: number; email: string; expiresAt: Date }>();
+
+// Generate a secure token
+function generateToken(): string {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+// Configure session middleware
 export const sessionMiddleware = session({
-  secret: 'construction-management-app-secret',
+  secret: process.env.SESSION_SECRET || 'construction-management-app-secret',
   name: 'construction.sid',
   resave: true,
   saveUninitialized: true,
   store: new MemoryStoreSession({
     checkPeriod: 86400000 // prune expired entries every 24h
   }),
-  cookie: { 
-    maxAge: 86400000, // 24 hours
-    secure: false,
+  cookie: {
+    maxAge: TOKEN_EXPIRY_MS,
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: false,
     path: '/',
     sameSite: 'lax'
   }
 });
 
-// Map to store active sessions - this should be a database in production
-const activeSessionIpMap = new Map<string, boolean>();
-
-// Very simple authentication middleware using IP as session identifier
-// THIS IS NOT SECURE AND ONLY FOR DEMO PURPOSES
+// Authentication middleware
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   // Determine if this is a module or asset request that should skip auth
-  const isAssetOrModuleRequest = 
-    req.path.includes('.') ||            // Files with extensions
-    req.path.startsWith('/@') ||         // Vite module imports
-    req.path.startsWith('/@fs/') ||      // Vite filesystem access
-    req.path.startsWith('/@id/') ||      // Vite module ID imports
-    req.path.startsWith('/@vite/') ||    // Vite internal modules
-    req.path.startsWith('/node_modules/')|| // Node modules  
-    req.path.startsWith('/src/') ||      // Source files
-    req.path === '/_debug_apis';         // Debug API endpoints
-  
-  // Skip auth for login page, login endpoint, test endpoint, task templates endpoint, or static assets
-  // Also temporarily skip auth for development mode
-  if (req.path === '/login' || 
-      req.path === '/api/auth/login' || 
+  const isAssetOrModuleRequest =
+    req.path.includes('.') ||
+    req.path.startsWith('/@') ||
+    req.path.startsWith('/@fs/') ||
+    req.path.startsWith('/@id/') ||
+    req.path.startsWith('/@vite/') ||
+    req.path.startsWith('/node_modules/') ||
+    req.path.startsWith('/src/') ||
+    req.path === '/_debug_apis';
+
+  // Skip auth for public pages and endpoints
+  if (req.path === '/login' ||
+      req.path === '/signup' ||
+      req.path === '/api/auth/login' ||
+      req.path === '/api/auth/register' ||
+      req.path === '/api/auth/logout' ||
       req.path === '/api/test' ||
       req.path === '/api/task-templates' ||
       isAssetOrModuleRequest ||
@@ -64,148 +78,317 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     return next();
   }
 
-  console.log('Auth check for path:', req.path);
-  
-  // Get client IP as session identifier
-  const ip = req.ip || req.socket.remoteAddress || '0.0.0.0';
-  console.log('Client IP:', ip);
-  
-  // First check if we have an active session for this IP
-  if (activeSessionIpMap.has(ip)) {
-    console.log('Found active session for IP:', ip);
-    return next();
-  }
-  
-  // Otherwise try the token approach
-  // Look in authorization header (Bearer token)
+  // Check for authentication token
   let token = req.headers.authorization?.split(' ')[1];
-  
-  // If not found in auth header, check for token in cookies
+
+  // Check cookies for token
   if (!token && req.cookies) {
-    // Check various cookie names that might contain the auth token
-    token = req.cookies.token || 
-            req.cookies['cm-app-auth-token'] || 
-            req.cookies['auth-token'] ||
-            req.cookies['access-token'];
-    console.log('Found token in cookies:', token);
-    console.log('Available cookies:', Object.keys(req.cookies));
+    token = req.cookies.token || req.cookies['auth-token'];
   }
-  
-  // If not found in cookie, check query string
+
+  // Check query string
   if (!token && req.query && req.query.token) {
     token = req.query.token as string;
-    console.log('Found token in query:', token);
-  }
-  
-  // If not found, check custom header
-  if (!token && req.headers['x-access-token']) {
-    token = req.headers['x-access-token'] as string;
-    console.log('Found token in custom header:', token);
-  }
-  
-  // If not found, check session too
-  if (!token && req.session && (req.session as any).token) {
-    token = (req.session as any).token;
-    console.log('Found token in session:', token);
   }
 
-  // Debug token info
-  console.log('Final auth token from request:', token);
-  console.log('Expected auth token:', AUTH_TOKEN);
-  console.log('Auth headers:', req.headers.authorization);
-  console.log('Cookies received:', req.cookies);
-  console.log('Session data:', req.session);
-  
-  // Check for auth token or session authentication
-  const sessionAuthenticated = req.session && (req.session as any).authenticated;
-  const tokenAuthenticated = token === AUTH_TOKEN;
-  const ipAuthenticated = activeSessionIpMap.has(ip);
-  
-  const isAuthenticated = tokenAuthenticated || sessionAuthenticated || ipAuthenticated;
-  
-  if (isAuthenticated) {
-    console.log('Authentication successful, proceeding to route:', req.path);
+  // Check custom header
+  if (!token && req.headers['x-access-token']) {
+    token = req.headers['x-access-token'] as string;
+  }
+
+  // Check session
+  if (!token && req.session && req.session.token) {
+    token = req.session.token;
+  }
+
+  // Validate token
+  if (token && tokenStore.has(token)) {
+    const tokenData = tokenStore.get(token)!;
+    if (tokenData.expiresAt > new Date()) {
+      return next();
+    } else {
+      // Token expired, remove it
+      tokenStore.delete(token);
+    }
+  }
+
+  // Check session authentication
+  if (req.session && req.session.authenticated) {
     return next();
   }
 
-  // For API requests, return 401 Unauthorized
+  // Not authenticated
   if (req.path.startsWith('/api/')) {
-    console.log('Token auth failed for API path:', req.path);
-    return res.status(401).json({ 
-      message: 'Unauthorized - invalid or missing token',
+    return res.status(401).json({
+      message: 'Unauthorized - please log in',
       path: req.path
     });
   }
 
-  // For non-API requests, redirect to login
-  console.log('Token auth failed, redirecting to login');
   return res.redirect('/login');
 };
 
-// Login handler - simple token-based auth combined with IP-based session
-export const handleLogin = (req: Request, res: Response) => {
-  const { password } = req.body;
-
-  console.log('Login attempt, checking password');
-
-  if (password === ADMIN_PASSWORD) {
-    console.log('Password correct, returning auth token');
-    
-    // Get client IP for session tracking
-    const ip = req.ip || req.socket.remoteAddress || '0.0.0.0';
-    console.log('Storing session for IP:', ip);
-    
-    // Store IP in active sessions map - this would be a DB in production
-    activeSessionIpMap.set(ip, true);
-    
-    // ALSO store auth token in session
-    if (req.session) {
-      (req.session as any).authenticated = true;
-      (req.session as any).token = AUTH_TOKEN;
-      (req.session as any).loginTime = new Date();
-      console.log('Session data stored:', { 
-        auth: (req.session as any).authenticated,
-        token: (req.session as any).token
+// Register handler
+export const handleRegister = async (req: Request, res: Response) => {
+  try {
+    // Validate input
+    const validationResult = registerUserSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validationResult.error.errors
       });
     }
-    
-    // Set a cookie with the token - multiple approaches for redundancy
-    res.cookie('token', AUTH_TOKEN, {
-      maxAge: 86400000, // 24 hours
-      httpOnly: false, // Allow JS access
-      secure: false,
+
+    const { email, password, name, company } = validationResult.data;
+
+    // Check if database is available
+    if (!db) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database not available'
+      });
+    }
+
+    // Check if user already exists
+    const existingUser = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
+    if (existingUser.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'An account with this email already exists'
+      });
+    }
+
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+
+    // Create user
+    const [newUser] = await db.insert(users).values({
+      email: email.toLowerCase(),
+      passwordHash,
+      name,
+      company: company || null,
+      role: 'user',
+      isActive: true
+    }).returning();
+
+    // Generate token
+    const token = generateToken();
+    tokenStore.set(token, {
+      userId: newUser.id,
+      email: newUser.email,
+      expiresAt: new Date(Date.now() + TOKEN_EXPIRY_MS)
+    });
+
+    // Set session
+    req.session.authenticated = true;
+    req.session.userId = newUser.id;
+    req.session.userEmail = newUser.email;
+    req.session.userName = newUser.name;
+    req.session.token = token;
+    req.session.loginTime = new Date();
+
+    // Set cookies
+    res.cookie('token', token, {
+      maxAge: TOKEN_EXPIRY_MS,
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
       path: '/',
       sameSite: 'lax'
     });
-    
-    // Also set a second cookie with different options as fallback
-    res.cookie('auth', AUTH_TOKEN, {
-      maxAge: 86400000, // 24 hours
-      httpOnly: false,
-      secure: false,
-      path: '/'
+
+    console.log('New user registered:', newUser.email);
+
+    return res.json({
+      success: true,
+      message: 'Registration successful',
+      token,
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        company: newUser.company
+      }
     });
-    
-    return res.json({ 
-      success: true, 
-      message: 'Authentication successful',
-      token: AUTH_TOKEN, // Send token in response
-      ip: ip // Include IP in response for debugging
-    });
-  } else {
-    console.log('Login failed: invalid password');
-    res.status(401).json({ 
-      success: false, 
-      message: 'Invalid password' 
+  } catch (error) {
+    console.error('Registration error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Registration failed. Please try again.'
     });
   }
 };
 
-// Logout handler - just clear the token
+// Login handler
+export const handleLogin = async (req: Request, res: Response) => {
+  try {
+    // Validate input
+    const validationResult = loginUserSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validationResult.error.errors
+      });
+    }
+
+    const { email, password } = validationResult.data;
+
+    // Check if database is available
+    if (!db) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database not available'
+      });
+    }
+
+    // Find user
+    const [user] = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password'
+      });
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: 'Account is deactivated'
+      });
+    }
+
+    // Verify password
+    const passwordMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!passwordMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password'
+      });
+    }
+
+    // Update last login time
+    await db.update(users).set({
+      lastLoginAt: new Date(),
+      updatedAt: new Date()
+    }).where(eq(users.id, user.id));
+
+    // Generate token
+    const token = generateToken();
+    tokenStore.set(token, {
+      userId: user.id,
+      email: user.email,
+      expiresAt: new Date(Date.now() + TOKEN_EXPIRY_MS)
+    });
+
+    // Set session
+    req.session.authenticated = true;
+    req.session.userId = user.id;
+    req.session.userEmail = user.email;
+    req.session.userName = user.name;
+    req.session.token = token;
+    req.session.loginTime = new Date();
+
+    // Set cookies
+    res.cookie('token', token, {
+      maxAge: TOKEN_EXPIRY_MS,
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      sameSite: 'lax'
+    });
+
+    console.log('User logged in:', user.email);
+
+    return res.json({
+      success: true,
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        company: user.company
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Login failed. Please try again.'
+    });
+  }
+};
+
+// Logout handler
 export const handleLogout = (req: Request, res: Response) => {
-  res.clearCookie('token');
-  res.json({ 
-    success: true, 
-    message: 'Logged out successfully' 
+  // Remove token from store
+  if (req.session && req.session.token) {
+    tokenStore.delete(req.session.token);
+  }
+
+  // Clear session
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Session destruction error:', err);
+    }
   });
+
+  // Clear cookies
+  res.clearCookie('token');
+  res.clearCookie('construction.sid');
+
+  return res.json({
+    success: true,
+    message: 'Logged out successfully'
+  });
+};
+
+// Get current user handler
+export const handleGetCurrentUser = async (req: Request, res: Response) => {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({
+      success: false,
+      message: 'Not authenticated'
+    });
+  }
+
+  try {
+    if (!db) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database not available'
+      });
+    }
+
+    const [user] = await db.select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      company: users.company,
+      role: users.role,
+      createdAt: users.createdAt
+    }).from(users).where(eq(users.id, req.session.userId)).limit(1);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    return res.json({
+      success: true,
+      user
+    });
+  } catch (error) {
+    console.error('Get current user error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to get user data'
+    });
+  }
 };

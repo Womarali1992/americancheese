@@ -40,7 +40,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
-import { handleLogin, handleLogout } from "./auth";
+import { handleLogin, handleLogout, handleRegister, handleGetCurrentUser } from "./auth";
 import { db } from "./db";
 import { eq, sql, isNull, and, or, inArray } from "drizzle-orm";
 import csvParser from "csv-parser";
@@ -60,7 +60,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Authentication routes
   app.post("/api/auth/login", handleLogin);
+  app.post("/api/auth/register", handleRegister);
   app.post("/api/auth/logout", handleLogout);
+  app.get("/api/auth/me", handleGetCurrentUser);
 
   // ==================== ADMIN TEMPLATE CATEGORIES ====================
   

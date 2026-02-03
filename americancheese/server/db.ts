@@ -1,13 +1,13 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import pkg from 'pg';
 const { Pool } = pkg;
-import { 
-  projects, 
-  tasks, 
-  contacts, 
-  expenses, 
-  materials, 
-  taskAttachments, 
+import {
+  projects,
+  tasks,
+  contacts,
+  expenses,
+  materials,
+  taskAttachments,
   labor,
   categoryTemplates,
   projectCategories,
@@ -18,7 +18,8 @@ import {
   checklistItemComments,
   subtaskComments,
   sectionStates,
-  sectionComments
+  sectionComments,
+  users
 } from '../shared/schema';
 
 // Get database configuration from environment
@@ -46,14 +47,14 @@ if (dbConfig.password && dbConfig.password !== 'password') {
     queryClient = new Pool(dbConfig);
     
     // Create drizzle database instance
-    db = drizzle(queryClient, { 
-      schema: { 
-        projects, 
-        tasks, 
-        contacts, 
-        expenses, 
-        materials, 
-        taskAttachments, 
+    db = drizzle(queryClient, {
+      schema: {
+        projects,
+        tasks,
+        contacts,
+        expenses,
+        materials,
+        taskAttachments,
         labor,
         categoryTemplates,
         projectCategories,
@@ -64,8 +65,9 @@ if (dbConfig.password && dbConfig.password !== 'password') {
         checklistItemComments,
         subtaskComments,
         sectionStates,
-        sectionComments
-      } 
+        sectionComments,
+        users
+      }
     });
     
     console.log('Database connection established successfully.');

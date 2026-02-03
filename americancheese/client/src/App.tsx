@@ -20,6 +20,7 @@ import SupplierQuotePage from "@/pages/suppliers/SupplierQuotePage";
 import QuoteDetailPage from "@/pages/suppliers/QuoteDetailPage";
 import MaterialsPage from "@/pages/materials";
 import LoginPage from "@/pages/login";
+import SignupPage from "@/pages/signup";
 import AdminPage from "@/pages/admin";
 import ProjectTemplatesPage from "@/pages/admin/project-templates";
 import CalendarPage from "@/pages/calendar";
@@ -47,7 +48,7 @@ function AuthCheck({ children }: { children: React.ReactNode }) {
   }, []);
   
   useEffect(() => {
-    if (location === '/login') {
+    if (location === '/login' || location === '/signup') {
       setIsAuthenticated(true);
       return;
     }
@@ -114,6 +115,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/login" component={LoginPage} />
+      <Route path="/signup" component={SignupPage} />
       <Route path="/" component={(props) => <ProtectedRoute component={DashboardPage} {...props} />} />
       <Route path="/dashboard" component={(props) => <ProtectedRoute component={DashboardPage} {...props} />} />
       <Route path="/projects" component={(props) => <ProtectedRoute component={ProjectsPage} {...props} />} />

@@ -7,26 +7,57 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export default function SignupPage() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    company: ''
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [, setLocation] = useLocation();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    // Validate password length
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          company: formData.company || undefined
+        }),
         credentials: 'include'
       });
 
@@ -37,11 +68,6 @@ export default function LoginPage() {
         localStorage.setItem('authToken', data.token);
         sessionStorage.setItem('authToken', data.token);
         document.cookie = `token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
-
-        // Store user info
-        if (data.user) {
-          localStorage.setItem('user', JSON.stringify(data.user));
-        }
 
         // Setup global fetch interceptor
         const originalFetch = window.fetch;
@@ -69,11 +95,11 @@ export default function LoginPage() {
           window.location.href = '/dashboard';
         }, 200);
       } else {
-        setError(data.message || 'Invalid email or password');
+        setError(data.message || 'Registration failed');
       }
     } catch (err) {
-      console.error('Login error:', err);
-      setError('Failed to login. Please try again.');
+      console.error('Signup error:', err);
+      setError('Failed to create account. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -81,7 +107,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#f8fafc] to-[#eef2ff] p-4">
-      <div className="w-full max-w-sm sm:max-w-md mb-10 text-center">
+      <div className="w-full max-w-sm sm:max-w-md mb-8 text-center">
         <div className="inline-flex items-center justify-center space-x-2 mb-4">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
             <path d="M3 9L12 4.5L21 9L12 13.5L3 9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -94,10 +120,10 @@ export default function LoginPage() {
 
       <Card className="w-full max-w-sm sm:max-w-md shadow-md border border-gray-100 bg-white/80 backdrop-blur-sm">
         <CardHeader className="pb-4 space-y-1">
-          <CardTitle className="text-xl font-semibold text-gray-800">Welcome Back</CardTitle>
-          <CardDescription className="text-sm text-gray-500">Enter your credentials to continue</CardDescription>
+          <CardTitle className="text-xl font-semibold text-gray-800">Create Account</CardTitle>
+          <CardDescription className="text-sm text-gray-500">Enter your details to get started</CardDescription>
         </CardHeader>
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleSignup}>
           <CardContent className="pb-2 space-y-4">
             {error && (
               <Alert variant="destructive" className="text-sm bg-rose-50 text-rose-600 border-rose-100">
@@ -107,32 +133,64 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
+              <Label htmlFor="name" className="text-sm font-medium text-gray-700">Full Name *</Label>
               <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
+                id="name"
+                name="name"
+                type="text"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="John Smith"
                 className="h-11 text-base bg-white border-gray-200 focus:border-primary focus:ring-primary"
                 required
-                autoComplete="email"
+                autoComplete="name"
                 autoFocus
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
+              <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email *</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="john@example.com"
+                className="h-11 text-base bg-white border-gray-200 focus:border-primary focus:ring-primary"
+                required
+                autoComplete="email"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="company" className="text-sm font-medium text-gray-700">Company</Label>
+              <Input
+                id="company"
+                name="company"
+                type="text"
+                value={formData.company}
+                onChange={handleChange}
+                placeholder="Smith Construction LLC"
+                className="h-11 text-base bg-white border-gray-200 focus:border-primary focus:ring-primary"
+                autoComplete="organization"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password *</Label>
               <div className="relative">
                 <Input
                   id="password"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="At least 6 characters"
                   className="h-11 text-base bg-white border-gray-200 focus:border-primary focus:ring-primary pr-10"
                   required
-                  autoComplete="current-password"
+                  autoComplete="new-password"
+                  minLength={6}
                 />
                 <button
                   type="button"
@@ -143,6 +201,21 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">Confirm Password *</Label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="Confirm your password"
+                className="h-11 text-base bg-white border-gray-200 focus:border-primary focus:ring-primary"
+                required
+                autoComplete="new-password"
+              />
+            </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4 pt-3 pb-6">
             <Button
@@ -150,19 +223,19 @@ export default function LoginPage() {
               type="submit"
               disabled={loading}
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Creating Account...' : 'Create Account'}
             </Button>
             <p className="text-sm text-center text-gray-500">
-              Don't have an account?{' '}
-              <a href="/signup" className="text-primary hover:underline font-medium">
-                Create one
+              Already have an account?{' '}
+              <a href="/login" className="text-primary hover:underline font-medium">
+                Sign in
               </a>
             </p>
           </CardFooter>
         </form>
       </Card>
 
-      <div className="mt-10 text-center text-xs text-gray-500">
+      <div className="mt-8 text-center text-xs text-gray-500">
         <p>&copy; 2025 SiteSetups. All rights reserved.</p>
       </div>
     </div>
