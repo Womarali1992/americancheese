@@ -17,10 +17,9 @@ jobs:
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /var/www/americancheese
+            cd /var/www/americancheese/americancheese
             git fetch origin
             git reset --hard origin/main
-            cd americancheese
             npm ci
             npm run build
             source .env && export $(cat .env | xargs) && npm run db:push
