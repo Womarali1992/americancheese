@@ -236,8 +236,8 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
 
   if (categoriesToDisplay.length === 0) {
     return (
-      <div className="text-center text-sm text-slate-500 py-8">
-        No categories with tasks to display
+      <div className="text-center text-sm text-slate-500 py-2">
+        No tasks yet
       </div>
     );
   }

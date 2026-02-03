@@ -1529,6 +1529,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Global task search endpoint
+  app.get("/api/tasks/search", async (req: Request, res: Response) => {
+    try {
+      const query = req.query.q as string;
+
+      if (!query || query.trim() === "") {
+        return res.json([]);
+      }
+
+      console.log("[Route] Searching tasks with query:", query);
+      const allTasks = await storage.getTasks();
+
+      // Search in title and description (case-insensitive)
+      const searchLower = query.toLowerCase();
+      const matchingTasks = allTasks.filter(task => {
+        const titleMatch = task.title?.toLowerCase().includes(searchLower);
+        const descriptionMatch = task.description?.toLowerCase().includes(searchLower);
+        return titleMatch || descriptionMatch;
+      });
+
+      console.log("[Route] Found matching tasks:", matchingTasks.length);
+      res.json(matchingTasks);
+    } catch (error) {
+      console.error("[Route] Error searching tasks:", error);
+      res.status(500).json({ message: "Failed to search tasks", error: error.message });
+    }
+  });
+
   app.get("/api/tasks/:id", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);

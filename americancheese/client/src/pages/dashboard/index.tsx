@@ -1275,14 +1275,16 @@ export default function DashboardPage() {
                             />
                           </div>
 
-                          <div className="mt-4 pt-3 border-t border-slate-200">
-                            <CategoryProgressColumns
-                              tasks={tasks.filter((task: any) => task.projectId === project.id)}
-                              hiddenCategories={project.hiddenCategories || []}
-                              projectId={project.id}
-                              isLoading={tasksLoading}
-                            />
-                          </div>
+                          {tasks.filter((task: any) => task.projectId === project.id).length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-slate-200">
+                              <CategoryProgressColumns
+                                tasks={tasks.filter((task: any) => task.projectId === project.id)}
+                                hiddenCategories={project.hiddenCategories || []}
+                                projectId={project.id}
+                                isLoading={tasksLoading}
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

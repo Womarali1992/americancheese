@@ -4,6 +4,7 @@ import { useTabNavigation, useCurrentTab, type TabName } from "@/hooks/useTabNav
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Logo } from "./Logo";
 import { getDynamicModuleColor } from "@/lib/color-themes";
+import { GlobalSearch } from "@/components/GlobalSearch";
 
 export function TopNav() {
   const { navigateToTab } = useTabNavigation();
@@ -31,6 +32,11 @@ export function TopNav() {
             <h1 className="text-xl font-bold text-gray-800 tracking-tight">SiteSetups</h1>
             <p className="text-xs text-gray-500 hidden md:block">Construction Management Platform</p>
           </div>
+        </div>
+
+        {/* Global Search */}
+        <div className="hidden md:block">
+          <GlobalSearch />
         </div>
 
         {/* Navigation items */}
