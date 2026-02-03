@@ -32,7 +32,7 @@ import {
   EnhancedSelectItem,
   EnhancedSelectRichTrigger,
 } from "@/components/ui/enhanced-select";
-import { Home, Building2, Code, FileX, Check, Palette, ChevronDown, FileCode2 } from "lucide-react";
+import { Home, Building2, Code, FileX, Palette, ChevronDown, FileCode2 } from "lucide-react";
 import { getPresetOptions } from "@shared/presets.ts";
 import { COLOR_THEMES } from "@/lib/color-themes";
 import {
@@ -286,43 +286,88 @@ export function CreateProjectDialog({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="presetId"
-              render={({ field }) => {
-                const selectedPreset = availablePresets.find(p => p.value === field.value);
-                return (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-slate-700">Category Preset</FormLabel>
-                    <EnhancedSelect onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
-                      <FormControl>
-                        <EnhancedSelectRichTrigger
-                          title={selectedPreset?.label || "Select a preset"}
-                          subtitle={selectedPreset?.description || "Choose a category preset for your project"}
-                          icon={selectedPreset ? getPresetIcon(selectedPreset.value) : undefined}
-                        />
-                      </FormControl>
-                      <EnhancedSelectContent>
-                        {availablePresets.map((preset) => (
-                          <EnhancedSelectItem key={preset.value} value={preset.value}>
-                            <div className="flex items-start gap-3">
-                              <div className="flex-shrink-0 mt-0.5 text-slate-500">
-                                {getPresetIcon(preset.value)}
+            <div className="flex gap-4">
+              <FormField
+                control={form.control}
+                name="presetId"
+                render={({ field }) => {
+                  const selectedPreset = availablePresets.find(p => p.value === field.value);
+                  return (
+                    <FormItem className="flex-1">
+                      <FormLabel className="text-sm font-medium text-slate-700">Category Preset</FormLabel>
+                      <EnhancedSelect onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                        <FormControl>
+                          <EnhancedSelectRichTrigger
+                            title={selectedPreset?.label || "Select a preset"}
+                            icon={selectedPreset ? getPresetIcon(selectedPreset.value) : undefined}
+                          />
+                        </FormControl>
+                        <EnhancedSelectContent>
+                          {availablePresets.map((preset) => (
+                            <EnhancedSelectItem key={preset.value} value={preset.value}>
+                              <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0 mt-0.5 text-slate-500">
+                                  {getPresetIcon(preset.value)}
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-medium text-sm text-slate-900">{preset.label}</span>
+                                  <span className="text-xs text-slate-500 leading-tight">{preset.description}</span>
+                                </div>
                               </div>
-                              <div className="flex flex-col min-w-0">
-                                <span className="font-medium text-sm text-slate-900">{preset.label}</span>
-                                <span className="text-xs text-slate-500 leading-tight">{preset.description}</span>
-                              </div>
-                            </div>
-                          </EnhancedSelectItem>
-                        ))}
-                      </EnhancedSelectContent>
-                    </EnhancedSelect>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
+                            </EnhancedSelectItem>
+                          ))}
+                        </EnhancedSelectContent>
+                      </EnhancedSelect>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+
+              <FormField
+                control={form.control}
+                name="colorTheme"
+                render={({ field }) => {
+                  const selectedTheme = field.value ? COLOR_THEMES[field.value] : null;
+                  return (
+                    <FormItem className="flex-1">
+                      <FormLabel className="text-sm font-medium text-slate-700">Color Theme</FormLabel>
+                      <EnhancedSelect onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                        <FormControl>
+                          <EnhancedSelectRichTrigger
+                            title={selectedTheme?.name || "Select a theme"}
+                            icon={<Palette className="h-4 w-4" />}
+                          />
+                        </FormControl>
+                        <EnhancedSelectContent>
+                          {availableThemes.map((themeKey) => {
+                            const theme = COLOR_THEMES[themeKey];
+                            if (!theme) return null;
+                            return (
+                              <EnhancedSelectItem key={themeKey} value={themeKey}>
+                                <div className="flex items-center gap-3">
+                                  <div className="flex gap-0.5">
+                                    {Object.entries(theme.tier1).slice(0, 4).map(([category, color]) => (
+                                      <div
+                                        key={category}
+                                        className="w-3 h-3 rounded-sm border border-slate-200"
+                                        style={{ backgroundColor: color }}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="font-medium text-sm text-slate-900">{theme.name}</span>
+                                </div>
+                              </EnhancedSelectItem>
+                            );
+                          })}
+                        </EnhancedSelectContent>
+                      </EnhancedSelect>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+            </div>
 
             <FormField
               control={form.control}
@@ -394,56 +439,6 @@ export function CreateProjectDialog({
                 </div>
               </CollapsibleContent>
             </Collapsible>
-
-            {/* Theme Settings */}
-            <FormField
-              control={form.control}
-              name="colorTheme"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Palette className="h-4 w-4 text-slate-500" />
-                    <FormLabel className="text-sm font-medium text-slate-700 mb-0">Color Theme</FormLabel>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1">
-                    {availableThemes.map((themeKey) => {
-                      const theme = COLOR_THEMES[themeKey];
-                      if (!theme) return null;
-
-                      const isSelected = field.value === themeKey;
-
-                      return (
-                        <div
-                          key={themeKey}
-                          className={`cursor-pointer p-2 border rounded-lg transition-all hover:shadow-sm ${isSelected
-                              ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50/50'
-                              : 'hover:border-slate-300 border-slate-200'
-                            }`}
-                          onClick={() => field.onChange(themeKey)}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-medium text-xs truncate">{theme.name}</span>
-                            {isSelected && <Check className="h-3 w-3 text-blue-600 flex-shrink-0" />}
-                          </div>
-
-                          {/* Mini Color Preview */}
-                          <div className="flex gap-0.5">
-                            {Object.entries(theme.tier1).slice(0, 5).map(([category, color]) => (
-                              <div
-                                key={category}
-                                className="w-3 h-3 rounded-sm border border-slate-200"
-                                style={{ backgroundColor: color }}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <DialogFooter className="sm:justify-end border-t border-slate-200 pt-4 mt-4 gap-2">
               <Button
