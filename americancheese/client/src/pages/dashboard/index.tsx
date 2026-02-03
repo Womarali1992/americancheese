@@ -126,7 +126,7 @@ const mockUsers = [
 const convertLinksToHtml = (text: string) => {
   if (!text) return "";
   const urlRegex = /(https?:\/\/[^\s]+)/g;
-  return text.replace(urlRegex, (url) => 
+  return text.replace(urlRegex, (url) =>
     `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${url}</a>`
   );
 };
@@ -152,7 +152,7 @@ export default function DashboardPage() {
   const [breakdownView, setBreakdownView] = useState<'default' | 'materials' | 'labor'>('default');
   const [forceRefresh, setForceRefresh] = useState(Date.now());
   const [viewPeriod, setViewPeriod] = useState(3);
-  
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -182,7 +182,7 @@ export default function DashboardPage() {
   // Simple function to get project color using new color system
   const getProjectColor = (id: number): string => {
     const project = projects.find((p: any) => p.id === id);
-    
+
     // If project has a custom theme, use its primary color
     if (project?.colorTheme) {
       const themeKey = project.colorTheme.toLowerCase().replace(/\s+/g, '-');
@@ -199,7 +199,7 @@ export default function DashboardPage() {
       activeTheme.tier1.subcategory4,
       activeTheme.tier1.subcategory5
     ];
-    
+
     // Use project ID to pick a stable color from the theme
     const colorIndex = (id - 1) % themeColors.length;
     return themeColors[colorIndex];
@@ -218,7 +218,7 @@ export default function DashboardPage() {
     console.log(`🎨 TIER2: "${categoryName}" (parent: ${tier1Parent}) project=${projectId} → ${color}`);
     return color;
   };
-  
+
   // Debug task loading
   console.log(`📊 Dashboard Tasks Debug:`, {
     totalTasks: tasks.length,
@@ -239,11 +239,11 @@ export default function DashboardPage() {
   const { data: contacts = [], isLoading: contactsLoading } = useQuery<any[]>({
     queryKey: ["/api/contacts"],
   });
-  
+
   const { data: expenses = [], isLoading: expensesLoading } = useQuery<any[]>({
     queryKey: ["/api/expenses"],
   });
-  
+
   const { data: laborRecords = [], isLoading: laborLoading } = useQuery<any[]>({
     queryKey: ["/api/labor"],
   });
@@ -279,39 +279,39 @@ export default function DashboardPage() {
   });
 
   // Initialize task materials data structures
-  const taskMaterials: {[key: number]: any[]} = {};
-  const taskMaterialCounts: {[key: number]: number} = {};
-  
+  const taskMaterials: { [key: number]: any[] } = {};
+  const taskMaterialCounts: { [key: number]: number } = {};
+
   // Organize materials by task
   React.useEffect(() => {
     if (materials && materials.length > 0) {
-      const taskMatMap: {[key: number]: any[]} = {};
-      const taskMatCounts: {[key: number]: number} = {};
-      
+      const taskMatMap: { [key: number]: any[] } = {};
+      const taskMatCounts: { [key: number]: number } = {};
+
       console.log("API Response for materials query:", "/api/materials");
       console.log("Materials list received, fixing taskIds format if needed");
-      
+
       materials.forEach((material) => {
         // Handle cases where taskId might be a string
         const taskId = typeof material.taskId === 'string' ? parseInt(material.taskId, 10) : material.taskId;
-        
+
         if (taskId) {
           if (!taskMatMap[taskId]) {
             taskMatMap[taskId] = [];
           }
           taskMatMap[taskId].push(material);
-          
+
           // Update count
           taskMatCounts[taskId] = (taskMatCounts[taskId] || 0) + 1;
         }
       });
-      
+
       // Save the organized materials in our reference objects
       Object.keys(taskMatMap).forEach((taskId) => {
         taskMaterials[Number(taskId)] = taskMatMap[Number(taskId)];
         taskMaterialCounts[Number(taskId)] = taskMatCounts[Number(taskId)];
       });
-      
+
       // Log for debugging
       console.log("Task materials map:", Object.keys(taskMaterials).length, "task entries");
     }
@@ -321,32 +321,32 @@ export default function DashboardPage() {
   const quotedMaterialIds = materials
     .filter((material) => material.isQuote === true)
     .map((material) => material.id);
-  
+
   // Filter labor entries that are marked as quotes
   const quotedLaborIds = laborRecords
     .filter((labor) => labor.isQuote === true)
     .map((labor) => labor.id);
-  
+
   // Calculate total budget and total spent across all projects, excluding quoted items
   const totalBudget = projects.reduce((sum, project) => sum + (project.budget || 0), 0);
   const totalSpent = expenses.reduce((sum, expense) => {
     // Check if this expense is related to a quoted material or labor entry
     const isMaterialQuote = expense.materialIds && expense.materialIds.some(id => quotedMaterialIds.includes(Number(id)));
     const isLaborQuote = expense.contactIds && expense.contactIds.some(id => quotedLaborIds.includes(Number(id)));
-    
+
     // Only add to total if it's not a quote
     if (!isMaterialQuote && !isLaborQuote) {
       return sum + expense.amount;
     }
     return sum;
   }, 0);
-  
+
   // Calculate budget remaining
   const budgetRemaining = totalBudget - totalSpent;
-  
+
   // Budget percentage
   const budgetPercentage = Math.round((totalSpent / totalBudget) * 100);
-  
+
   // Get top 5 material expenses
   const getTopMaterialExpenses = () => {
     if (!expenses) return [];
@@ -370,9 +370,9 @@ export default function DashboardPage() {
 
     // Filter expenses that are related to labor
     const laborExpenses = expenses
-      .filter((expense: any) => expense.category.toLowerCase().includes('labor') || 
-                         expense.category.toLowerCase().includes('staff') ||
-                         expense.category.toLowerCase().includes('contractor'))
+      .filter((expense: any) => expense.category.toLowerCase().includes('labor') ||
+        expense.category.toLowerCase().includes('staff') ||
+        expense.category.toLowerCase().includes('contractor'))
       .sort((a: any, b: any) => b.amount - a.amount)
       .slice(0, 5);
 
@@ -392,13 +392,13 @@ export default function DashboardPage() {
     }
 
     // Calculate actual total for materials
-    const materialsTotal = expenses?.filter((expense: any) => 
+    const materialsTotal = expenses?.filter((expense: any) =>
       expense.category.toLowerCase().includes('material')
     ).reduce((sum: number, expense: any) => sum + expense.amount, 0) || 0;
 
     // Calculate actual total for labor
-    const laborTotal = expenses?.filter((expense: any) => 
-      expense.category.toLowerCase().includes('labor') || 
+    const laborTotal = expenses?.filter((expense: any) =>
+      expense.category.toLowerCase().includes('labor') ||
       expense.category.toLowerCase().includes('staff') ||
       expense.category.toLowerCase().includes('contractor')
     ).reduce((sum: number, expense: any) => sum + expense.amount, 0) || 0;
@@ -412,17 +412,17 @@ export default function DashboardPage() {
       { name: 'Misc', amount: 0, percentage: 0 }
     ];
   };
-  
+
   // Filter expenses based on search and filters
   const filteredExpenses = expenses?.filter((expense: any) => {
     const matchesSearch = expense.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          expense.vendor?.toLowerCase().includes(searchQuery.toLowerCase());
+      expense.vendor?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesProject = projectFilter === "all" || expense.projectId.toString() === projectFilter;
     const matchesCategory = categoryFilter === "all" || expense.category === categoryFilter;
 
     return matchesSearch && matchesProject && matchesCategory;
   });
-  
+
   // Delete expense mutation
   const deleteExpenseMutation = useMutation({
     mutationFn: async (expenseId: number) => {
@@ -458,8 +458,8 @@ export default function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
       // Also invalidate project-specific expenses if we're viewing a specific project
       if (projectFilter !== "all") {
-        queryClient.invalidateQueries({ 
-          queryKey: ["/api/projects", Number(projectFilter), "expenses"] 
+        queryClient.invalidateQueries({
+          queryKey: ["/api/projects", Number(projectFilter), "expenses"]
         });
       }
       setDeleteAlertOpen(false);
@@ -482,7 +482,7 @@ export default function DashboardPage() {
       deleteExpenseMutation.mutate(selectedExpense.id);
     }
   };
-  
+
   // Compute dashboard metrics
   const metrics = {
     activeProjects: projects.filter((p: any) => p.status === "active").length || 0,
@@ -497,16 +497,16 @@ export default function DashboardPage() {
   const upcomingDeadlines = tasks.filter((task: any) => !task.completed)
     .sort((a: any, b: any) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
     .slice(0, 4);
-    
+
   // Get upcoming labor tasks
   const upcomingLaborTasks = React.useMemo(() => {
     // Filter labor records for current or upcoming ones
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Start of today
-    
+
     // Log for debugging
     console.log("Total labor records for dashboard:", laborRecords.length);
-    
+
     // Make sure we have the latest data
     const filteredLabor = laborRecords
       .filter((labor: any) => {
@@ -515,30 +515,30 @@ export default function DashboardPage() {
         // 2. OR Start date is in the future or today
         // 3. OR Work date is in the future or today
         // 4. AND are not completed yet
-        
+
         let isRelevant = false;
-        
+
         // Check end date
         if (labor.endDate) {
           const endDate = new Date(labor.endDate);
           endDate.setHours(0, 0, 0, 0);
           if (endDate >= today) isRelevant = true;
         }
-        
+
         // Check start date
         if (labor.startDate) {
           const startDate = new Date(labor.startDate);
           startDate.setHours(0, 0, 0, 0);
           if (startDate >= today) isRelevant = true;
         }
-        
+
         // Check work date
         if (labor.workDate) {
           const workDate = new Date(labor.workDate);
           workDate.setHours(0, 0, 0, 0);
           if (workDate >= today) isRelevant = true;
         }
-        
+
         // Only include non-completed items
         return isRelevant && labor.status !== 'completed';
       })
@@ -550,38 +550,38 @@ export default function DashboardPage() {
           if (labor.endDate) return new Date(labor.endDate);
           return new Date('2099-12-31'); // Far future for entries without dates
         };
-        
+
         const dateA = getClosestDate(a);
         const dateB = getClosestDate(b);
         return dateA.getTime() - dateB.getTime();
       });
-    
+
     // Log filtered results for debugging
     console.log("Filtered upcoming labor records:", filteredLabor.length);
-    
+
     // Return the top 5 entries to show more upcoming labor
     return filteredLabor.slice(0, 5);
   }, [laborRecords]);
-  
+
   // Find tasks associated with labor entries
   const getAssociatedTask = (laborEntry: any) => {
     let task;
-    
+
     // If labor entry has a taskId, use that to find the task
     if (laborEntry.taskId) {
       task = tasks.find((t: any) => t.id === laborEntry.taskId);
     } else {
       // Otherwise, look for tasks in the same project with matching dates
-      task = tasks.find((t: any) => 
+      task = tasks.find((t: any) =>
         t.projectId === laborEntry.projectId &&
         new Date(t.startDate).getTime() <= new Date(laborEntry.endDate).getTime() &&
         new Date(t.endDate).getTime() >= new Date(laborEntry.startDate).getTime()
       );
     }
-    
+
     // If no task is found, return null
     if (!task) return null;
-    
+
     // Return the task with all required fields for the TaskCard component
     return {
       ...task,
@@ -602,17 +602,17 @@ export default function DashboardPage() {
     const contact = contacts.find((c: any) => c.id === contactId);
     return contact ? `${contact.firstName} ${contact.lastName}` : "Unknown Contact";
   };
-  
+
   // Helper function to get supplier info by ID
   const getSupplierInfo = (supplierId: number | null) => {
     if (!supplierId) return null;
     const supplier = contacts.find((c: any) => c.id === supplierId && c.type === "supplier");
-    
+
     if (!supplier) return null;
-    
+
     return {
       id: supplier.id,
-      name: supplier.firstName 
+      name: supplier.firstName
         ? `${supplier.firstName} ${supplier.lastName || ''}`.trim()
         : supplier.company || "Unknown Supplier",
       company: supplier.company,
@@ -623,7 +623,7 @@ export default function DashboardPage() {
       initials: supplier.initials || (supplier.firstName ? supplier.firstName.charAt(0) : (supplier.company ? supplier.company.charAt(0) : "S"))
     };
   };
-  
+
   // Helper function to find supplier for a material
   const getSupplierForMaterial = (material: any) => {
     // First try to get by supplierId if available
@@ -631,22 +631,22 @@ export default function DashboardPage() {
       const supplierInfo = getSupplierInfo(material.supplierId);
       if (supplierInfo) return supplierInfo;
     }
-    
+
     // If no supplierId or not found, try to match by supplier name from contacts
     if (material.supplier) {
-      const matchingSupplier = contacts.find((c: any) => 
-        c.type === "supplier" && 
+      const matchingSupplier = contacts.find((c: any) =>
+        c.type === "supplier" &&
         (
           c.company === material.supplier ||
           (c.firstName && `${c.firstName} ${c.lastName || ''}`.includes(material.supplier)) ||
           (c.lastName && material.supplier.includes(c.lastName))
         )
       );
-      
+
       if (matchingSupplier) {
         return getSupplierInfo(matchingSupplier.id);
       }
-      
+
       // If no match found in contacts but we have a supplier name, create a basic info object
       return {
         id: 0,
@@ -657,14 +657,14 @@ export default function DashboardPage() {
         initials: material.supplier.charAt(0)
       };
     }
-    
+
     return null;
   };
-    
+
   // Calculate tier1 category progress for each project
   const calculateTier1Progress = (projectId: number) => {
     const projectTasks = tasks.filter((task: any) => task.projectId === projectId);
-    
+
     // Create a map to ensure standardized naming for categories
     const standardizedCategoryMap: Record<string, string> = {
       'structural': 'structural',
@@ -676,101 +676,101 @@ export default function DashboardPage() {
       'finishing': 'finishings',
       'finishes': 'finishings'
     };
-    
+
     // Get hidden categories from this project
     const currentProject = projects.find((p: any) => p.id === projectId);
     const projectHiddenCategories = currentProject?.hiddenCategories || [];
-    
+
     // Group tasks by their explicit tier1Category field
     const tasksByTier1 = projectTasks.reduce((acc: Record<string, any[]>, task: any) => {
       if (!task.tier1Category) return acc;
-      
+
       // Standardize the tier1 category name
       const tier1Raw = task.tier1Category.toLowerCase();
       const tier1 = standardizedCategoryMap[tier1Raw] || tier1Raw;
-      
+
       // Skip tasks from hidden categories
       if (projectHiddenCategories.includes(tier1)) return acc;
-      
+
       if (!acc[tier1]) {
         acc[tier1] = [];
       }
       acc[tier1].push(task);
       return acc;
     }, {});
-    
+
     // Calculate completion percentage for each tier - only for tiers that have tasks
     const progressByTier: Record<string, number> = {};
-    
+
     console.log('Task categories found:', Object.keys(tasksByTier1));
-    
+
     // Process only tier1 categories that actually have tasks
     Object.keys(tasksByTier1).forEach(tier => {
       const tierTasks = tasksByTier1[tier] || [];
       const totalTasks = tierTasks.length;
-      
+
       // Only process categories that have tasks
       if (totalTasks > 0) {
         // Debug information to show which tasks are marked as completed
         console.log('Tasks in tier', tier, ':', tierTasks.map((t: any) => ({
-          id: t.id, 
-          title: t.title, 
-          completed: t.completed, 
+          id: t.id,
+          title: t.title,
+          completed: t.completed,
           status: t.status
         })));
-        
+
         // Check both the completed flag and status field (tasks marked as 'completed' should count)
-        const completedTasks = tierTasks.filter((task: any) => 
+        const completedTasks = tierTasks.filter((task: any) =>
           task.completed === true || task.status === 'completed'
         ).length;
-        
+
         progressByTier[tier] = Math.round((completedTasks / totalTasks) * 100);
       }
     });
-    
+
     console.log('Progress for project', projectId, ':', progressByTier);
-    
+
     return progressByTier;
   };
-  
+
   // Map to store project tier1 progress data
   const projectTier1Progress = projects.reduce((acc: Record<number, any>, project: any) => {
     acc[project.id] = calculateTier1Progress(project.id);
-    
+
     // Get hidden categories for this project
     const hiddenCategories = project.hiddenCategories || [];
-    
+
     // Only include categories that have tasks and are not hidden
     const availableCategories = Object.keys(acc[project.id]);
     let visibleCategories = availableCategories.filter(cat => !hiddenCategories.includes(cat));
-    
+
     // If all categories are hidden (unusual case), just use all available categories
     if (visibleCategories.length === 0) {
       visibleCategories = availableCategories;
     }
-    
+
     // Calculate the average progress for each project based on visible categories that have tasks
     const totalProgress = visibleCategories.length > 0 ? Math.round(
       visibleCategories.reduce((sum, cat) => sum + (acc[project.id][cat] || 0), 0) / visibleCategories.length
     ) : 0;
-    
+
     // Update the project.progress value to match our calculated progress 
     // This ensures all progress bars show the same value based on actual task completion
     project.progress = project.progress || totalProgress;
-    
+
     return acc;
   }, {});
 
   // Filter projects based on search query and status
   const filteredProjects = projects.filter((project: any) => {
     const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         project.location?.toLowerCase()?.includes(searchQuery.toLowerCase());
+      project.location?.toLowerCase()?.includes(searchQuery.toLowerCase());
 
     const matchesStatus = statusFilter === "all" || project.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
-  
+
   // Function to get project name by ID
   const getProjectName = (projectId: number) => {
     const project = projects.find((p: any) => p.id === projectId);
@@ -791,12 +791,12 @@ export default function DashboardPage() {
     if (days <= 7) return "text-amber-600";
     return "text-green-600";
   };
-  
+
   // Format material status text
   const formatMaterialStatus = (status: string): string => {
     if (!status) return "Pending";
-    
-    switch(status.toLowerCase()) {
+
+    switch (status.toLowerCase()) {
       case 'pending': return 'Pending';
       case 'ordered': return 'Ordered';
       case 'received': return 'Received';
@@ -820,7 +820,7 @@ export default function DashboardPage() {
   const handleCreateProject = () => {
     setCreateDialogOpen(true);
   };
-  
+
   // Function to activate all tasks for all projects
   const activateAllTasks = async () => {
     try {
@@ -830,19 +830,19 @@ export default function DashboardPage() {
           "Content-Type": "application/json",
         }
       });
-      
+
       if (response.ok) {
         const result = await response.json();
-        
+
         // Refresh tasks data
         queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
         // Refresh all project tasks
         projects.forEach((project: any) => {
-          queryClient.invalidateQueries({ 
-            queryKey: ["/api/projects", project.id, "tasks"] 
+          queryClient.invalidateQueries({
+            queryKey: ["/api/projects", project.id, "tasks"]
           });
         });
-        
+
         toast({
           title: "Tasks Activated",
           description: `Successfully activated ${result.totalTasksCreated} tasks across all projects.`,
@@ -876,11 +876,11 @@ export default function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/labor'] });
       queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
       projects.forEach((project: any) => {
-        queryClient.invalidateQueries({ 
-          queryKey: ["/api/projects", project.id, "labor"] 
+        queryClient.invalidateQueries({
+          queryKey: ["/api/projects", project.id, "labor"]
         });
       });
-      
+
       toast({
         title: "Success",
         description: "Labor record deleted successfully",
@@ -905,10 +905,10 @@ export default function DashboardPage() {
   const calculateProjectExpenses = (projectId: number) => {
     const projectExpenses = expenses.filter((expense: any) => expense.projectId === projectId);
     const project = projects.find((p: any) => p.id === projectId);
-    
+
     // Get hidden categories for this project
     const hiddenCategories = project?.hiddenCategories || [];
-    
+
     // Default structure for expense calculation
     const expenseData = {
       materials: 0,
@@ -920,70 +920,70 @@ export default function DashboardPage() {
         finishings: { materials: 0, labor: 0 }
       }
     };
-    
+
     // Process each expense, excluding quoted items
     projectExpenses.forEach((expense: any) => {
       // Check if this expense is related to a quoted material or labor entry
       const isMaterialQuote = expense.materialIds && expense.materialIds.some(id => quotedMaterialIds.includes(Number(id)));
       const isLaborQuote = expense.contactIds && expense.contactIds.some(id => quotedLaborIds.includes(Number(id)));
-      
+
       // Skip quoted items in budget calculations
       if (isMaterialQuote || isLaborQuote) {
         return; // Skip this expense
       }
-      
+
       if (expense.category === 'materials') {
         expenseData.materials += expense.amount;
-        
+
         // If it has a tier1 category and that category is not hidden, add to that specific system
-        if (expense.tier1Category && 
-            expenseData.systems[expense.tier1Category] && 
-            !hiddenCategories.includes(expense.tier1Category.toLowerCase())) {
+        if (expense.tier1Category &&
+          expenseData.systems[expense.tier1Category] &&
+          !hiddenCategories.includes(expense.tier1Category.toLowerCase())) {
           expenseData.systems[expense.tier1Category].materials += expense.amount;
         } else {
           // If no specific tier1 category or it's hidden, distribute evenly among visible categories
           let visibleCategories = ["structural", "systems", "sheathing", "finishings"]
             .filter(cat => !hiddenCategories.includes(cat));
-          
+
           // If all categories are hidden (unusual), just distribute to all
           if (visibleCategories.length === 0) {
             visibleCategories = ["structural", "systems", "sheathing", "finishings"];
           }
-          
+
           const distribution = expense.amount / visibleCategories.length;
-          
+
           visibleCategories.forEach(category => {
             expenseData.systems[category].materials += distribution;
           });
         }
-      } 
+      }
       else if (expense.category === 'labor') {
         expenseData.labor += expense.amount;
-        
+
         // If it has a tier1 category and that category is not hidden, add to that specific system
-        if (expense.tier1Category && 
-            expenseData.systems[expense.tier1Category] && 
-            !hiddenCategories.includes(expense.tier1Category.toLowerCase())) {
+        if (expense.tier1Category &&
+          expenseData.systems[expense.tier1Category] &&
+          !hiddenCategories.includes(expense.tier1Category.toLowerCase())) {
           expenseData.systems[expense.tier1Category].labor += expense.amount;
         } else {
           // If no specific tier1 category or it's hidden, distribute evenly among visible categories
           let visibleCategories = ["structural", "systems", "sheathing", "finishings"]
             .filter(cat => !hiddenCategories.includes(cat));
-          
+
           // If all categories are hidden (unusual), just distribute to all
           if (visibleCategories.length === 0) {
             visibleCategories = ["structural", "systems", "sheathing", "finishings"];
           }
-          
+
           const distribution = expense.amount / visibleCategories.length;
-          
+
           visibleCategories.forEach(category => {
             expenseData.systems[category].labor += distribution;
           });
         }
       }
     });
-    
+
     return expenseData;
   };
 
@@ -1004,112 +1004,122 @@ export default function DashboardPage() {
   return (
     <Layout>
       <div className="space-y-3 w-full max-w-full overflow-hidden px-1 sm:px-3">
-        <div className="bg-white border-2 border-indigo-500 rounded-lg shadow-sm">
-          {/* First row with title and buttons */}
-          <div className="flex justify-between items-center p-3 sm:p-4 bg-indigo-50 rounded-t-lg">
-            <div className="flex items-center gap-4 flex-1">
-              <h1 className="text-xl sm:text-2xl font-bold text-indigo-600">Dashboard</h1>
+        {/* Header - Clean & Minimal */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="bg-indigo-600 p-2 rounded-lg shadow-sm">
+              <Building className="h-6 w-6 text-white" />
             </div>
-            <div className="flex items-center gap-2">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-48 border-indigo-500 rounded-lg focus:ring-indigo-500">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="on_hold">On Hold</SelectItem>
-                  <SelectItem value="planning">Planning</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              {/* Search Dropdown */}
-              <div className="relative search-dropdown-container">
-                <Button 
-                  variant="outline"
-                  className="border-indigo-500 text-indigo-600 hover:bg-indigo-50 font-medium shadow-sm h-9 px-3"
-                  onClick={() => setSearchDropdownOpen(!searchDropdownOpen)}
-                  size="sm"
-                >
-                  <Search className="h-4 w-4" />
-                </Button>
-                
-                {searchDropdownOpen && (
-                  <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-indigo-200 rounded-lg shadow-lg z-50 p-3">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-indigo-600" />
-                      <Input 
-                        placeholder="Search projects..." 
-                        className="w-full pl-9 border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        autoFocus
-                      />
-                      {searchQuery && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-1 top-1 h-8 w-8 rounded-md hover:bg-indigo-50"
-                          onClick={() => setSearchQuery("")}
-                        >
-                          <X className="h-4 w-4 text-indigo-600" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              <Button 
-                className="bg-indigo-600 text-white hover:bg-indigo-700 font-medium shadow-sm h-9 px-4"
-                onClick={handleCreateProject}
-                size="sm"
-              >
-                <Plus className="mr-2 h-4 w-4 text-white" /> 
-                New Project
-              </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
+              <p className="text-sm text-slate-500">Overview of all active projects</p>
             </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-initial">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search projects..."
+                className="pl-9 h-10 w-full sm:w-64 bg-white border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all shadow-sm rounded-lg"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[140px] h-10 border-slate-200 shadow-sm rounded-lg bg-white">
+                <div className="flex items-center gap-2">
+                  <SelectValue placeholder="Status" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Projects</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="on_hold">On Hold</SelectItem>
+                <SelectItem value="planning">Planning</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button
+              onClick={handleCreateProject}
+              className="h-10 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm hover:shadow transition-all rounded-lg px-4 w-full sm:w-auto"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              New Project
+            </Button>
           </div>
         </div>
 
         {/* Unified Key Metrics Badge */}
-        <div className="bg-slate-50 border-2 border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
-          <div className="grid grid-cols-2 md:grid-cols-4">
-            {/* Active Projects */}
-            <div className="p-4 flex items-center justify-center border-r border-b md:border-b-0 border-slate-200">
-              <div className="flex items-center gap-3">
-                <Building className="h-6 w-6 text-indigo-600" />
-                <div className="text-2xl font-bold text-slate-800">{metrics.activeProjects}</div>
+        {/* Unified Key Metrics - Modern Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {/* Active Projects */}
+          <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 group">
+            <div className="flex justify-between items-start mb-2">
+              <div className="p-2 bg-indigo-50 rounded-lg group-hover:bg-indigo-100 transition-colors">
+                <Building className="h-5 w-5 text-indigo-600" />
               </div>
+              <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-100 font-normal">
+                Active
+              </Badge>
             </div>
-            
-            {/* Open Tasks */}
-            <div className="p-4 flex items-center justify-center md:border-r border-b md:border-b-0 border-slate-200">
-              <div className="flex items-center gap-3">
-                <CheckSquare className="h-6 w-6 text-green-600" />
-                <div className="text-2xl font-bold text-slate-800">{metrics.openTasks}</div>
-              </div>
+            <div className="mt-2">
+              <h3 className="text-3xl font-bold text-slate-800">{metrics.activeProjects}</h3>
+              <p className="text-sm text-slate-500 font-medium">Active Projects</p>
             </div>
-            
-            {/* Pending Materials */}
-            <div className="p-4 flex items-center justify-center border-r md:border-r border-slate-200">
-              <div className="flex items-center gap-3">
-                <Package className="h-6 w-6 text-orange-600" />
-                <div className="text-2xl font-bold text-slate-800">{metrics.pendingMaterials}</div>
+          </div>
+
+          {/* Open Tasks */}
+          <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 group">
+            <div className="flex justify-between items-start mb-2">
+              <div className="p-2 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
+                <CheckSquare className="h-5 w-5 text-green-600" />
               </div>
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-100 font-normal">
+                Tasks
+              </Badge>
             </div>
-            
-            {/* Budget Used */}
-            <div className="p-4 flex items-center justify-center">
-              <div className="flex items-center gap-3">
-                <Users className="h-6 w-6 text-blue-600" />
-                <div className="text-2xl font-bold text-slate-800">{metrics.budgetUtilization}%</div>
+            <div className="mt-2">
+              <h3 className="text-3xl font-bold text-slate-800">{metrics.openTasks}</h3>
+              <p className="text-sm text-slate-500 font-medium">Open Tasks</p>
+            </div>
+          </div>
+
+          {/* Pending Materials */}
+          <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 group">
+            <div className="flex justify-between items-start mb-2">
+              <div className="p-2 bg-orange-50 rounded-lg group-hover:bg-orange-100 transition-colors">
+                <Package className="h-5 w-5 text-orange-600" />
               </div>
+              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-100 font-normal">
+                Orders
+              </Badge>
+            </div>
+            <div className="mt-2">
+              <h3 className="text-3xl font-bold text-slate-800">{metrics.pendingMaterials}</h3>
+              <p className="text-sm text-slate-500 font-medium">Pending Materials</p>
+            </div>
+          </div>
+
+          {/* Budget Used */}
+          <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 group">
+            <div className="flex justify-between items-start mb-2">
+              <div className="p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
+                <DollarSign className="h-5 w-5 text-blue-600" />
+              </div>
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100 font-normal">
+                Budget
+              </Badge>
+            </div>
+            <div className="mt-2">
+              <h3 className="text-3xl font-bold text-slate-800">{metrics.budgetUtilization}%</h3>
+              <p className="text-sm text-slate-500 font-medium">Budget Utilized</p>
             </div>
           </div>
         </div>
-        
+
         {/* Project Pages Navigation - Above Card Header */}
         {filteredProjects.length > 1 && (
           <div className="mb-4">
@@ -1149,324 +1159,151 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Projects Overview */}
-        <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-indigo-500">
-          <CardContent className="p-0 divide-y divide-slate-200">
-            {filteredProjects.length === 0 ? (
-              <div className="p-8 text-center">
-                <Building className="h-10 w-10 mx-auto text-slate-300 mb-2" />
-                <h3 className="text-lg font-medium text-slate-700">No Projects Found</h3>
-                <p className="text-slate-500 mt-1">Get started by creating a new project.</p>
-                <Button className="mt-4 bg-blue-600 hover:bg-blue-700" onClick={handleCreateProject}>
-                  <Plus className="h-4 w-4 mr-2" /> Create New Project
-                </Button>
-              </div>
-            ) : (
-              <>
-                {filteredProjects.length > 0 && (
-                  <div className="p-3">
-                    <Carousel className="w-full relative">
-                      {/* Position the navigation buttons on the sides of the cards */}
-                      <CarouselPrevious className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 h-10 w-10 bg-white/80 hover:bg-white/90 border border-slate-200" />
-                      <CarouselNext className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 h-10 w-10 bg-white/80 hover:bg-white/90 border border-slate-200" />
-                      
-                      <CarouselContent>
-                        {filteredProjects.map((project: any) => (
-                          <CarouselItem key={project.id} data-project-id={project.id} className="md:basis-full lg:basis-full w-full max-w-full">
-                            <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 max-w-full mx-1 sm:mx-0">
-                              <div 
-                                className="p-3 relative"
-                                style={{
-                                  // Use earth tone gradient colors based on project ID with lightened effect
-                                  background: (() => {
-                                    const color = getProjectColor(project.id);
-                                    // Add white and a subtle tint to create a lighter, more refined gradient
-                                    return `linear-gradient(to right, rgba(255,255,255,0.85), ${color}40), linear-gradient(to bottom, rgba(255,255,255,0.9), ${color}30)`;
-                                  })(),
-                                  borderBottom: `1px solid ${getProjectColor(project.id)}`
-                                }}
-                              >
-                                <div className="flex justify-between items-start">
-                                  <div className="flex items-start flex-1">
-                                    <div 
-                                      className="h-full w-1 rounded-full mr-3 self-stretch"
-                                      style={{ backgroundColor: getProjectColor(project.id) }}
-                                    ></div>
-                                    <div className="flex-1">
-                                      <div className="mb-2">
-                                        <div className="flex items-center gap-3 flex-wrap">
-                                          <h3 
-                                            className="text-lg font-semibold text-slate-800 hover:text-slate-600 cursor-pointer transition-colors duration-200"
-                                            onClick={() => navigate(`/projects/${project.id}`)}
-                                          >
-                                            {project.name}
-                                          </h3>
-                                          
-                                          {/* Tier 1 Category Badges */}
-                                          <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
-                                            {(() => {
-                                              // Get tier 1 categories from the project's configured categories (in correct order)
-                                              // IMPORTANT: Keep full category objects to access their `color` property
-                                              const projectConfiguredCategoryObjects = allProjectCategories
-                                                .filter((cat: any) => cat.projectId === project.id && cat.type === 'tier1')
-                                                .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
+        {/* Projects Overview - Modern & Clean */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-900">Active Projects</h2>
+            <Button variant="ghost" className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50" onClick={() => navigate('/projects')}>
+              View All <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
 
-                                              // Get tasks to check which categories have tasks
-                                              const projectTasks = tasks.filter((task: any) => task.projectId === project.id);
+          {filteredProjects.length === 0 ? (
+            <div className="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center">
+              <Building className="h-10 w-10 mx-auto text-slate-300 mb-2" />
+              <h3 className="text-lg font-medium text-slate-700">No Projects Found</h3>
+              <p className="text-slate-500 mt-1">Get started by creating a new project.</p>
+              <Button className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white" onClick={handleCreateProject}>
+                <Plus className="h-4 w-4 mr-2" /> Create New Project
+              </Button>
+            </div>
+          ) : (
+            <Carousel className="w-full relative group">
+              <CarouselPrevious className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 h-10 w-10 bg-white shadow-md border-slate-100 text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0" />
+              <CarouselNext className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 h-10 w-10 bg-white shadow-md border-slate-100 text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0" />
 
-                                              // Define preferred category order (workout categories first, then others)
-                                              const preferredOrder = ['pull', 'push', 'legs', 'cardio', 'structural', 'systems', 'software engineering', 'product management', 'design / ux', 'marketing / go-to-market (gtm)'];
-
-                                              // Get unique categories from tasks and create pseudo-category objects
-                                              const taskCategoryObjects: any[] = [];
-                                              const seenCategories = new Set<string>();
-                                              projectTasks.forEach((task: any) => {
-                                                const cat = task.tier1Category;
-                                                if (cat && !seenCategories.has(cat)) {
-                                                  seenCategories.add(cat);
-                                                  taskCategoryObjects.push({ name: cat, color: null }); // No stored color for task-derived categories
-                                                }
-                                              });
-
-                                              // Sort task-derived categories by preferred order
-                                              taskCategoryObjects.sort((a, b) => {
-                                                const indexA = preferredOrder.indexOf(a.name.toLowerCase());
-                                                const indexB = preferredOrder.indexOf(b.name.toLowerCase());
-                                                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-                                                if (indexA !== -1) return -1;
-                                                if (indexB !== -1) return 1;
-                                                return a.name.localeCompare(b.name);
-                                              });
-
-                                              // Use configured categories if available, otherwise use task-derived categories
-                                              // IMPORTANT: Show ALL configured categories, not just ones with tasks
-                                              const projectTier1CategoryObjects = projectConfiguredCategoryObjects.length > 0
-                                                ? projectConfiguredCategoryObjects
-                                                : taskCategoryObjects;
-
-                                              // Limit to 4 categories for mobile space
-                                              const displayedCategoryObjects = projectTier1CategoryObjects.slice(0, 4);
-
-                                              // Debug logging
-                                              console.log(`📋 Project ${project.id} (${project.name}) categories:`, {
-                                                configuredCategories: projectConfiguredCategoryObjects.map((c: any) => ({ name: c.name, color: c.color })),
-                                                taskCategories: taskCategoryObjects.map((c: any) => c.name),
-                                                displayedCategories: displayedCategoryObjects.map((c: any) => ({ name: c.name, color: c.color }))
-                                              });
-
-                                              return displayedCategoryObjects.map((categoryObj: any, categoryIndex: number) => {
-                                                const tier1Category = categoryObj.name;
-                                                const getTier1Icon = (tier1: string, className: string = "h-3 w-3") => {
-                                                  const lowerCaseTier1 = (tier1 || '').toLowerCase();
-
-                                                  // Check for specific category names in this project
-                                                  if (lowerCaseTier1.includes('ali') || lowerCaseTier1.includes('apartment')) {
-                                                    return <Building className={`${className}`} />;
-                                                  }
-
-                                                  if (lowerCaseTier1.includes('ux') || lowerCaseTier1.includes('ui') || lowerCaseTier1.includes('design')) {
-                                                    return <Cog className={`${className}`} />;
-                                                  }
-
-                                                  if (lowerCaseTier1.includes('search') || lowerCaseTier1.includes('agent')) {
-                                                    return <PanelTop className={`${className}`} />;
-                                                  }
-
-                                                  if (lowerCaseTier1.includes('website') || lowerCaseTier1.includes('admin') || lowerCaseTier1.includes('web')) {
-                                                    return <Sofa className={`${className}`} />;
-                                                  }
-
-                                                  return <Home className={`${className}`} />;
-                                                };
-
-                                                // PRIORITY: Use category's stored color FIRST, then fall back to computed color
-                                                const storedColor = categoryObj.color;
-                                                const computedColor = getSimpleTier1Color(tier1Category, project.id, categoryIndex);
-                                                const baseColor = storedColor || computedColor || '#6b7280';
-                                                console.log(`🎨 Category "${tier1Category}" color: stored=${storedColor || 'NONE'}, computed=${computedColor}, final=${baseColor}`);
-                                                // Ensure baseColor is a valid hex string
-                                                const validBaseColor = (typeof baseColor === 'string' && baseColor.startsWith && baseColor.startsWith('#')) ? baseColor : '#6b7280';
-                                                const badgeColors = {
-                                                  bg: lightenColor(validBaseColor, 0.9),      // Very light background
-                                                  border: lightenColor(validBaseColor, 0.6), // Medium border
-                                                  text: darkenColor(validBaseColor, 0.2)     // Darker text
-                                                };
-
-                                                return (
-                                                  <Button
-                                                    key={tier1Category}
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="px-1.5 sm:px-2 py-1 h-6 text-xs font-medium rounded-full border transition-all duration-200 hover:shadow-sm whitespace-nowrap flex-shrink-0"
-                                                    style={{
-                                                      backgroundColor: badgeColors.bg,
-                                                      borderColor: badgeColors.border,
-                                                      color: badgeColors.text
-                                                    }}
-                                                    onClick={(e) => {
-                                                      e.stopPropagation();
-                                                      navigate(`/tasks?tier1=${encodeURIComponent(tier1Category)}&projectId=${project.id}`);
-                                                    }}
-                                                  >
-                                                    {getTier1Icon(tier1Category, "h-3 w-3 mr-0.5 sm:mr-1 flex-shrink-0")}
-                                                    <span className="truncate max-w-[80px] sm:max-w-none">
-                                                      {formatCategoryName(tier1Category, project.id)}
-                                                    </span>
-                                                  </Button>
-                                                );
-                                              });
-                                            })()}
-                                          </div>
-                                        </div>
-                                      </div>
-                                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                                        <div className="flex items-center text-sm text-slate-700 font-medium">
-                                          <MapPin className="h-4 w-4 mr-1 text-slate-600" />
-                                          {project.location || "No location specified"}
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-2">
-                                          <span className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap ${
-                                            project.status === "active" ? "bg-green-200 text-green-800 border border-green-300" :
-                                            project.status === "planned" ? "bg-blue-200 text-blue-800 border border-blue-300" :
-                                            project.status === "completed" ? "bg-[#503e49]/20 text-[#503e49] border border-[#503e49]/30" :
-                                            "bg-orange-200 text-orange-800 border border-orange-300"
-                                          }`}>
-                                            {project.status === "active" ? "Active" : 
-                                             project.status === "planned" ? "Planned" : 
-                                             project.status === "completed" ? "Completed" : 
-                                             "On Hold"}
-                                          </span>
-                                          <span className="text-xs bg-white bg-opacity-80 text-slate-800 px-2 py-1 rounded-full border border-slate-200 font-medium whitespace-nowrap">
-                                            Due: {formatDate(project.endDate)}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="flex-shrink-0 ml-4">
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-white hover:bg-opacity-70">
-                                          <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}`)}>
-                                          View Details
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}/tasks`)}>
-                                          View Tasks
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}/resources`)}>
-                                          View Resources
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              <div className="p-3">
-                                <div className="mt-1 grid grid-cols-1 gap-4">
-                                  {/* Progress Overview - Enhanced - Full Width */}
-                                  <div>
-                                    <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-100 overflow-hidden max-w-full">
-                                      {/* Overall progress indicator - with meter style */}
-                                      <div className="mb-4">
-                                        <div className="flex justify-between items-center mb-2">
-                                          <div className="flex items-center">
-                                            <div 
-                                              className="w-1 h-5 rounded-sm mr-2"
-                                              style={{
-                                                backgroundColor: getProjectColor(project.id)
-                                              }}
-                                            ></div>
-                                            <span className="text-base font-semibold">Overall Completion</span>
-                                          </div>
-                                          <div 
-                                            className="text-sm font-bold rounded-full px-3 py-0.5 bg-white/70"
-                                            style={{ 
-                                              color: getProjectColor(project.id),
-                                              border: `1px solid ${getProjectColor(project.id)}40`
-                                            }}
-                                          >
-                                            {project.progress || 0}%
-                                          </div>
-                                        </div>
-                                        <div 
-                                          className="w-full rounded-lg h-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
-                                          onClick={() => navigate(`/tasks?projectId=${project.id}`)}
-                                          title={`View all tasks for ${project.name}`}
-                                        >
-                                          <div
-                                            className="h-3 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md"
-                                            style={{ 
-                                              width: `${Math.min(Math.max(project.progress || 0, 0), 100)}%`,
-                                              backgroundColor: getProjectColor(project.id)
-                                            }}
-                                          >
-                                            {(project.progress || 0) > 15 && (
-                                              <div className="h-full flex items-center justify-end pr-1">
-                                                <div className="h-2 w-[1px] bg-white opacity-50 mr-[3px]"></div>
-                                                <div className="h-2 w-[1px] bg-white opacity-50 mr-[3px]"></div>
-                                                <div className="h-2 w-[1px] bg-white opacity-50"></div>
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-                                      
-                                      {/* System Progress Charts - Always expanded by default */}
-                                      <div className="space-y-3">
-                                        <div className="w-full">
-                                          <div className="flex items-center justify-between w-full mb-1 border-b-2 border-slate-200 pb-1 text-left">
-                                            <div className="flex items-center">
-                                              <h4 className="text-sm font-medium text-slate-700">Progress by Construction Phase</h4>
-                                            </div>
-                                          </div>
-                                          <div className="mt-2">
-                                            {/* Use our reusable component that respects hidden categories */}
-                                            <CategoryProgressColumns 
-                                              tasks={tasks.filter((task: any) => task.projectId === project.id)} 
-                                              hiddenCategories={project.hiddenCategories || []}
-                                              projectId={project.id}
-                                              isLoading={tasksLoading}
-                                            />
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  
-
-                                </div>
+              <CarouselContent>
+                {filteredProjects.map((project: any) => (
+                  <CarouselItem key={project.id} data-project-id={project.id} className="md:basis-full lg:basis-full w-full max-w-full">
+                    <div
+                      className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer"
+                      onClick={() => navigate(`/projects/${project.id}`)}
+                    >
+                      <div className="p-5 border-b border-slate-50">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="h-10 w-10 rounded-lg flex items-center justify-center text-white font-bold shadow-sm"
+                              style={{ backgroundColor: getProjectColor(project.id) }}
+                            >
+                              {project.name.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold text-slate-900 leading-tight">{project.name}</h3>
+                              <div className="flex items-center text-sm text-slate-500 mt-0.5">
+                                <MapPin className="h-3 w-3 mr-1" />
+                                {project.location || "No location"}
                               </div>
                             </div>
-                          </CarouselItem>
-                        ))}
-                      </CarouselContent>
-                    </Carousel>
-                  </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
+                          </div>
+
+                          <div className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${project.status === "active" ? "bg-green-50 text-green-700 border-green-100" :
+                            project.status === "planned" ? "bg-blue-50 text-blue-700 border-blue-100" :
+                              "bg-slate-50 text-slate-600 border-slate-100"
+                            }`}>
+                            {project.status === "active" ? "Active" :
+                              project.status === "planned" ? "Planned" : "On Hold"}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {(() => {
+                            // Get tier 1 categories code (simplified for brevity, logic remains same)
+                            const projectConfiguredCategoryObjects = allProjectCategories
+                              .filter((cat: any) => cat.projectId === project.id && cat.type === 'tier1')
+                              .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                            const projectTasks = tasks.filter((task: any) => task.projectId === project.id);
+                            const preferredOrder = ['pull', 'push', 'legs', 'cardio', 'structural', 'systems', 'software engineering', 'product management', 'design / ux', 'marketing / go-to-market (gtm)'];
+                            const taskCategoryObjects: any[] = [];
+                            const seenCategories = new Set<string>();
+                            projectTasks.forEach((task: any) => {
+                              const cat = task.tier1Category;
+                              if (cat && !seenCategories.has(cat)) {
+                                seenCategories.add(cat);
+                                taskCategoryObjects.push({ name: cat, color: null });
+                              }
+                            });
+                            // Sort tasks...
+                            taskCategoryObjects.sort((a, b) => { // same sort logic 
+                              const indexA = preferredOrder.indexOf(a.name.toLowerCase());
+                              const indexB = preferredOrder.indexOf(b.name.toLowerCase());
+                              if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                              if (indexA !== -1) return -1;
+                              if (indexB !== -1) return 1;
+                              return a.name.localeCompare(b.name);
+                            });
+                            const displayedCategoryObjects = (projectConfiguredCategoryObjects.length > 0 ? projectConfiguredCategoryObjects : taskCategoryObjects).slice(0, 4);
+
+                            return displayedCategoryObjects.map((categoryObj: any, categoryIndex: number) => {
+                              const tier1Category = categoryObj.name;
+                              const computedColor = getSimpleTier1Color(tier1Category, project.id, categoryIndex);
+                              const baseColor = categoryObj.color || computedColor || '#6b7280';
+
+                              return (
+                                <div
+                                  key={tier1Category}
+                                  className="px-2 py-1 rounded-md text-xs font-medium border flex items-center bg-white"
+                                  style={{ color: baseColor, borderColor: `${baseColor}40` }}
+                                >
+                                  <span className="w-1.5 h-1.5 rounded-full mr-1.5" style={{ backgroundColor: baseColor }}></span>
+                                  {formatCategoryName(tier1Category, project.id)}
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+
+                        <div className="bg-slate-50 rounded-lg p-3">
+                          <div className="flex justify-between text-sm mb-1.5">
+                            <span className="font-medium text-slate-700">Progress</span>
+                            <span className="font-bold" style={{ color: getProjectColor(project.id) }}>{project.progress || 0}%</span>
+                          </div>
+                          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{ width: `${project.progress || 0}%`, backgroundColor: getProjectColor(project.id) }}
+                            />
+                          </div>
+
+                          <div className="mt-4 pt-3 border-t border-slate-200">
+                            <CategoryProgressColumns
+                              tasks={tasks.filter((task: any) => task.projectId === project.id)}
+                              hiddenCategories={project.hiddenCategories || []}
+                              projectId={project.id}
+                              isLoading={tasksLoading}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
+          )}
+        </div>
 
         {/* Current & Upcoming Labor - Full Width */}
-        <Card className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 rounded-xl relative border-l-4 border-l-indigo-500 mb-6">
-          <CardHeader className="p-4 bg-white border-b-2 border-indigo-500">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-lg font-semibold text-indigo-600">Current & Upcoming Labor</CardTitle>
-              {upcomingLaborTasks?.length > 0 && (
-                <div className="text-sm bg-indigo-50 text-indigo-600 rounded-full px-3 py-1 font-medium border border-indigo-300">
-                  {upcomingLaborTasks.length} {upcomingLaborTasks.length === 1 ? 'Entry' : 'Entries'}
-                </div>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="p-6 space-y-4">
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-900">Current & Upcoming Labor</h2>
+            {upcomingLaborTasks?.length > 0 && (
+              <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-100">
+                {upcomingLaborTasks.length} {upcomingLaborTasks.length === 1 ? 'Entry' : 'Entries'}
+              </Badge>
+            )}
+          </div>
+          <div className="space-y-4">
             {upcomingLaborTasks?.length === 0 ? (
               <div className="text-center">
                 <p className="text-slate-500">No upcoming labor scheduled</p>
@@ -1481,17 +1318,17 @@ export default function DashboardPage() {
                       {upcomingLaborTasks.map((labor: any) => {
                         // Find the associated task for this labor entry
                         const associatedTask = getAssociatedTask(labor);
-                        
+
                         return (
                           <CarouselItem key={labor.id} className="pl-4 md:basis-full">
                             <div className="h-full p-2">
                               <h3 className="text-sm font-medium text-slate-600 mb-2">Work by {labor.fullName || getContactName(labor.contactId)}</h3>
-                              
+
                               {/* Vertical stack for labor card, task, and materials - each on its own row */}
                               <div className="space-y-4">
                                 {/* Labor Card - First Row */}
                                 <div className="w-full">
-                                  <LaborCard 
+                                  <LaborCard
                                     labor={{
                                       ...labor,
                                       fullName: labor.fullName || getContactName(labor.contactId),
@@ -1505,7 +1342,7 @@ export default function DashboardPage() {
                                     }}
                                     onDelete={(laborId) => handleLaborDelete(laborId)}
                                   />
-                                  
+
                                   <div className="mt-2">
                                     <Button
                                       variant="outline"
@@ -1520,129 +1357,92 @@ export default function DashboardPage() {
                                     </Button>
                                   </div>
                                 </div>
-                                
+
                                 {/* Task Card - Second Row - Clean Modern Design */}
                                 {associatedTask && (
                                   <div className="w-full">
-                                    <Card 
-                                      key={associatedTask.id} 
-                                      className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer`}
+
+                                    <div
+                                      key={associatedTask.id}
+                                      className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer group"
                                       onClick={() => navigate(`/tasks/${associatedTask.id}`)}
                                     >
-                                      <CardHeader className="flex flex-col space-y-1.5 p-4 pb-8 w-full overflow-hidden border-b border-green-100 bg-green-50">
+                                      <div className="p-4 border-b border-slate-50 bg-slate-50/50">
                                         {/* Tier Category Badges */}
-                                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                                        <div className="flex items-center justify-between gap-2 mb-3">
                                           <div className="flex items-center gap-2">
                                             {associatedTask.tier2Category && (() => {
                                               const tier2Color = getSimpleTier2Color(associatedTask.tier2Category, associatedTask.tier1Category, associatedTask.projectId);
                                               return (
                                                 <span
-                                                  className="text-xs font-medium px-2 py-0.5 rounded-full"
+                                                  className="text-[10px] uppercase tracking-wider font-semibold px-2 py-1 rounded-md"
                                                   style={{
-                                                    backgroundColor: hexToRgba(tier2Color, 0.12),
+                                                    backgroundColor: hexToRgba(tier2Color, 0.1),
                                                     color: tier2Color,
-                                                    border: `1px solid ${hexToRgba(tier2Color, 0.25)}`
                                                   }}
                                                 >
                                                   {associatedTask.tier2Category}
                                                 </span>
                                               );
                                             })()}
-                                            
-                                            {associatedTask.tier1Category && (
-                                              <span
-                                                className="text-xs font-normal"
-                                                style={{
-                                                  color: getSimpleTier1Color(associatedTask.tier1Category, associatedTask.projectId)
-                                                }}
-                                              >
-                                                {associatedTask.tier1Category}
-                                              </span>
-                                            )}
                                           </div>
-                                          
+
                                           <div className="flex items-center gap-2">
-                                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                              associatedTask.status === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
-                                              associatedTask.status === "in_progress" ? "bg-yellow-100 text-yellow-800 border border-yellow-200" :
-                                              associatedTask.status === "delayed" ? "bg-red-100 text-red-800 border border-red-200" :
-                                              "bg-white bg-opacity-70 text-slate-800 border border-slate-200"
-                                            }`}>
+                                            <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-md ${associatedTask.status === "completed" ? "bg-green-100 text-green-700" :
+                                              associatedTask.status === "in_progress" ? "bg-blue-100 text-blue-700" :
+                                                associatedTask.status === "delayed" ? "bg-red-100 text-red-700" :
+                                                  "bg-slate-100 text-slate-600"
+                                              }`}>
                                               {formatTaskStatus(associatedTask.status)}
                                             </span>
                                           </div>
                                         </div>
-                                        
+
                                         <div className="flex items-center">
-                                          <CardTitle className="text-base font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">{associatedTask.title}</CardTitle>
+                                          <h4 className="text-base font-semibold text-slate-800 group-hover:text-indigo-600 transition-colors line-clamp-1">{associatedTask.title}</h4>
                                         </div>
-                                      </CardHeader>
-                                      <CardContent className="p-4">
+                                      </div>
+                                      <div className="p-4">
                                         {/* Time and dates info in a clean, minimal format */}
-                                        <div className="flex items-center justify-between mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                                          <div className="flex flex-col items-center">
-                                            <p className="text-xs text-slate-500 font-medium uppercase">Start</p>
+                                        <div className="flex items-center justify-between mb-4">
+                                          <div className="flex flex-col">
+                                            <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">Start</p>
                                             <p className="text-sm font-medium text-slate-700">{formatDate(associatedTask.startDate || new Date())}</p>
                                           </div>
-                                          <div className="h-6 border-r border-slate-200"></div>
-                                          <div className="flex flex-col items-center">
-                                            <p className="text-xs text-slate-500 font-medium uppercase">End</p>
+                                          <div className="flex flex-col text-right">
+                                            <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">End</p>
                                             <p className="text-sm font-medium text-slate-700">{formatDate(associatedTask.endDate || new Date())}</p>
                                           </div>
-                                          <div className="h-6 border-r border-slate-200"></div>
-                                          <div className="flex flex-col items-center">
-                                            <p className="text-xs text-slate-500 font-medium uppercase">Progress</p>
-                                            <p className="text-sm font-medium text-slate-700">{associatedTask.progress || 0}%</p>
-                                          </div>
                                         </div>
-                                        
-                                        {/* Assignee */}
-                                        <div className="flex items-center mb-3">
-                                          <div className="p-2 rounded-full bg-green-100 mr-3">
-                                            <User className="h-4 w-4 text-green-600" />
-                                          </div>
-                                          <div>
-                                            <p className="text-xs text-slate-500 font-medium">ASSIGNED TO</p>
-                                            <p className="text-sm font-medium text-slate-700">{associatedTask.assignedTo || "Unassigned"}</p>
-                                          </div>
-                                        </div>
-                                        
-                                        {/* Project */}
-                                        <div className="flex items-center mb-3">
-                                          <div className="p-2 rounded-full bg-green-100 mr-3">
-                                            <Building className="h-4 w-4 text-green-600" />
-                                          </div>
-                                          <div>
-                                            <p className="text-xs text-slate-500 font-medium">PROJECT</p>
-                                            <p className="text-sm font-medium text-slate-700">{getProjectName(associatedTask.projectId)}</p>
-                                          </div>
-                                        </div>
-                                        
                                         {/* Progress bar */}
-                                        <div className="mb-3 mt-3">
-                                          <div className="w-full bg-slate-100 rounded-full h-2">
-                                            <div 
-                                              className="bg-green-500 rounded-full h-2" 
+                                        <div className="mb-4">
+                                          <div className="flex justify-between text-xs mb-1">
+                                            <span className="text-slate-500 font-medium">Progress</span>
+                                            <span className="text-slate-700 font-bold">{associatedTask.progress || 0}%</span>
+                                          </div>
+                                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                            <div
+                                              className="bg-indigo-500 rounded-full h-1.5 transition-all duration-300"
                                               style={{ width: `${associatedTask.progress || 0}%` }}
                                             ></div>
                                           </div>
                                         </div>
-                                        
+
                                         {/* Labor and Materials status tags */}
-                                        <div className="flex flex-wrap gap-2 mt-3">
-                                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md font-medium text-xs flex items-center">
-                                            <Users className="h-3 w-3 mr-1" />
+                                        <div className="flex flex-wrap gap-2">
+                                          <div className="px-2 py-1 bg-slate-50 text-slate-600 rounded-md text-xs font-medium flex items-center border border-slate-100">
+                                            <Users className="h-3 w-3 mr-1.5 text-slate-400" />
                                             Labor Assigned
-                                          </span>
-                                          
-                                          <span className="px-2 py-1 bg-slate-100 text-slate-800 rounded-md font-medium text-xs flex items-center">
-                                            <Package className="h-3 w-3 mr-1" />
+                                          </div>
+
+                                          <div className="px-2 py-1 bg-slate-50 text-slate-600 rounded-md text-xs font-medium flex items-center border border-slate-100">
+                                            <Package className="h-3 w-3 mr-1.5 text-slate-400" />
                                             {taskMaterialCounts[associatedTask.id] || 0} Materials
-                                          </span>
+                                          </div>
                                         </div>
-                                      </CardContent>
-                                    </Card>
-                                    
+                                      </div>
+                                    </div>
+
                                     <div className="mt-2">
                                       <Button
                                         variant="outline"
@@ -1654,46 +1454,42 @@ export default function DashboardPage() {
                                     </div>
                                   </div>
                                 )}
-                                
+
                                 {/* Materials List - Third Row */}
                                 {/* Debug info */}
-                                {console.log('Associated task for materials:', associatedTask?.id, 
-                                  'Has materials?', associatedTask && !!taskMaterials[associatedTask.id], 
+                                {console.log('Associated task for materials:', associatedTask?.id,
+                                  'Has materials?', associatedTask && !!taskMaterials[associatedTask.id],
                                   'Count:', associatedTask && taskMaterials[associatedTask.id]?.length || 0,
                                   'All materials length:', materials.length,
                                   'First few taskIds:', materials.slice(0, 5).map(m => m.taskId))}
-                                
+
                                 {/* Materials Card - Show Project Materials - Clean Modern Design */}
                                 <div className="w-full">
-                                  <Card className="border-l-4 border-orange-500 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
-                                    <CardHeader className="flex flex-col space-y-1.5 p-4 pb-8 w-full overflow-hidden border-b border-orange-100 bg-orange-50">
+
+                                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+                                    <div className="p-4 border-b border-slate-50 bg-slate-50/50">
                                       <div className="flex items-center justify-between gap-2 mb-1.5">
                                         <div className="flex items-center gap-2">
-                                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
+                                          <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-1 rounded-md bg-orange-100 text-orange-700">
                                             Materials
                                           </span>
-                                          <span className="text-xs font-normal text-orange-700">
-                                            Project Resources
-                                          </span>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-xs px-2 py-1 rounded-full font-medium bg-orange-100 text-orange-800 border border-orange-200">
-                                            Project Materials
-                                          </span>
-                                        </div>
+                                        <span className="text-xs font-medium text-slate-500">
+                                          Project Resources
+                                        </span>
                                       </div>
-                                      
+
                                       <div className="flex items-center">
-                                        <CardTitle className="text-base font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">Materials Overview</CardTitle>
+                                        <h4 className="text-base font-semibold text-slate-800">Materials Overview</h4>
                                       </div>
-                                    </CardHeader>
-                                    <CardContent className="p-4 pt-2">
+                                    </div>
+                                    <div className="p-4">
                                       {(() => {
                                         // Get all materials for this project
-                                        const projectMaterials = materials.filter(m => 
+                                        const projectMaterials = materials.filter(m =>
                                           m.projectId === labor.projectId
                                         ).slice(0, 5); // Show only first 5 for mobile view
-                                        
+
                                         if (projectMaterials.length === 0) {
                                           return (
                                             <div className="text-center py-6">
@@ -1703,14 +1499,14 @@ export default function DashboardPage() {
                                             </div>
                                           );
                                         }
-                                        
+
                                         // Group materials by supplier
-                                        const supplierGroups: {[key: string]: {supplier: any, materials: any[]}} = {};
-                                        
+                                        const supplierGroups: { [key: string]: { supplier: any, materials: any[] } } = {};
+
                                         projectMaterials.forEach(material => {
                                           // Get a unique key for the supplier
                                           const supplierKey = material.supplier || material.supplierId?.toString() || 'unknown';
-                                          
+
                                           // Initialize group if needed
                                           if (!supplierGroups[supplierKey]) {
                                             const supplierInfo = getSupplierForMaterial(material);
@@ -1719,11 +1515,11 @@ export default function DashboardPage() {
                                               materials: []
                                             };
                                           }
-                                          
+
                                           // Add material to the group
                                           supplierGroups[supplierKey].materials.push(material);
                                         });
-                                        
+
                                         return (
                                           <div className="space-y-4 max-h-[320px] overflow-y-auto">
                                             {Object.entries(supplierGroups).map(([key, group]) => (
@@ -1749,11 +1545,11 @@ export default function DashboardPage() {
                                                     </div>
                                                   </Card>
                                                 )}
-                                                
+
                                                 {/* Material Items */}
                                                 {group.materials.map(material => (
-                                                  <div 
-                                                    key={material.id} 
+                                                  <div
+                                                    key={material.id}
                                                     className="flex items-center justify-between bg-slate-50 p-2 rounded-md hover:bg-slate-100"
                                                   >
                                                     <div className="flex items-center">
@@ -1766,7 +1562,7 @@ export default function DashboardPage() {
                                                           {material.quantity} {material.unit || 'units'} {material.cost ? `• ${formatCurrency(material.cost)}` : ''}
                                                         </p>
                                                         {material.taskId && (
-                                                          <button 
+                                                          <button
                                                             className="mt-1 text-xs text-blue-600 hover:text-blue-800 flex items-center"
                                                             onClick={(e) => {
                                                               e.stopPropagation();
@@ -1779,18 +1575,17 @@ export default function DashboardPage() {
                                                         )}
                                                       </div>
                                                     </div>
-                                                    <span className={`text-xs px-2 py-1 rounded-full ${
-                                                      material.status === 'ordered' ? 'bg-blue-100 text-blue-800' :
+                                                    <span className={`text-xs px-2 py-1 rounded-full ${material.status === 'ordered' ? 'bg-blue-100 text-blue-800' :
                                                       material.status === 'received' ? 'bg-green-100 text-green-800' :
-                                                      'bg-slate-100 text-slate-800'
-                                                    }`}>
+                                                        'bg-slate-100 text-slate-800'
+                                                      }`}>
                                                       {formatMaterialStatus(material.status)}
                                                     </span>
                                                   </div>
                                                 ))}
                                               </div>
                                             ))}
-                                            
+
                                             {/* If there are more materials than shown, indicate there's more */}
                                             {projectMaterials.length < materials.filter(m => m.projectId === labor.projectId).length && (
                                               <div className="text-center py-1 text-xs text-blue-600">
@@ -1799,22 +1594,24 @@ export default function DashboardPage() {
                                             )}
                                           </div>
                                         );
-                                      
+
                                       })()}
-                                      
-                                      <Button 
-                                        variant="outline" 
-                                        className="w-full mt-3 text-orange-600 hover:text-orange-700"
+
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="w-full mt-3 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                                         onClick={() => navigate(`/projects/${labor.projectId}/materials`)}
                                       >
                                         <Package className="h-4 w-4 mr-2" />
                                         View All Materials
                                       </Button>
-                                    </CardContent>
-                                  </Card>
+                                    </div>
+                                  </div>
                                 </div>
+
                               </div>
-                              
+
                               {/* Horizontal scroll indicator */}
                               <div className="flex justify-center gap-1 mt-2">
                                 <div className="h-1 w-6 bg-blue-600 rounded-full"></div>
@@ -1832,18 +1629,18 @@ export default function DashboardPage() {
                     </div>
                   </Carousel>
                 </div>
-                
+
                 {/* Desktop view: Grid layout */}
                 <div className="hidden lg:block">
                   {upcomingLaborTasks.map((labor: any) => {
                     // Find the associated task for this labor entry
                     const associatedTask = getAssociatedTask(labor);
-                    
+
                     return (
                       <div key={labor.id} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                         {/* Labor Card */}
                         <div className="flex flex-col h-full">
-                          <LaborCard 
+                          <LaborCard
                             labor={{
                               ...labor,
                               fullName: labor.fullName || getContactName(labor.contactId),
@@ -1858,139 +1655,96 @@ export default function DashboardPage() {
                             onDelete={(laborId) => handleLaborDelete(laborId)}
                           />
                         </div>
-                        
+
                         {/* Enhanced Task Card (if found) */}
                         {associatedTask ? (
                           <div className="flex flex-col h-full">
-                            <Card 
-                              key={associatedTask.id} 
-                              className={`border-l-4 ${getStatusBorderColor(associatedTask.status)} shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer flex-grow`}
+                            <div
+                              key={associatedTask.id}
+                              className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer flex-grow group h-full flex flex-col"
                               onClick={() => navigate(`/tasks/${associatedTask.id}`)}
                             >
-                              <CardHeader className="flex flex-col space-y-1.5 p-6 pb-10 w-full overflow-hidden border-b border-green-100 bg-green-50 h-[150px]">
+                              <div className="p-4 border-b border-slate-50 bg-slate-50/50">
                                 {/* Tier Category Badges */}
-                                <div className="flex items-center justify-between gap-2 mb-1.5">
+                                <div className="flex items-center justify-between gap-2 mb-3">
                                   <div className="flex items-center gap-2">
                                     {associatedTask.tier2Category && (() => {
                                       const tier2Color = getSimpleTier2Color(associatedTask.tier2Category, associatedTask.tier1Category, associatedTask.projectId);
                                       return (
                                         <span
-                                          className="text-xs font-medium px-2 py-0.5 rounded-full"
+                                          className="text-[10px] uppercase tracking-wider font-semibold px-2 py-1 rounded-md"
                                           style={{
-                                            backgroundColor: hexToRgba(tier2Color, 0.12),
+                                            backgroundColor: hexToRgba(tier2Color, 0.1),
                                             color: tier2Color,
-                                            border: `1px solid ${hexToRgba(tier2Color, 0.25)}`
                                           }}
                                         >
                                           {associatedTask.tier2Category}
                                         </span>
                                       );
                                     })()}
-
-                                    {associatedTask.tier1Category && (
-                                      <span
-                                        className="text-xs font-normal"
-                                        style={{
-                                          color: getSimpleTier1Color(associatedTask.tier1Category, associatedTask.projectId)
-                                        }}
-                                      >
-                                        {associatedTask.tier1Category}
-                                      </span>
-                                    )}
                                   </div>
-                                  
+
                                   <div className="flex items-center gap-2">
-                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                      associatedTask.status === "completed" ? "bg-green-100 text-green-800 border border-green-200" :
-                                      associatedTask.status === "in_progress" ? "bg-yellow-100 text-yellow-800 border border-yellow-200" :
-                                      associatedTask.status === "delayed" ? "bg-red-100 text-red-800 border border-red-200" :
-                                      "bg-white bg-opacity-70 text-slate-800 border border-slate-200"
-                                    }`}>
+                                    <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-md ${associatedTask.status === "completed" ? "bg-green-100 text-green-700" :
+                                      associatedTask.status === "in_progress" ? "bg-blue-100 text-blue-700" :
+                                        associatedTask.status === "delayed" ? "bg-red-100 text-red-700" :
+                                          "bg-slate-100 text-slate-600"
+                                      }`}>
                                       {formatTaskStatus(associatedTask.status)}
                                     </span>
                                   </div>
                                 </div>
-                                
+
                                 <div className="flex items-center">
-                                  <CardTitle className="text-base font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">{associatedTask.title}</CardTitle>
+                                  <h4 className="text-base font-semibold text-slate-800 group-hover:text-indigo-600 transition-colors line-clamp-1">{associatedTask.title}</h4>
                                 </div>
-                              </CardHeader>
-                              <CardContent className="p-6 flex-grow flex flex-col">
-                                {/* Time and dates info in a clean, minimal format */}
-                                <div className="flex items-center justify-between mb-5 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                  <div className="flex flex-col items-center">
-                                    <p className="text-xs text-slate-500 font-medium uppercase">Start</p>
-                                    <p className="font-medium text-slate-700">{formatDate(associatedTask.startDate || new Date())}</p>
+                              </div>
+                              <div className="p-5 flex-grow flex flex-col">
+                                {/* Time and dates info - modern clean */}
+                                <div className="flex items-center justify-between mb-5">
+                                  <div className="flex flex-col">
+                                    <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">Start Date</p>
+                                    <p className="text-sm font-medium text-slate-700 mt-1">{formatDate(associatedTask.startDate || new Date())}</p>
                                   </div>
-                                  <div className="h-6 border-r border-slate-200"></div>
-                                  <div className="flex flex-col items-center">
-                                    <p className="text-xs text-slate-500 font-medium uppercase">End</p>
-                                    <p className="font-medium text-slate-700">{formatDate(associatedTask.endDate || new Date())}</p>
-                                  </div>
-                                  <div className="h-6 border-r border-slate-200"></div>
-                                  <div className="flex flex-col items-center">
-                                    <p className="text-xs text-slate-500 font-medium uppercase">Progress</p>
-                                    <p className="font-medium text-slate-700">{associatedTask.progress || 0}%</p>
+                                  <div className="h-8 w-px bg-slate-100"></div>
+                                  <div className="flex flex-col text-right">
+                                    <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">End Date</p>
+                                    <p className="text-sm font-medium text-slate-700 mt-1">{formatDate(associatedTask.endDate || new Date())}</p>
                                   </div>
                                 </div>
-                                
-                                {/* Assignee */}
-                                <div className="flex items-center mb-4">
-                                  <div className="p-2 rounded-full bg-green-100 mr-3">
-                                    <User className="h-4 w-4 text-green-600" />
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-slate-500 font-medium">ASSIGNED TO</p>
-                                    <p className="font-medium text-slate-700">{associatedTask.assignedTo || "Unassigned"}</p>
-                                  </div>
-                                </div>
-                                
-                                {/* Project */}
-                                <div className="flex items-center mb-4">
-                                  <div className="p-2 rounded-full bg-green-100 mr-3">
-                                    <Building className="h-4 w-4 text-green-600" />
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-slate-500 font-medium">PROJECT</p>
-                                    <p className="font-medium text-slate-700">{getProjectName(associatedTask.projectId)}</p>
-                                  </div>
-                                </div>
-                                
+
                                 {/* Progress bar */}
-                                <div className="mb-4 mt-4">
-                                  <div className="w-full bg-slate-100 rounded-full h-2">
-                                    <div 
-                                      className="bg-green-500 rounded-full h-2" 
+                                <div className="mb-6">
+                                  <div className="flex justify-between text-xs mb-2">
+                                    <span className="text-slate-500 font-medium">Progress</span>
+                                    <span className="text-slate-700 font-bold">{associatedTask.progress || 0}%</span>
+                                  </div>
+                                  <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                    <div
+                                      className="bg-indigo-500 rounded-full h-1.5 transition-all duration-300"
                                       style={{ width: `${associatedTask.progress || 0}%` }}
                                     ></div>
                                   </div>
                                 </div>
-                                
-                                {/* Labor and Materials status tags */}
-                                <div className="flex flex-wrap gap-2 mt-4">
-                                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md font-medium text-xs flex items-center">
-                                    <Users className="h-3 w-3 mr-1" />
-                                    Labor Assigned
-                                  </span>
-                                  
-                                  <span className="px-2 py-1 bg-slate-100 text-slate-800 rounded-md font-medium text-xs flex items-center">
-                                    <Package className="h-3 w-3 mr-1" />
-                                    {associatedTask.materialIds && associatedTask.materialIds.length > 0 
-                                      ? `${associatedTask.materialIds.length} Materials` 
-                                      : 'No Materials'}
-                                  </span>
+
+                                <div className="mt-auto">
+                                  <div className="flex flex-wrap gap-2">
+                                    <div className="px-2.5 py-1.5 bg-slate-50 text-slate-600 rounded-md text-xs font-medium flex items-center border border-slate-100">
+                                      <Users className="h-3.5 w-3.5 mr-2 text-slate-400" />
+                                      {associatedTask.assignedTo || "Unassigned"}
+                                    </div>
+                                  </div>
                                 </div>
-                                
+
                                 {/* Task Description - simplified */}
                                 {associatedTask.description && (
-                                  <div className="mt-4 p-3 bg-slate-50 rounded-md border border-slate-100">
-                                    <p className="text-xs text-slate-500 font-medium mb-1">DESCRIPTION</p>
-                                    <p className="text-sm text-slate-700">{associatedTask.description}</p>
-                                  </div>
+                                  <p className="text-xs text-slate-500 mt-4 line-clamp-2">
+                                    {associatedTask.description}
+                                  </p>
                                 )}
-                              </CardContent>
-                            </Card>
-                            
+                              </div>
+                            </div>
+
                             {/* Add View Task Details button to match other cards */}
                             <div className="mt-2">
                               <Button
@@ -2009,14 +1763,14 @@ export default function DashboardPage() {
                             </CardContent>
                           </Card>
                         )}
-                        
+
                         {/* Materials Card - Third Column */}
                         <div className="flex flex-col h-full">
                           {(() => {
                             // Extract material IDs from labor and task
                             const laborMaterialIds = labor.materialIds || [];
                             const taskMaterialIds = associatedTask?.materialIds || [];
-                            
+
                             // Combine both sets of material IDs (remove duplicates)
                             const combinedIds = [...laborMaterialIds, ...taskMaterialIds];
                             // Create a map to track unique IDs without using Set
@@ -2027,12 +1781,12 @@ export default function DashboardPage() {
                             });
                             const uniqueIds = Object.keys(uniqueIdsMap);
                             const allMaterialIds = uniqueIds.map(id => id);
-                            
+
                             // Find the actual material objects for these IDs
-                            const relatedMaterials = materials.filter((material: any) => 
+                            const relatedMaterials = materials.filter((material: any) =>
                               allMaterialIds.includes(material.id.toString())
                             );
-                            
+
                             // Create a task-like object for the TaskMaterialsView component
                             const materialsTask = {
                               id: associatedTask?.id || labor.id,
@@ -2040,121 +1794,65 @@ export default function DashboardPage() {
                               projectId: labor.projectId,
                               materialIds: allMaterialIds
                             };
-                            
+
                             return (
                               <>
-                                <Card className="border-l-4 border-orange-500 shadow-sm hover:shadow-md transition-shadow duration-200 flex-grow overflow-hidden">
-                                  <CardHeader className="flex flex-col space-y-1.5 p-6 pb-10 w-full overflow-hidden border-b border-orange-100 bg-orange-50 h-[150px]">
-                                    {/* Tier Category Badges */}
+                                <div className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex-grow overflow-hidden flex flex-col h-full">
+                                  <div className="p-4 border-b border-slate-50 bg-slate-50/50">
                                     <div className="flex items-center justify-between gap-2 mb-1.5">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
-                                          Materials
-                                        </span>
-                                        {associatedTask?.tier2Category && (
-                                          <span
-                                            className="text-xs font-normal"
-                                            style={{
-                                              color: getSimpleTier2Color(associatedTask.tier2Category, associatedTask.tier1Category, associatedTask.projectId)
-                                            }}
-                                          >
-                                            {associatedTask.tier2Category}
-                                          </span>
-                                        )}
-                                        {associatedTask?.tier1Category && (
-                                          <span
-                                            className="text-xs font-normal"
-                                            style={{
-                                              color: getSimpleTier1Color(associatedTask.tier1Category, associatedTask.projectId)
-                                            }}
-                                          >
-                                            {associatedTask.tier1Category}
-                                          </span>
-                                        )}
-                                      </div>
-                                      
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs px-2 py-1 rounded-full font-medium bg-orange-100 text-orange-800 border border-orange-200">
-                                          {relatedMaterials.length} Items
-                                        </span>
-                                      </div>
+                                      <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-1 rounded-md bg-orange-100 text-orange-700">
+                                        Materials
+                                      </span>
+                                      <span className="text-[10px] bg-white border border-slate-200 text-slate-600 px-2 py-1 rounded-md font-medium">
+                                        {relatedMaterials.length} Items
+                                      </span>
                                     </div>
-                                    
+
                                     <div className="flex items-center">
-                                      <CardTitle className="text-base font-medium text-slate-800 px-3 py-2 bg-white rounded-md border border-slate-100 w-full mb-2">
-                                        {relatedMaterials.length > 0 && relatedMaterials[0].section 
-                                          ? `${relatedMaterials[0].section} Materials` 
+                                      <h4 className="text-base font-semibold text-slate-800">
+                                        {relatedMaterials.length > 0 && relatedMaterials[0].section
+                                          ? `${relatedMaterials[0].section} Materials`
                                           : "Project Materials"
                                         }
-                                      </CardTitle>
+                                      </h4>
                                     </div>
-                                  </CardHeader>
-                                  <CardContent className="p-6 flex-grow flex flex-col">
+                                  </div>
+                                  <div className="p-5 flex-grow flex flex-col">
                                     {relatedMaterials.length > 0 ? (
                                       <div className="space-y-4">
-                                        {/* Summary Info */}
-                                        <div className="flex items-center justify-between mb-5 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                          <div className="flex flex-col items-center">
-                                            <p className="text-xs text-slate-500 font-medium uppercase">Total Items</p>
-                                            <p className="font-medium text-slate-700">{relatedMaterials.length}</p>
-                                          </div>
-                                          <div className="h-6 border-r border-slate-200"></div>
-                                          <div className="flex flex-col items-center">
-                                            <p className="text-xs text-slate-500 font-medium uppercase">Total Value</p>
-                                            <p className="font-medium text-slate-700">
-                                              {formatCurrency(relatedMaterials.reduce((sum, mat) => sum + (mat.price || 0) * (mat.quantity || 1), 0))}
-                                            </p>
-                                          </div>
-                                          <div className="h-6 border-r border-slate-200"></div>
-                                          <div className="flex flex-col items-center">
-                                            <p className="text-xs text-slate-500 font-medium uppercase">Status</p>
-                                            <p className="font-medium text-slate-700">
-                                              {relatedMaterials.some(m => m.status === 'received') ? 'Partial' : 'Pending'}
-                                            </p>
-                                          </div>
-                                        </div>
-                                        
                                         {/* Materials List */}
                                         <div className="space-y-3">
-                                          <p className="text-xs text-slate-500 font-medium">MATERIALS</p>
-                                          {relatedMaterials.map((material: any) => (
+                                          {relatedMaterials.slice(0, 3).map((material: any) => (
                                             <div key={material.id} className="p-3 bg-slate-50 rounded-md border border-slate-100 flex justify-between">
                                               <div className="flex items-center">
-                                                <div className="p-2 rounded-full bg-orange-100 mr-3">
-                                                  <Package className="h-4 w-4 text-orange-600" />
+                                                <div className="p-2 rounded-full bg-white border border-slate-100 mr-3">
+                                                  <Package className="h-4 w-4 text-orange-400" />
                                                 </div>
                                                 <div>
-                                                  <h4 className="text-sm font-medium text-slate-800">{material.name}</h4>
+                                                  <h4 className="text-sm font-medium text-slate-800 line-clamp-1">{material.name}</h4>
                                                   <p className="text-xs text-slate-500">
-                                                    {material.quantity} {material.unit} • {formatCurrency(material.price || 0)}
+                                                    {material.quantity} {material.unit}
                                                   </p>
                                                 </div>
                                               </div>
-                                              <span className={`text-xs px-2 py-1 h-fit rounded-full self-center ${
-                                                material.status === 'ordered' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                                                material.status === 'received' ? 'bg-green-100 text-green-800 border border-green-200' :
-                                                'bg-slate-100 text-slate-800 border border-slate-200'
-                                              }`}>
-                                                {material.status || 'pending'}
-                                              </span>
                                             </div>
                                           ))}
+                                          {relatedMaterials.length > 3 && (
+                                            <p className="text-xs text-center text-slate-500 italic">+{relatedMaterials.length - 3} more items...</p>
+                                          )}
                                         </div>
                                       </div>
                                     ) : (
-                                      <div className="flex flex-col justify-center items-center p-6 text-center bg-slate-50 rounded-lg border border-slate-100">
-                                        <div className="p-3 rounded-full bg-orange-50 mb-2">
-                                          <Package className="h-6 w-6 text-orange-300" />
+                                      <div className="flex flex-col justify-center items-center py-10 text-center">
+                                        <div className="p-3 rounded-full bg-slate-50 mb-2">
+                                          <Package className="h-6 w-6 text-slate-300" />
                                         </div>
-                                        <p className="text-slate-700 font-medium">No materials assigned</p>
-                                        <p className="text-xs text-slate-500 mt-1 max-w-xs">
-                                          Materials can be assigned to tasks or labor entries from the resources section
-                                        </p>
+                                        <p className="text-slate-600 font-medium text-sm">No materials assigned</p>
                                       </div>
                                     )}
-                                  </CardContent>
-                                </Card>
-                                
+                                  </div>
+                                </div>
+
                                 {/* View Materials Button */}
                                 <div className="mt-2">
                                   <Button
@@ -2182,8 +1880,8 @@ export default function DashboardPage() {
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Dashboard Widgets */}
         <div className="grid grid-cols-1 gap-6 w-full max-w-full overflow-hidden">
@@ -2198,25 +1896,25 @@ export default function DashboardPage() {
                 <div className="flex items-center space-x-2">
                   {/* View Period Buttons */}
                   <div className="flex items-center space-x-1">
-                    <Button 
+                    <Button
                       variant={viewPeriod === 1 ? "default" : "outline"}
-                      size="sm" 
+                      size="sm"
                       className="h-8 px-2 text-xs"
                       onClick={() => setViewPeriod(1)}
                     >
                       1D
                     </Button>
-                    <Button 
+                    <Button
                       variant={viewPeriod === 3 ? "default" : "outline"}
-                      size="sm" 
+                      size="sm"
                       className="h-8 px-2 text-xs"
                       onClick={() => setViewPeriod(3)}
                     >
                       3D
                     </Button>
-                    <Button 
+                    <Button
                       variant={viewPeriod === 10 ? "default" : "outline"}
-                      size="sm" 
+                      size="sm"
                       className="h-8 px-2 text-xs"
                       onClick={() => setViewPeriod(10)}
                     >
@@ -2228,11 +1926,11 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-0">
               {!tasksLoading && tasks.length > 0 ? (
-                <div style={{ 
-                    height: "500px",
-                    overflow: "hidden"
-                  }}>
-                  <GanttChartLabor 
+                <div style={{
+                  height: "500px",
+                  overflow: "hidden"
+                }}>
+                  <GanttChartLabor
                     tasks={tasks.map(task => ({
                       id: task.id,
                       name: task.title,
@@ -2301,6 +1999,6 @@ export default function DashboardPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Layout>
+    </Layout >
   );
 }
