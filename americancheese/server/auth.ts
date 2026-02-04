@@ -153,6 +153,10 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
   if (token && tokenStore.has(token)) {
     const tokenData = tokenStore.get(token)!;
     if (tokenData.expiresAt > new Date()) {
+      // Set session data from token store
+      req.session.userId = tokenData.userId;
+      req.session.userEmail = tokenData.email;
+      req.session.authenticated = true;
       return next();
     } else {
       // Token expired, remove it
