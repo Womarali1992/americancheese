@@ -69,6 +69,11 @@ export default function SignupPage() {
         sessionStorage.setItem('authToken', data.token);
         document.cookie = `token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
 
+        // Store user info
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
+
         // Setup global fetch interceptor
         const originalFetch = window.fetch;
         window.fetch = function(url, options = {}) {

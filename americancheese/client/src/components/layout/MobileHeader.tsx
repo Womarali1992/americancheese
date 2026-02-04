@@ -2,25 +2,26 @@ import React from "react";
 import { useCurrentTab } from "@/hooks/useTabNavigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Logo } from "./Logo";
-import { 
-  Filter, 
-  Plus, 
-  Search, 
+import {
+  Plus,
   CheckSquare,
-  Package, 
+  Package,
   Users,
   ArrowLeft,
-  Menu
+  LogOut,
+  User
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from "@/components/ui/tooltip";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface MobileHeaderProps {
   title?: string;
@@ -30,7 +31,7 @@ interface MobileHeaderProps {
 export function MobileHeader({ title, backButton = false }: MobileHeaderProps) {
   const currentTab = useCurrentTab();
   const [location, navigate] = useLocation();
-  const isMobile = useIsMobile();
+  const { user, initials, logout } = useCurrentUser();
   
   // Get icon based on current tab
   const getTabIcon = () => {
@@ -158,16 +159,41 @@ export function MobileHeader({ title, backButton = false }: MobileHeaderProps) {
             </Button>
           )}
           
-          <Button 
-            size="sm"
-            variant="ghost" 
-            className="text-gray-500 rounded-full ml-0.5 p-0 h-7 w-7 flex-shrink-0"
-            aria-label="User profile"
-          >
-            <Avatar className="h-6 w-6 border border-gray-100 shadow-sm">
-              <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">MR</AvatarFallback>
-            </Avatar>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-gray-500 rounded-full ml-0.5 p-0 h-7 w-7 flex-shrink-0"
+                aria-label="User profile"
+              >
+                <Avatar className="h-6 w-6 border border-gray-100 shadow-sm">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">{initials}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{user?.name || 'User'}</p>
+                  <p className="text-xs leading-none text-muted-foreground">{user?.email || ''}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="cursor-pointer" disabled>
+                <User className="mr-2 h-4 w-4" />
+                <span>Account Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                onClick={logout}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
