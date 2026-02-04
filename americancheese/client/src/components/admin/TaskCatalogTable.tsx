@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Filter, ArrowUpDown, Download } from "lucide-react";
+import { Link } from "wouter";
+import { Search, Filter, ArrowUpDown, Download, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -360,10 +361,21 @@ export default function TaskCatalogTable({ projectId }: TaskCatalogTableProps) {
                 filteredAndSortedTasks.map((task: any) => (
                   <TableRow key={task.id} className="hover:bg-muted/30">
                     <TableCell className="font-mono text-xs font-semibold">
-                      {task.id}
+                      <Link
+                        href={`/tasks/${task.id}`}
+                        className="text-primary hover:text-primary/80 hover:underline"
+                      >
+                        #{task.id}
+                      </Link>
                     </TableCell>
                     <TableCell className="font-medium">
-                      {task.title}
+                      <Link
+                        href={`/tasks/${task.id}`}
+                        className="text-foreground hover:text-primary hover:underline flex items-center gap-1.5 group"
+                      >
+                        {task.title}
+                        <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </Link>
                     </TableCell>
                     <TableCell>
                       {task.tier1Category ? (() => {

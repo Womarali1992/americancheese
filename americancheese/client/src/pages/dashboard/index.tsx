@@ -1022,14 +1022,17 @@ export default function DashboardPage() {
               <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-full border border-slate-200 shadow-sm">
                 <Building className="h-3 w-3 text-indigo-500" />
                 <span className="text-xs font-semibold text-slate-800">{metrics.activeProjects}</span>
+                <span className="text-xs text-slate-500">Projects</span>
               </div>
               <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-full border border-slate-200 shadow-sm">
                 <CheckSquare className="h-3 w-3 text-green-500" />
                 <span className="text-xs font-semibold text-slate-800">{metrics.openTasks}</span>
+                <span className="text-xs text-slate-500">Tasks</span>
               </div>
               <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-full border border-slate-200 shadow-sm">
                 <Package className="h-3 w-3 text-orange-500" />
                 <span className="text-xs font-semibold text-slate-800">{metrics.pendingMaterials}</span>
+                <span className="text-xs text-slate-500">Pending</span>
               </div>
             </div>
 
@@ -1154,7 +1157,7 @@ export default function DashboardPage() {
                   <CarouselItem key={project.id} data-project-id={project.id} className="md:basis-full lg:basis-full w-full max-w-full">
                     <div
                       className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer"
-                      onClick={() => navigate(`/projects/${project.id}/tasks`)}
+                      onClick={() => navigate(`/tasks?projectId=${project.id}`)}
                     >
                       <div className="p-5 border-b border-slate-50">
                         <div className="flex justify-between items-start mb-4">
