@@ -15,6 +15,7 @@ export function Sidebar() {
     { id: "calendar", icon: "ri-calendar-line", label: "Calendar" },
     { id: "materials", icon: "ri-box-3-line", label: "Materials" },
     { id: "contacts", icon: "ri-contacts-line", label: "Contacts" },
+    { id: "credentials", icon: "ri-lock-2-line", label: "Credentials", isAdmin: true },
     { id: "settings", icon: "ri-user-settings-line", label: "Settings", isAdmin: true },
     { id: "admin", icon: "ri-settings-4-line", label: "Admin Panel", isAdmin: true }
   ];
@@ -29,7 +30,7 @@ export function Sidebar() {
           <Logo className="h-9 w-9 text-primary mr-3" />
           <div>
             <h1 className="text-2xl font-bold text-gray-800 tracking-tight">SiteSetups</h1>
-            <p className="text-xs text-gray-500">Construction Management Platform</p>
+            <p className="text-xs text-gray-500">Automated Development Platform</p>
           </div>
         </div>
         <div className="flex-grow flex flex-col">

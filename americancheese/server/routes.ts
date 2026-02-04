@@ -57,6 +57,7 @@ import { Readable } from "stream";
 import multer from "multer";
 import OpenAI from "openai";
 import { parseStringPromise } from "xml2js";
+import credentialsRouter from "./credentials-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up multer storage for file uploads
@@ -78,6 +79,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/auth/tokens", handleListApiTokens);
   app.post("/api/auth/tokens/:id/revoke", handleRevokeApiToken);
   app.delete("/api/auth/tokens/:id", handleDeleteApiToken);
+
+  // Credentials Vault routes
+  app.use('/api/credentials', credentialsRouter);
 
   // ==================== ADMIN TEMPLATE CATEGORIES ====================
   

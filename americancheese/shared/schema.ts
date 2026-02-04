@@ -66,6 +66,64 @@ export const insertApiTokenSchema = createInsertSchema(apiTokens).omit({
 export type ApiToken = typeof apiTokens.$inferSelect;
 export type InsertApiToken = z.infer<typeof insertApiTokenSchema>;
 
+// Credentials Vault Schema - for securely storing sensitive credentials
+export const credentials = pgTable("credentials", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(), // User-friendly name (e.g., "AWS Production", "LinkedIn API")
+  category: text("category").notNull().default("other"), // api_key, password, connection_string, certificate, other
+  website: text("website"), // Optional associated URL/domain
+  username: text("username"), // Optional username (unencrypted for display)
+  encryptedValue: text("encrypted_value").notNull(), // AES-256-GCM encrypted credential
+  iv: text("iv").notNull(), // Initialization vector for decryption
+  authTag: text("auth_tag").notNull(), // Authentication tag for GCM mode
+  notes: text("notes"), // Optional notes (unencrypted)
+  expiresAt: timestamp("expires_at"), // Optional expiration date
+  lastAccessedAt: timestamp("last_accessed_at"), // When credential was last revealed
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertCredentialSchema = createInsertSchema(credentials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastAccessedAt: true,
+});
+
+// Schema for creating credentials (with plaintext value before encryption)
+export const createCredentialSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  category: z.enum(["api_key", "password", "connection_string", "certificate", "other"]).default("other"),
+  website: z.string().optional(),
+  username: z.string().optional(),
+  value: z.string().min(1, "Credential value is required"), // Plaintext value to encrypt
+  notes: z.string().optional(),
+  expiresAt: z.string().optional(), // ISO date string
+});
+
+// Schema for updating credentials
+export const updateCredentialSchema = z.object({
+  name: z.string().min(1).optional(),
+  category: z.enum(["api_key", "password", "connection_string", "certificate", "other"]).optional(),
+  website: z.string().optional(),
+  username: z.string().optional(),
+  value: z.string().min(1).optional(), // New plaintext value if updating
+  notes: z.string().optional(),
+  expiresAt: z.string().optional(),
+});
+
+// Schema for reveal request (requires password verification)
+export const revealCredentialSchema = z.object({
+  password: z.string().min(1, "Password is required"),
+});
+
+export type Credential = typeof credentials.$inferSelect;
+export type InsertCredential = z.infer<typeof insertCredentialSchema>;
+export type CreateCredential = z.infer<typeof createCredentialSchema>;
+export type UpdateCredential = z.infer<typeof updateCredentialSchema>;
+export type RevealCredential = z.infer<typeof revealCredentialSchema>;
+
 // Project Schema
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),

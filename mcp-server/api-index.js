@@ -1115,6 +1115,75 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["taskId"],
         },
       },
+
+      // ==================== CREDENTIALS VAULT TOOLS ====================
+      {
+        name: "list_credentials",
+        description: "List all stored credentials for the authenticated user. Returns masked values for security. Use reveal in the web UI to see actual values.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            category: { type: "string", description: "Filter by category: api_key, password, connection_string, certificate, other" },
+          },
+        },
+      },
+      {
+        name: "get_credential",
+        description: "Get a specific credential by ID (masked value). Use the web UI to reveal the actual value.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            id: { type: "number", description: "The credential ID" },
+          },
+          required: ["id"],
+        },
+      },
+      {
+        name: "create_credential",
+        description: "Create a new encrypted credential. The value will be stored securely with AES-256-GCM encryption.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            name: { type: "string", description: "Credential name (e.g., 'LinkedIn API', 'Database Password')" },
+            category: { type: "string", description: "Category: api_key, password, connection_string, certificate, other" },
+            value: { type: "string", description: "The credential value to encrypt and store" },
+            website: { type: "string", description: "Associated website or service URL" },
+            username: { type: "string", description: "Associated username or email" },
+            notes: { type: "string", description: "Optional notes about this credential" },
+            expiresAt: { type: "string", description: "Expiration date (YYYY-MM-DD)" },
+          },
+          required: ["name", "value"],
+        },
+      },
+      {
+        name: "update_credential",
+        description: "Update an existing credential. Leave value empty to keep the existing encrypted value.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            id: { type: "number", description: "The credential ID to update" },
+            name: { type: "string", description: "New name" },
+            category: { type: "string", description: "New category: api_key, password, connection_string, certificate, other" },
+            value: { type: "string", description: "New value (leave empty to keep existing)" },
+            website: { type: "string", description: "Associated website or service URL" },
+            username: { type: "string", description: "Associated username or email" },
+            notes: { type: "string", description: "Optional notes" },
+            expiresAt: { type: "string", description: "Expiration date (YYYY-MM-DD)" },
+          },
+          required: ["id"],
+        },
+      },
+      {
+        name: "delete_credential",
+        description: "Delete a credential permanently",
+        inputSchema: {
+          type: "object",
+          properties: {
+            id: { type: "number", description: "The credential ID to delete" },
+          },
+          required: ["id"],
+        },
+      },
     ],
   };
 });
@@ -1939,6 +2008,98 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           tier2Category: task.tier2Category || null,
         });
         return { content: [{ type: "text", text: JSON.stringify(event, null, 2) }] };
+      }
+
+      // ==================== CREDENTIALS VAULT HANDLERS ====================
+      case "list_credentials": {
+        const result = await apiRequest("GET", "/api/credentials");
+        let credentials = result?.credentials || [];
+
+        // Filter by category if provided
+        if (args?.category) {
+          credentials = credentials.filter(c => c.category === args.category);
+        }
+
+        if (credentials.length === 0) {
+          return { content: [{ type: "text", text: "No credentials found." }] };
+        }
+
+        let output = "## Credentials Vault\n\n";
+        output += "| ID | Name | Category | Username | Website | Expires |\n";
+        output += "|-----|------|----------|----------|---------|----------|\n";
+        credentials.forEach(c => {
+          const expires = c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : "-";
+          const expiredFlag = c.isExpired ? " (EXPIRED)" : "";
+          output += `| ${c.id} | ${c.name} | ${c.category} | ${c.username || "-"} | ${c.website || "-"} | ${expires}${expiredFlag} |\n`;
+        });
+        output += "\n*Values are encrypted. Use the web UI to reveal actual credential values.*";
+
+        return { content: [{ type: "text", text: output }] };
+      }
+
+      case "get_credential": {
+        const result = await apiRequest("GET", `/api/credentials/${args.id}`);
+        const cred = result?.credential;
+        if (!cred) {
+          return { content: [{ type: "text", text: `Credential ${args.id} not found.` }], isError: true };
+        }
+
+        let output = `## Credential: ${cred.name}\n\n`;
+        output += `- **ID:** ${cred.id}\n`;
+        output += `- **Category:** ${cred.category}\n`;
+        output += `- **Username:** ${cred.username || "Not set"}\n`;
+        output += `- **Website:** ${cred.website || "Not set"}\n`;
+        output += `- **Value:** ${cred.maskedValue} (encrypted)\n`;
+        output += `- **Notes:** ${cred.notes || "None"}\n`;
+        output += `- **Expires:** ${cred.expiresAt ? new Date(cred.expiresAt).toLocaleDateString() : "Never"}\n`;
+        output += `- **Last Accessed:** ${cred.lastAccessedAt ? new Date(cred.lastAccessedAt).toLocaleDateString() : "Never"}\n`;
+        if (cred.isExpired) {
+          output += "\n**WARNING: This credential has expired!**\n";
+        }
+        output += "\n*Use the web UI to reveal the actual credential value.*";
+
+        return { content: [{ type: "text", text: output }] };
+      }
+
+      case "create_credential": {
+        const result = await apiRequest("POST", "/api/credentials", {
+          name: args.name,
+          category: args.category || "other",
+          value: args.value,
+          website: args.website || null,
+          username: args.username || null,
+          notes: args.notes || null,
+          expiresAt: args.expiresAt || null,
+        });
+
+        if (result?.success) {
+          return { content: [{ type: "text", text: `Credential "${args.name}" created successfully (ID: ${result.credential?.id}). Value is encrypted with AES-256-GCM.` }] };
+        }
+        return { content: [{ type: "text", text: `Failed to create credential: ${result?.message || "Unknown error"}` }], isError: true };
+      }
+
+      case "update_credential": {
+        const updateData = {};
+        const fields = ["name", "category", "value", "website", "username", "notes", "expiresAt"];
+        for (const field of fields) {
+          if (args[field] !== undefined && args[field] !== "") {
+            updateData[field] = args[field];
+          }
+        }
+
+        const result = await apiRequest("PUT", `/api/credentials/${args.id}`, updateData);
+        if (result?.success) {
+          return { content: [{ type: "text", text: `Credential ${args.id} updated successfully.` }] };
+        }
+        return { content: [{ type: "text", text: `Failed to update credential: ${result?.message || "Unknown error"}` }], isError: true };
+      }
+
+      case "delete_credential": {
+        const result = await apiRequest("DELETE", `/api/credentials/${args.id}`);
+        if (result?.success) {
+          return { content: [{ type: "text", text: `Credential ${args.id} deleted successfully.` }] };
+        }
+        return { content: [{ type: "text", text: `Failed to delete credential: ${result?.message || "Unknown error"}` }], isError: true };
       }
 
       default:
