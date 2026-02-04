@@ -601,8 +601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Also include the owner as a "member" for display purposes
       const project = await storage.getProject(projectId);
-      if (project?.createdBy) {
-        const owner = await storage.getUserByEmail?.(req.session?.userEmail || '');
+      if (project?.createdBy && db) {
         // Get owner info from the database
         const ownerUser = await db.select({
           id: users.id,
