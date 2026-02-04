@@ -134,6 +134,14 @@ jobs:
           npm run db:push 2>&1
           echo "Schema push complete"
 
+          # Grant permissions AFTER schema push (to include any new tables)
+          echo "Granting permissions to americancheese user..."
+          sudo -u postgres psql -d americancheese -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO americancheese;" 2>&1
+          sudo -u postgres psql -d americancheese -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO americancheese;" 2>&1
+          sudo -u postgres psql -d americancheese -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO americancheese;" 2>&1
+          sudo -u postgres psql -d americancheese -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO americancheese;" 2>&1
+          echo "Permissions granted"
+
           # Run database fixes (americancheese database already has data)
           echo "Running database fixes..."
           sudo -u postgres psql -d americancheese -c "UPDATE tasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
