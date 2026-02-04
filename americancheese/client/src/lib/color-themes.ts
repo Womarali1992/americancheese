@@ -1303,6 +1303,8 @@ export function getDynamicModuleColor(module: string, theme?: ColorTheme): {
     'contact': '#3b82f6',    // Blue
     'labor': '#16a34a',      // Green (same as tasks)
     'expense': '#ea580c',    // Orange (same as materials)
+    'calendar': '#0891b2',   // Cyan
+    'settings': '#64748b',   // Slate gray
     'admin': '#8b5cf6'       // Purple
   };
   

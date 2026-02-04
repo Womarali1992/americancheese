@@ -15,6 +15,7 @@ export function Sidebar() {
     { id: "calendar", icon: "ri-calendar-line", label: "Calendar" },
     { id: "materials", icon: "ri-box-3-line", label: "Materials" },
     { id: "contacts", icon: "ri-contacts-line", label: "Contacts" },
+    { id: "settings", icon: "ri-user-settings-line", label: "Settings", isAdmin: true },
     { id: "admin", icon: "ri-settings-4-line", label: "Admin Panel", isAdmin: true }
   ];
 

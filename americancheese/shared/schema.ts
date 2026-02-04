@@ -42,6 +42,30 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type RegisterUser = z.infer<typeof registerUserSchema>;
 export type LoginUser = z.infer<typeof loginUserSchema>;
 
+// API Tokens Schema - for MCP and external API access
+export const apiTokens = pgTable("api_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(), // User-friendly name for the token (e.g., "MCP Server", "CI/CD")
+  token: text("token").notNull().unique(), // The actual token (hashed for security)
+  tokenPrefix: text("token_prefix").notNull(), // First 8 chars shown to user for identification
+  lastUsedAt: timestamp("last_used_at"),
+  expiresAt: timestamp("expires_at"), // null for non-expiring tokens
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  revokedAt: timestamp("revoked_at"), // When the token was revoked
+});
+
+export const insertApiTokenSchema = createInsertSchema(apiTokens).omit({
+  id: true,
+  createdAt: true,
+  lastUsedAt: true,
+  revokedAt: true,
+});
+
+export type ApiToken = typeof apiTokens.$inferSelect;
+export type InsertApiToken = z.infer<typeof insertApiTokenSchema>;
+
 // Project Schema
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),

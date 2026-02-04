@@ -24,6 +24,7 @@ import SignupPage from "@/pages/signup";
 import AdminPage from "@/pages/admin";
 import ProjectTemplatesPage from "@/pages/admin/project-templates";
 import CalendarPage from "@/pages/calendar";
+import SettingsPage from "@/pages/settings";
 
 import { queryClient } from "./lib/queryClient";
 
@@ -133,6 +134,7 @@ function Router() {
       <Route path="/calendar" component={(props) => <ProtectedRoute component={CalendarPage} {...props} />} />
       <Route path="/admin" component={(props) => <ProtectedRoute component={AdminPage} {...props} />} />
       <Route path="/admin/project-templates/:projectId" component={(props) => <ProtectedRoute component={ProjectTemplatesPage} {...props} />} />
+      <Route path="/settings" component={(props) => <ProtectedRoute component={SettingsPage} {...props} />} />
       <Route path="/labor" component={() => { window.location.href = '/contacts?tab=labor'; return null; }} />
       <Route component={NotFound} />
     </Switch>

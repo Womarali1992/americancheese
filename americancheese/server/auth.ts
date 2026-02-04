@@ -4,8 +4,8 @@ import MemoryStore from 'memorystore';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { db } from './db';
-import { users, registerUserSchema, loginUserSchema } from '../shared/schema';
-import { eq } from 'drizzle-orm';
+import { users, apiTokens, registerUserSchema, loginUserSchema } from '../shared/schema';
+import { eq, and, isNull, desc } from 'drizzle-orm';
 
 // Extend express-session types
 declare module 'express-session' {
@@ -29,9 +29,19 @@ const MemoryStoreSession = MemoryStore(session);
 // Store for auth tokens (in production, use Redis or database)
 const tokenStore = new Map<string, { userId: number; email: string; expiresAt: Date }>();
 
-// Generate a secure token
+// Generate a secure token for sessions
 function generateToken(): string {
   return crypto.randomBytes(32).toString('hex');
+}
+
+// Generate a secure API token (longer, with prefix)
+function generateApiToken(): string {
+  return 'ac_' + crypto.randomBytes(32).toString('hex');
+}
+
+// Hash an API token for storage
+function hashApiToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
 }
 
 // Configure session middleware
@@ -53,7 +63,7 @@ export const sessionMiddleware = session({
 });
 
 // Authentication middleware
-export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
+export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   // Determine if this is a module or asset request that should skip auth
   const isAssetOrModuleRequest =
     req.path.includes('.') ||
@@ -101,7 +111,45 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     token = req.session.token;
   }
 
-  // Validate token
+  // Check if this is an API token (starts with 'ac_')
+  if (token && token.startsWith('ac_') && db) {
+    try {
+      const hashedToken = hashApiToken(token);
+      const [apiToken] = await db.select()
+        .from(apiTokens)
+        .where(and(
+          eq(apiTokens.token, hashedToken),
+          eq(apiTokens.isActive, true),
+          isNull(apiTokens.revokedAt)
+        ))
+        .limit(1);
+
+      if (apiToken) {
+        // Check expiration
+        if (apiToken.expiresAt && apiToken.expiresAt < new Date()) {
+          return res.status(401).json({
+            message: 'API token has expired',
+            path: req.path
+          });
+        }
+
+        // Update last used timestamp (non-blocking)
+        db.update(apiTokens)
+          .set({ lastUsedAt: new Date() })
+          .where(eq(apiTokens.id, apiToken.id))
+          .catch(err => console.error('Failed to update API token last used:', err));
+
+        // Set user context for the request
+        req.session.userId = apiToken.userId;
+        req.session.authenticated = true;
+        return next();
+      }
+    } catch (error) {
+      console.error('API token validation error:', error);
+    }
+  }
+
+  // Validate session token
   if (token && tokenStore.has(token)) {
     const tokenData = tokenStore.get(token)!;
     if (tokenData.expiresAt > new Date()) {
@@ -389,6 +437,242 @@ export const handleGetCurrentUser = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to get user data'
+    });
+  }
+};
+
+// ==================== API TOKEN HANDLERS ====================
+
+// Create a new API token
+export const handleCreateApiToken = async (req: Request, res: Response) => {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({
+      success: false,
+      message: 'Not authenticated'
+    });
+  }
+
+  try {
+    if (!db) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database not available'
+      });
+    }
+
+    const { name, expiresInDays } = req.body;
+
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token name is required'
+      });
+    }
+
+    // Generate the token
+    const plainToken = generateApiToken();
+    const hashedToken = hashApiToken(plainToken);
+    const tokenPrefix = plainToken.substring(0, 11); // "ac_" + first 8 chars
+
+    // Calculate expiration if provided
+    let expiresAt = null;
+    if (expiresInDays && typeof expiresInDays === 'number' && expiresInDays > 0) {
+      expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
+    }
+
+    // Insert the token
+    const [newToken] = await db.insert(apiTokens).values({
+      userId: req.session.userId,
+      name: name.trim(),
+      token: hashedToken,
+      tokenPrefix,
+      expiresAt,
+      isActive: true
+    }).returning();
+
+    console.log('API token created for user:', req.session.userId, 'name:', name);
+
+    // Return the plain token ONCE - it cannot be retrieved again
+    return res.json({
+      success: true,
+      message: 'API token created successfully. Copy it now - you will not be able to see it again.',
+      token: plainToken,
+      tokenInfo: {
+        id: newToken.id,
+        name: newToken.name,
+        tokenPrefix: newToken.tokenPrefix,
+        expiresAt: newToken.expiresAt,
+        createdAt: newToken.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Create API token error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to create API token'
+    });
+  }
+};
+
+// List all API tokens for the current user
+export const handleListApiTokens = async (req: Request, res: Response) => {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({
+      success: false,
+      message: 'Not authenticated'
+    });
+  }
+
+  try {
+    if (!db) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database not available'
+      });
+    }
+
+    const tokens = await db.select({
+      id: apiTokens.id,
+      name: apiTokens.name,
+      tokenPrefix: apiTokens.tokenPrefix,
+      lastUsedAt: apiTokens.lastUsedAt,
+      expiresAt: apiTokens.expiresAt,
+      isActive: apiTokens.isActive,
+      createdAt: apiTokens.createdAt,
+      revokedAt: apiTokens.revokedAt
+    })
+    .from(apiTokens)
+    .where(eq(apiTokens.userId, req.session.userId))
+    .orderBy(desc(apiTokens.createdAt));
+
+    return res.json({
+      success: true,
+      tokens
+    });
+  } catch (error) {
+    console.error('List API tokens error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to list API tokens'
+    });
+  }
+};
+
+// Revoke an API token
+export const handleRevokeApiToken = async (req: Request, res: Response) => {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({
+      success: false,
+      message: 'Not authenticated'
+    });
+  }
+
+  try {
+    if (!db) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database not available'
+      });
+    }
+
+    const tokenId = parseInt(req.params.id);
+    if (isNaN(tokenId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid token ID'
+      });
+    }
+
+    // Verify the token belongs to the user
+    const [existingToken] = await db.select()
+      .from(apiTokens)
+      .where(and(
+        eq(apiTokens.id, tokenId),
+        eq(apiTokens.userId, req.session.userId)
+      ))
+      .limit(1);
+
+    if (!existingToken) {
+      return res.status(404).json({
+        success: false,
+        message: 'Token not found'
+      });
+    }
+
+    // Revoke the token
+    await db.update(apiTokens)
+      .set({
+        isActive: false,
+        revokedAt: new Date()
+      })
+      .where(eq(apiTokens.id, tokenId));
+
+    console.log('API token revoked:', tokenId, 'for user:', req.session.userId);
+
+    return res.json({
+      success: true,
+      message: 'API token revoked successfully'
+    });
+  } catch (error) {
+    console.error('Revoke API token error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to revoke API token'
+    });
+  }
+};
+
+// Delete an API token permanently
+export const handleDeleteApiToken = async (req: Request, res: Response) => {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({
+      success: false,
+      message: 'Not authenticated'
+    });
+  }
+
+  try {
+    if (!db) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database not available'
+      });
+    }
+
+    const tokenId = parseInt(req.params.id);
+    if (isNaN(tokenId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid token ID'
+      });
+    }
+
+    // Verify the token belongs to the user and delete
+    const result = await db.delete(apiTokens)
+      .where(and(
+        eq(apiTokens.id, tokenId),
+        eq(apiTokens.userId, req.session.userId)
+      ))
+      .returning();
+
+    if (result.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Token not found'
+      });
+    }
+
+    console.log('API token deleted:', tokenId, 'for user:', req.session.userId);
+
+    return res.json({
+      success: true,
+      message: 'API token deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete API token error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to delete API token'
     });
   }
 };

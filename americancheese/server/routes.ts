@@ -40,7 +40,16 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
-import { handleLogin, handleLogout, handleRegister, handleGetCurrentUser } from "./auth";
+import {
+  handleLogin,
+  handleLogout,
+  handleRegister,
+  handleGetCurrentUser,
+  handleCreateApiToken,
+  handleListApiTokens,
+  handleRevokeApiToken,
+  handleDeleteApiToken
+} from "./auth";
 import { db } from "./db";
 import { eq, sql, isNull, and, or, inArray } from "drizzle-orm";
 import csvParser from "csv-parser";
@@ -63,6 +72,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", handleRegister);
   app.post("/api/auth/logout", handleLogout);
   app.get("/api/auth/me", handleGetCurrentUser);
+
+  // API Token management routes
+  app.post("/api/auth/tokens", handleCreateApiToken);
+  app.get("/api/auth/tokens", handleListApiTokens);
+  app.post("/api/auth/tokens/:id/revoke", handleRevokeApiToken);
+  app.delete("/api/auth/tokens/:id", handleDeleteApiToken);
 
   // ==================== ADMIN TEMPLATE CATEGORIES ====================
   
