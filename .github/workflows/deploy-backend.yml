@@ -23,12 +23,12 @@ jobs:
           if_key_exists: replace
 
       - name: Adding Known Hosts
-        run: ssh-keyscan -H 178.128.118.54 >> ~/.ssh/known_hosts
+        run: ssh-keyscan -H 134.199.207.43 >> ~/.ssh/known_hosts
 
       - name: Deploy to Digital Ocean
         run: |
           echo "Deploying americancheese backend..."
-          ssh -i ~/.ssh/id_rsa root@178.128.118.54 << 'ENDSSH'
+          ssh -i ~/.ssh/id_rsa root@134.199.207.43 << 'ENDSSH'
           set -e
           echo "Starting deployment process..."
 
