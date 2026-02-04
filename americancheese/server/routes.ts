@@ -2954,9 +2954,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   })();
 
   // Contact routes
-  app.get("/api/contacts", async (_req: Request, res: Response) => {
+  app.get("/api/contacts", async (req: Request, res: Response) => {
     try {
-      const contacts = await storage.getContacts();
+      const userId = req.session?.userId;
+      let contacts = await storage.getContacts();
+
+      // Filter contacts by user's accessible projects (via labor entries)
+      if (userId) {
+        const userProjects = await storage.getProjects(userId);
+        const accessibleProjectIds = new Set(userProjects.map(p => p.id));
+
+        // Get all labor entries for accessible projects
+        const allLabor = await storage.getLabor();
+        const accessibleLabor = allLabor.filter(l => l.projectId && accessibleProjectIds.has(l.projectId));
+        const accessibleContactIds = new Set(accessibleLabor.map(l => l.contactId));
+
+        // Filter contacts to only those used in accessible projects
+        contacts = contacts.filter(c => accessibleContactIds.has(c.id));
+      }
+
       res.json(contacts);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch contacts" });
