@@ -1052,71 +1052,27 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Unified Key Metrics Badge */}
-        {/* Unified Key Metrics - Modern Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {/* Active Projects */}
-          <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 group">
-            <div className="flex justify-between items-start mb-2">
-              <div className="p-2 bg-indigo-50 rounded-lg group-hover:bg-indigo-100 transition-colors">
-                <Building className="h-5 w-5 text-indigo-600" />
-              </div>
-              <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-100 font-normal">
-                Active
-              </Badge>
-            </div>
-            <div className="mt-2">
-              <h3 className="text-3xl font-bold text-slate-800">{metrics.activeProjects}</h3>
-              <p className="text-sm text-slate-500 font-medium">Active Projects</p>
-            </div>
+        {/* Mini Ticker Metrics */}
+        <div className="flex flex-wrap items-center gap-2 mb-6">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
+            <Building className="h-3.5 w-3.5 text-indigo-500" />
+            <span className="text-sm font-semibold text-slate-800">{metrics.activeProjects}</span>
+            <span className="text-xs text-slate-500">Projects</span>
           </div>
-
-          {/* Open Tasks */}
-          <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 group">
-            <div className="flex justify-between items-start mb-2">
-              <div className="p-2 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
-                <CheckSquare className="h-5 w-5 text-green-600" />
-              </div>
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-100 font-normal">
-                Tasks
-              </Badge>
-            </div>
-            <div className="mt-2">
-              <h3 className="text-3xl font-bold text-slate-800">{metrics.openTasks}</h3>
-              <p className="text-sm text-slate-500 font-medium">Open Tasks</p>
-            </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
+            <CheckSquare className="h-3.5 w-3.5 text-green-500" />
+            <span className="text-sm font-semibold text-slate-800">{metrics.openTasks}</span>
+            <span className="text-xs text-slate-500">Open Tasks</span>
           </div>
-
-          {/* Pending Materials */}
-          <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 group">
-            <div className="flex justify-between items-start mb-2">
-              <div className="p-2 bg-orange-50 rounded-lg group-hover:bg-orange-100 transition-colors">
-                <Package className="h-5 w-5 text-orange-600" />
-              </div>
-              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-100 font-normal">
-                Orders
-              </Badge>
-            </div>
-            <div className="mt-2">
-              <h3 className="text-3xl font-bold text-slate-800">{metrics.pendingMaterials}</h3>
-              <p className="text-sm text-slate-500 font-medium">Pending Materials</p>
-            </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
+            <Package className="h-3.5 w-3.5 text-orange-500" />
+            <span className="text-sm font-semibold text-slate-800">{metrics.pendingMaterials}</span>
+            <span className="text-xs text-slate-500">Pending</span>
           </div>
-
-          {/* Budget Used */}
-          <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 group">
-            <div className="flex justify-between items-start mb-2">
-              <div className="p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
-                <DollarSign className="h-5 w-5 text-blue-600" />
-              </div>
-              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100 font-normal">
-                Budget
-              </Badge>
-            </div>
-            <div className="mt-2">
-              <h3 className="text-3xl font-bold text-slate-800">{metrics.budgetUtilization}%</h3>
-              <p className="text-sm text-slate-500 font-medium">Budget Utilized</p>
-            </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
+            <DollarSign className="h-3.5 w-3.5 text-blue-500" />
+            <span className="text-sm font-semibold text-slate-800">{metrics.budgetUtilization}%</span>
+            <span className="text-xs text-slate-500">Budget</span>
           </div>
         </div>
 
@@ -1187,7 +1143,7 @@ export default function DashboardPage() {
                   <CarouselItem key={project.id} data-project-id={project.id} className="md:basis-full lg:basis-full w-full max-w-full">
                     <div
                       className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer"
-                      onClick={() => navigate(`/projects/${project.id}`)}
+                      onClick={() => navigate(`/projects/${project.id}/tasks`)}
                     >
                       <div className="p-5 border-b border-slate-50">
                         <div className="flex justify-between items-start mb-4">
@@ -1207,13 +1163,16 @@ export default function DashboardPage() {
                             </div>
                           </div>
 
-                          <div className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${project.status === "active" ? "bg-green-50 text-green-700 border-green-100" :
-                            project.status === "planned" ? "bg-blue-50 text-blue-700 border-blue-100" :
-                              "bg-slate-50 text-slate-600 border-slate-100"
-                            }`}>
-                            {project.status === "active" ? "Active" :
-                              project.status === "planned" ? "Planned" : "On Hold"}
-                          </div>
+                          <button
+                            className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/projects/${project.id}`);
+                            }}
+                            title="Project Settings"
+                          >
+                            <Settings className="h-5 w-5" />
+                          </button>
                         </div>
 
                         <div className="flex flex-wrap gap-2 mb-4">
