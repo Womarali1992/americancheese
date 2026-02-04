@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
-import { Settings, Layers, PaintBucket, Home, AlertCircle, Sparkles, Package, Palette, TableProperties, Eye, ToggleLeft } from "lucide-react";
+import { Settings, Layers, PaintBucket, Home, AlertCircle, Sparkles, Package, Palette, TableProperties, Eye, ToggleLeft, Key } from "lucide-react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -38,12 +38,20 @@ export default function AdminPage() {
               </div>
             </div>
             
-            <Button asChild variant="outline" className="shadow-sm hover:shadow-md transition-all">
-              <Link href="/">
-                <Home className="w-4 h-4 mr-2" />
-                Back to Dashboard
-              </Link>
-            </Button>
+            <div className="flex gap-2">
+              <Button asChild variant="outline" className="shadow-sm hover:shadow-md transition-all">
+                <Link href="/settings">
+                  <Key className="w-4 h-4 mr-2" />
+                  API Tokens
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="shadow-sm hover:shadow-md transition-all">
+                <Link href="/">
+                  <Home className="w-4 h-4 mr-2" />
+                  Back to Dashboard
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
 
