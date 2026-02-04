@@ -103,9 +103,8 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
     }
   }, [urlParams.tier1, urlParams.tier2]); // Removed selectedCategory from deps to prevent loops
 
-  // Helper function to update URL with category parameters
+  // Helper function to navigate to tasks page with category parameters
   const updateURLWithCategory = (tier1?: string, tier2?: string) => {
-    const [basePath] = location.split('?');
     const params = new URLSearchParams();
 
     // Always include projectId if we have it
@@ -121,32 +120,44 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
       params.set('tier2', tier2);
     }
 
-    const newURL = params.toString() ? `${basePath}?${params.toString()}` : basePath;
+    // Navigate to tasks page with the category filters
+    const newURL = params.toString() ? `/tasks?${params.toString()}` : '/tasks';
     setLocation(newURL);
   };
 
-  // Helper function to navigate to a category and update URL
+  // Helper function to navigate to tasks page filtered by category
   const navigateToCategory = (category: string) => {
     // Determine if this category is a tier1 or tier2 category by looking at the tasks
     const sampleTask = filteredTasks?.find(task =>
       task.tier1Category === category || task.tier2Category === category
     );
 
-    if (!sampleTask) {
-      console.warn('No task found for category:', category);
-      setSelectedCategory(category);
-      return;
+    // Build the URL parameters
+    const params = new URLSearchParams();
+    if (projectId) {
+      params.set('projectId', projectId.toString());
     }
 
-    if (sampleTask.tier1Category === category) {
-      // This is a tier1 category
-      updateURLWithCategory(category);
-    } else if (sampleTask.tier2Category === category) {
-      // This is a tier2 category, we need to include its tier1 parent
-      updateURLWithCategory(sampleTask.tier1Category, category);
+    if (sampleTask) {
+      if (sampleTask.tier1Category === category) {
+        // This is a tier1 category
+        params.set('tier1', category);
+      } else if (sampleTask.tier2Category === category) {
+        // This is a tier2 category, include its tier1 parent
+        if (sampleTask.tier1Category) {
+          params.set('tier1', sampleTask.tier1Category);
+        }
+        params.set('tier2', category);
+      }
+    } else {
+      // Fallback: assume it's a tier1 category
+      params.set('tier1', category);
     }
 
-    setSelectedCategory(category);
+    // Navigate to tasks page
+    const tasksUrl = `/tasks?${params.toString()}`;
+    console.log('Navigating to:', tasksUrl);
+    setLocation(tasksUrl);
   };
 
   // Helper function to clear category navigation

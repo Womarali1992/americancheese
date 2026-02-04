@@ -94,36 +94,14 @@ function getProjectThemeColor(
   parentCategoryName?: string | null,
   adminCategories: CategoryData[] = []
 ): string | null {
-  // Debug ANY project 6 task
-  if (currentProjectId === 6) {
-    console.log('🔧 ANY Project 6 task:', {
-      categoryName,
-      currentProjectId,
-      projectsLength: projects.length,
-      projects: projects.map(p => ({ id: p.id, useGlobalTheme: p.useGlobalTheme, colorTheme: p.colorTheme }))
-    });
-  }
-  
   if (!currentProjectId || !projects.length) {
-    if (categoryName.toLowerCase() === 'design / ux' && currentProjectId === 6) {
-      console.log('🔧 Early return for project 6');
-    }
     return null;
   }
 
   const project = projects.find(p => p.id === currentProjectId);
 
-  if (categoryName.toLowerCase() === 'design / ux' && currentProjectId === 6) {
-    console.log('🔧 Found project 6:', project);
-  }
-
   // Use project theme if colorTheme is set (regardless of useGlobalTheme flag)
   if (!project || !project.colorTheme) {
-    console.log(`🎨 No theme for project ${currentProjectId}, category "${categoryName}":`, {
-      hasProject: !!project,
-      useGlobalTheme: project?.useGlobalTheme,
-      colorTheme: project?.colorTheme
-    });
     return null;
   }
 
@@ -155,12 +133,6 @@ function getProjectThemeColor(
       ? themeColors[categoryIndex]
       : theme.primary; // fallback
 
-    console.log(`🎨 Tier1 "${categoryName}" (project ${currentProjectId}, index ${categoryIndex}) → "${project.colorTheme}":`, {
-      categoryIndex,
-      color: resolvedColor,
-      totalCategories: projectTier1Categories.length,
-      theme: project.colorTheme
-    });
     return resolvedColor;
   } else {
     // INDEX-BASED TIER2 COLOR ASSIGNMENT
@@ -268,7 +240,6 @@ export function getTier1Color(
     );
 
     if (categoryWithColor?.color) {
-      console.log(`🎨 STORED COLOR: tier1 "${categoryName}" → ${categoryWithColor.color}`);
       return categoryWithColor.color;
     }
   }
@@ -322,7 +293,6 @@ export function getTier1Color(
         if (categoryIndex >= 0) {
           const colorIndex = categoryIndex % themeColors.length;
           const indexColor = themeColors[colorIndex];
-          console.log(`🎨 INDEX-BASED COLOR: tier1 "${categoryName}" (index ${categoryIndex}) → ${indexColor}`);
           return indexColor;
         }
 
@@ -331,7 +301,6 @@ export function getTier1Color(
         
         // If name mapping found something other than default, use it
         if (nameMappedColor !== theme.tier1.default) {
-          console.log(`🎨 NAME-MAPPED COLOR: tier1 "${categoryName}" → ${nameMappedColor}`);
           return nameMappedColor;
         }
 
@@ -344,7 +313,6 @@ export function getTier1Color(
         }
         const fallbackIndex = Math.abs(hash) % themeColors.length;
         const hashColor = themeColors[fallbackIndex];
-        console.log(`🎨 HASH-BASED COLOR: tier1 "${categoryName}" → ${hashColor}`);
         return hashColor;
       }
     }
@@ -412,7 +380,6 @@ export function getTier2Color(
     );
 
     if (categoryWithColor?.color) {
-      console.log(`🎨 STORED COLOR: tier2 "${categoryName}" → ${categoryWithColor.color}`);
       return categoryWithColor.color;
     }
   }
@@ -505,16 +472,12 @@ export function getTier2Color(
             if (parentIndex >= 0) {
               // Map 0-indexed parent to 1-indexed subcategory group
               subcategoryIndex = (parentIndex % 5) + 1;
-              console.log(`🎨 Tier2: Parent "${normalizedParent}" using project index ${parentIndex} -> group ${subcategoryIndex}`);
             }
           }
 
           // FALLBACK: Use name-based mapping if not found in project's category list
           if (!subcategoryIndex) {
             subcategoryIndex = tier1ToSubcategoryMap[normalizedParent];
-            if (subcategoryIndex) {
-              console.log(`🎨 Tier2: Parent "${normalizedParent}" using name-based mapping -> group ${subcategoryIndex}`);
-            }
           }
 
           // Final fallback to group 1
@@ -570,8 +533,6 @@ export function getTier2Color(
             const subtleOffsets = [3, 2, 4, 1, 5, 0, 6];
             const subtleIndex = subtleOffsets[tier2Index % subtleOffsets.length];
             const finalColor = variations[subtleIndex];
-            
-            console.log(`🎨 Tier2 CLOSE COLOR: "${categoryName}" (index ${tier2Index}) → variation ${subtleIndex} of ${baseColor} → ${finalColor}`);
             return finalColor;
           }
 

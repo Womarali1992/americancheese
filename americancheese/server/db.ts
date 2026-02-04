@@ -19,7 +19,8 @@ import {
   subtaskComments,
   sectionStates,
   sectionComments,
-  users
+  users,
+  projectMembers
 } from '../shared/schema';
 
 // Get database configuration from environment
@@ -66,7 +67,8 @@ if (dbConfig.password && dbConfig.password !== 'password') {
         subtaskComments,
         sectionStates,
         sectionComments,
-        users
+        users,
+        projectMembers
       }
     });
     
@@ -92,6 +94,7 @@ import { addSelectedTemplatesField } from './migrations/add-selected-templates.j
 import { addTaskTimeFields } from './migrations/add-task-time-fields.js';
 import { addCalendarScheduleFields } from './migrations/add-calendar-schedule-fields.js';
 import { addReferencedTaskIdsField } from './migrations/add-referenced-task-ids.js';
+import { addProjectMembersTable } from './migrations/add-project-members.js';
 
 // Export a function to initialize the database and create tables
 export async function initDatabase() {
@@ -285,6 +288,7 @@ export async function initDatabase() {
     await addTaskTimeFields(queryClient);
     await addCalendarScheduleFields(queryClient);
     await addReferencedTaskIdsField(queryClient);
+    await addProjectMembersTable(queryClient);
 
     console.log('Database initialization complete.');
   } catch (error) {

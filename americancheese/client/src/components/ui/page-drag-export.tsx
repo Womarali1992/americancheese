@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { GripVertical, Copy, CheckCircle, FileDown, ChevronDown } from 'lucide-react';
+import { GripVertical, Copy, CheckCircle, FileDown, ChevronDown, Download, FileCode, FileSpreadsheet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,6 +26,13 @@ export interface ExportSection {
   getContent: () => string;
 }
 
+interface ExportFileOption {
+  label: string;
+  format: string;
+  icon?: React.ReactNode;
+  onExport: () => void;
+}
+
 interface PageDragExportProps {
   children: React.ReactNode;
   /** Function that returns the full page content to export when dragged */
@@ -36,6 +43,8 @@ interface PageDragExportProps {
   sections?: ExportSection[];
   /** Optional class name for the wrapper */
   className?: string;
+  /** Optional file export options (e.g., XML, CSV) */
+  exportFileOptions?: ExportFileOption[];
 }
 
 /**
@@ -48,6 +57,7 @@ export function PageDragExport({
   exportTitle = 'Page Content',
   sections = [],
   className = '',
+  exportFileOptions = [],
 }: PageDragExportProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragSuccess, setDragSuccess] = useState(false);
@@ -309,6 +319,20 @@ export function PageDragExport({
                   <span className="text-xs text-purple-600 ml-auto">visible</span>
                 )}
                 <Copy className="h-3 w-3 ml-auto text-gray-400" />
+              </DropdownMenuItem>
+            ))}
+
+            {exportFileOptions.length > 0 && <DropdownMenuSeparator />}
+
+            {exportFileOptions.map((option, index) => (
+              <DropdownMenuItem
+                key={`export-${index}`}
+                onClick={option.onExport}
+                className="flex items-center gap-2 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-900"
+              >
+                {option.icon || <Download className="h-4 w-4" />}
+                <span className="font-medium">{option.label}</span>
+                <span className="text-xs text-emerald-600 ml-auto">{option.format}</span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

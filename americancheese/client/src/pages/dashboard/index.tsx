@@ -1933,15 +1933,20 @@ export default function DashboardPage() {
                   overflow: "hidden"
                 }}>
                   <GanttChartLabor
-                    tasks={tasks.map(task => ({
-                      id: task.id,
-                      name: task.title,
-                      startDate: new Date(task.startDate),
-                      endDate: new Date(task.endDate),
-                      progress: task.completionPercentage || 0,
-                      dependencies: [],
-                      status: task.status
-                    }))}
+                    tasks={tasks.map(task => {
+                      // Use calendar dates if available (actual schedule), otherwise use task dates (planned schedule)
+                      const effectiveStartDate = task.calendarStartDate || task.startDate;
+                      const effectiveEndDate = task.calendarEndDate || task.endDate;
+                      return {
+                        id: task.id,
+                        name: task.title,
+                        startDate: new Date(effectiveStartDate),
+                        endDate: new Date(effectiveEndDate),
+                        progress: task.completionPercentage || 0,
+                        dependencies: [],
+                        status: task.status
+                      };
+                    })}
                     viewPeriod={viewPeriod}
                   />
                 </div>

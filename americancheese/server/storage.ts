@@ -161,6 +161,20 @@ export interface IStorage {
   createSectionComment(comment: InsertSectionComment): Promise<SectionComment>;
   updateSectionComment(id: number, comment: Partial<InsertSectionComment>): Promise<SectionComment | undefined>;
   deleteSectionComment(id: number): Promise<boolean>;
+
+  // Project Member operations (for project sharing)
+  getProjectMembers?(projectId: number): Promise<any[]>;
+  getProjectMember?(projectId: number, userId: number): Promise<any>;
+  getProjectMemberById?(id: number): Promise<any>;
+  getProjectMemberByEmail?(projectId: number, email: string): Promise<any>;
+  inviteProjectMember?(projectId: number, email: string, role: string, invitedBy: number): Promise<any>;
+  acceptProjectInvitation?(memberId: number, userId: number): Promise<any>;
+  declineProjectInvitation?(memberId: number): Promise<boolean>;
+  updateProjectMemberRole?(memberId: number, role: string): Promise<any>;
+  removeProjectMember?(memberId: number): Promise<boolean>;
+  getUserInvitations?(userEmail: string): Promise<any[]>;
+  getUserByEmail?(email: string): Promise<any>;
+  checkProjectAccess?(userId: number, projectId: number): Promise<{ hasAccess: boolean; role: string | null }>;
 }
 
 export class MemStorage implements IStorage {

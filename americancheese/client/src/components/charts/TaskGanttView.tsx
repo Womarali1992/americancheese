@@ -57,22 +57,26 @@ export function TaskGanttView({
   const [, navigate] = useLocation();
   const { getTier1Color, getTier2Color } = useUnifiedColors(projectId);
 
-  // Calculate initial date based on earliest task
+  // Calculate initial date based on earliest task using effective dates
   const initialDate = useMemo(() => {
     const allDates: Date[] = [];
 
     tasks.forEach(task => {
-      if (task.startDate) {
+      // Use calendar dates if available, otherwise use task dates
+      const effectiveStartDate = task.calendarStartDate || task.startDate;
+      if (effectiveStartDate) {
         try {
-          allDates.push(parseISO(task.startDate));
+          allDates.push(parseISO(effectiveStartDate));
         } catch {}
       }
     });
 
     subtasks.forEach(subtask => {
-      if (subtask.startDate) {
+      // Use calendar dates if available, otherwise use subtask dates
+      const effectiveStartDate = subtask.calendarStartDate || subtask.startDate;
+      if (effectiveStartDate) {
         try {
-          allDates.push(parseISO(subtask.startDate));
+          allDates.push(parseISO(effectiveStartDate));
         } catch {}
       }
     });
@@ -97,24 +101,32 @@ export function TaskGanttView({
   }, [currentDate, viewPeriod]);
 
   // Convert tasks and subtasks to gantt items
+  // Uses effective dates: calendarStartDate/calendarEndDate when available (actual schedule),
+  // falls back to startDate/endDate (planned schedule) - synced with calendar views
   const ganttItems = useMemo(() => {
     const items: GanttItem[] = [];
 
     // Add tasks
     tasks.forEach(task => {
-      if (!task.startDate || !task.endDate) return;
+      // Use calendar dates if available (actual schedule), otherwise use task dates (planned schedule)
+      const effectiveStartDate = task.calendarStartDate || task.startDate;
+      const effectiveEndDate = task.calendarEndDate || task.endDate;
+      const effectiveStartTime = task.calendarStartTime || task.startTime;
+      const effectiveEndTime = task.calendarEndTime || task.endTime;
+
+      if (!effectiveStartDate || !effectiveEndDate) return;
 
       try {
-        const startDate = parseISO(task.startDate);
-        const endDate = parseISO(task.endDate);
+        const startDate = parseISO(effectiveStartDate);
+        const endDate = parseISO(effectiveEndDate);
 
         items.push({
           id: task.id,
           title: task.title,
           startDate,
           endDate,
-          startTime: task.startTime,
-          endTime: task.endTime,
+          startTime: effectiveStartTime,
+          endTime: effectiveEndTime,
           tier1Category: task.tier1Category,
           tier2Category: task.tier2Category,
           projectId: task.projectId,
@@ -127,7 +139,13 @@ export function TaskGanttView({
 
     // Add subtasks
     subtasks.forEach(subtask => {
-      if (!subtask.startDate || !subtask.endDate) return;
+      // Use calendar dates if available (actual schedule), otherwise use subtask dates (planned schedule)
+      const effectiveStartDate = subtask.calendarStartDate || subtask.startDate;
+      const effectiveEndDate = subtask.calendarEndDate || subtask.endDate;
+      const effectiveStartTime = subtask.calendarStartTime || subtask.startTime;
+      const effectiveEndTime = subtask.calendarEndTime || subtask.endTime;
+
+      if (!effectiveStartDate || !effectiveEndDate) return;
 
       const parentTask = taskMap.get(subtask.parentTaskId);
       const codeNumber = parentTask
@@ -135,16 +153,16 @@ export function TaskGanttView({
         : `-.${(subtask.sortOrder ?? 0) + 1}`;
 
       try {
-        const startDate = parseISO(subtask.startDate);
-        const endDate = parseISO(subtask.endDate);
+        const startDate = parseISO(effectiveStartDate);
+        const endDate = parseISO(effectiveEndDate);
 
         items.push({
           id: subtask.id + 1000000,
           title: `${codeNumber}: ${subtask.title}`,
           startDate,
           endDate,
-          startTime: subtask.startTime,
-          endTime: subtask.endTime,
+          startTime: effectiveStartTime,
+          endTime: effectiveEndTime,
           tier1Category: parentTask?.tier1Category,
           tier2Category: parentTask?.tier2Category,
           projectId: parentTask?.projectId || 0,

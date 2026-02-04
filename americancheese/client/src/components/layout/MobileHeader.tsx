@@ -104,7 +104,7 @@ export function MobileHeader({ title, backButton = false }: MobileHeaderProps) {
             <Logo className="h-6 w-6 text-primary mr-2 flex-shrink-0" />
             <div className="overflow-hidden min-w-0">
               <h1 className="text-base font-semibold tracking-tight text-gray-800 truncate">SiteSetups</h1>
-              <p className="text-xs text-gray-500 -mt-1 truncate">Construction Management</p>
+              <p className="text-xs text-gray-500 -mt-1 truncate">Automated Development</p>
             </div>
           </div>
         ) : (

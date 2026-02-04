@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <rect width="32" height="32" rx="6" fill="#6366f1"/>
+  <!-- Code brackets with automation gear -->
+  <g transform="translate(4, 4)">
+    <!-- Left bracket -->
+    <path d="M8 6L4 12L8 18" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Right bracket -->
+    <path d="M16 6L20 12L16 18" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Center automation symbol (lightning bolt) -->
+    <path d="M13 8L10 12.5H14L11 17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

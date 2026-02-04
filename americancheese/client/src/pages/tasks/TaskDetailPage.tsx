@@ -100,6 +100,7 @@ import { ScheduleTaskDialog } from '@/components/calendar/ScheduleTaskDialog';
 import { ContextEditor } from '@/components/context';
 import { getCalendarSchedulePrefix } from '@/components/task/TaskTimeDisplay';
 import { ContextData, createEmptyContext } from '../../../../shared/context-types';
+import { CreateContactDialog } from '@/pages/contacts/CreateContactDialog';
 import {
   Collapsible,
   CollapsibleContent,
@@ -122,6 +123,7 @@ export default function TaskDetailPage() {
   const [isMaterialsDialogOpen, setIsMaterialsDialogOpen] = useState(false);
   const [isLaborDialogOpen, setIsLaborDialogOpen] = useState(false);
   const [isAttachmentsDialogOpen, setIsAttachmentsDialogOpen] = useState(false);
+  const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
@@ -535,6 +537,40 @@ export default function TaskDetailPage() {
     setIsLaborDialogOpen(true);
   };
 
+  // Handle contact created - link it to the task
+  const handleContactCreated = async (contactId: number) => {
+    if (!task) return;
+
+    const currentContactIds = task.contactIds || [];
+    const currentNumericIds = currentContactIds.map(id =>
+      typeof id === 'string' ? parseInt(id) : id
+    );
+
+    // Add the new contact ID if not already present
+    if (!currentNumericIds.includes(contactId)) {
+      const updatedContactIds = [...currentNumericIds, contactId];
+
+      try {
+        const response = await fetch(`/api/tasks/${numericTaskId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contactIds: updatedContactIds })
+        });
+
+        if (response.ok) {
+          toast({
+            title: "Contact Added",
+            description: "Contact has been linked to this task.",
+          });
+          queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}`] });
+          queryClient.invalidateQueries({ queryKey: ['/api/contacts'] });
+        }
+      } catch (error) {
+        console.error("Error linking contact to task:", error);
+      }
+    }
+  };
+
   // Handle adding materials through section materials dialog
   const handleAddSectionMaterials = (materialIds: number[]) => {
     if (!task) return;
@@ -696,6 +732,20 @@ export default function TaskDetailPage() {
         getExportContent={getExportContent}
         exportTitle={task.title}
         sections={exportSections}
+        exportFileOptions={[
+          {
+            label: 'Export as XML',
+            format: 'full data',
+            icon: <FileCode className="h-4 w-4" />,
+            onExport: handleExportTaskXML,
+          },
+          {
+            label: 'Export as CSV',
+            format: 'spreadsheet',
+            icon: <FileSpreadsheet className="h-4 w-4" />,
+            onExport: handleExportTaskCSV,
+          },
+        ]}
       >
         <div className="w-full min-w-0 space-y-8 sm:space-y-10 overflow-x-hidden pb-10">
 
@@ -731,7 +781,13 @@ export default function TaskDetailPage() {
             </div>
 
             {/* Title & Main Actions */}
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+            <div
+              className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 py-4"
+              style={{
+                borderTop: primaryColor ? `8px solid ${primaryColor}CC` : 'none',
+                borderBottom: primaryColor ? `8px solid ${primaryColor}CC` : 'none'
+              }}
+            >
               <div className="flex-1 space-y-4">
                 <div className="space-y-2">
                   <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
@@ -764,6 +820,28 @@ export default function TaskDetailPage() {
                         <span className="text-slate-400 font-normal">of {formatCurrency(task.estimatedCost || 0)}</span>
                       </div>
                     )}
+
+                    {/* Quick Add Buttons */}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2.5 text-xs border-orange-300 text-orange-700 hover:bg-orange-50 hover:border-orange-400"
+                        onClick={() => setIsMaterialsDialogOpen(true)}
+                      >
+                        <Package className="h-3.5 w-3.5 mr-1" />
+                        Add Material
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2.5 text-xs border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400"
+                        onClick={() => setIsContactDialogOpen(true)}
+                      >
+                        <Users className="h-3.5 w-3.5 mr-1" />
+                        Add Contact
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
@@ -804,35 +882,13 @@ export default function TaskDetailPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-row items-center gap-3 w-full md:w-auto">
-                <div className="w-full md:w-48">
-                  <Select
-                    value={task.status || 'not_started'}
-                    onValueChange={handleTaskStatusChange}
-                    disabled={isUpdatingStatus}
-                  >
-                    <SelectTrigger className="w-full h-10 bg-white border-slate-200 text-slate-700 font-medium shadow-sm hover:border-slate-300 focus:ring-slate-900 focus:ring-offset-0">
-                      <SelectValue placeholder="Change Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statusOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value} className="cursor-pointer">
-                          <div className="flex items-center gap-2">
-                            <option.icon className={`h-4 w-4 ${option.color}`} />
-                            <span className={option.value === 'completed' ? 'font-medium text-emerald-600' : ''}>{option.label}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
+              <div className="flex flex-row items-center gap-2 md:gap-3 w-full md:w-auto">
                 {/* Calendar Schedule Button */}
                 <Button
                   variant="outline"
                   size="default"
                   className={cn(
-                    "h-10 px-4 font-medium shadow-sm",
+                    "h-10 px-3 md:px-4 font-medium shadow-sm text-sm",
                     task.calendarActive ?? false
                       ? "border-cyan-200 text-cyan-700 hover:bg-cyan-50 hover:text-cyan-900 hover:border-cyan-300"
                       : "border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300"
@@ -841,46 +897,46 @@ export default function TaskDetailPage() {
                   title={(task.calendarActive ?? false) ? "Edit calendar schedule" : "Schedule on calendar"}
                 >
                   <Calendar className={cn(
-                    "mr-2 h-4 w-4",
+                    "h-4 w-4 md:mr-2",
                     (task.calendarActive ?? false) ? "text-cyan-600" : "text-slate-400"
                   )} />
-                  {(task.calendarActive ?? false) ? "On Calendar" : "Add to Calendar"}
+                  <span className="hidden md:inline">{(task.calendarActive ?? false) ? "On Calendar" : "Add to Calendar"}</span>
                 </Button>
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="outline"
-                      className="h-10 px-4 border-emerald-200 text-emerald-700 font-medium hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-300 shadow-sm"
-                      title="Export task with all data (subtasks, comments, materials, labor, etc.)"
+                      className="h-10 px-3 md:px-4 border-slate-200 text-slate-700 font-medium hover:bg-slate-50 hover:text-slate-900 shadow-sm text-sm"
                     >
-                      <Download className="mr-2 h-4 w-4" />
-                      Export
-                      <ChevronDown className="ml-2 h-4 w-4" />
+                      <Edit className="h-4 w-4 md:mr-2" />
+                      <span className="hidden md:inline">Edit</span>
+                      <ChevronDown className="ml-1 md:ml-2 h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={handleExportTaskXML} className="cursor-pointer">
-                      <FileCode className="mr-2 h-4 w-4 text-blue-600" />
-                      Export as XML
-                      <span className="ml-2 text-xs text-slate-500">(full data)</span>
+                    <DropdownMenuItem onClick={handleEditTask} className="cursor-pointer">
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit Task
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleExportTaskCSV} className="cursor-pointer">
-                      <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />
-                      Export as CSV
-                      <span className="ml-2 text-xs text-slate-500">(spreadsheet)</span>
-                    </DropdownMenuItem>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</div>
+                    {statusOptions.map(option => (
+                      <DropdownMenuItem
+                        key={option.value}
+                        onClick={() => handleTaskStatusChange(option.value)}
+                        className={cn(
+                          "cursor-pointer",
+                          task.status === option.value && "bg-slate-100"
+                        )}
+                        disabled={isUpdatingStatus}
+                      >
+                        <option.icon className={`mr-2 h-4 w-4 ${option.color}`} />
+                        <span className={option.value === 'completed' ? 'font-medium text-emerald-600' : ''}>{option.label}</span>
+                        {task.status === option.value && <span className="ml-auto text-xs text-slate-400">Current</span>}
+                      </DropdownMenuItem>
+                    ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-
-                <Button
-                  variant="outline"
-                  onClick={handleEditTask}
-                  className="h-10 px-4 border-slate-200 text-slate-700 font-medium hover:bg-slate-50 hover:text-slate-900 shadow-sm"
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </Button>
               </div>
             </div>
 
@@ -1036,6 +1092,14 @@ export default function TaskDetailPage() {
         }}
         projectId={task?.projectId}
         preselectedTaskId={numericTaskId}
+      />
+
+      {/* Create Contact Dialog */}
+      <CreateContactDialog
+        open={isContactDialogOpen}
+        onOpenChange={setIsContactDialogOpen}
+        projectId={task?.projectId}
+        onContactCreated={handleContactCreated}
       />
 
       {/* Attachments Panel Dialog */}

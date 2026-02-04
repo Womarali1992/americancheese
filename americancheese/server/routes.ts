@@ -1,13 +1,13 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { 
-  insertProjectSchema, 
-  insertTaskSchema, 
-  insertContactSchema, 
-  insertExpenseSchema, 
-  insertMaterialSchema, 
-  insertLaborSchema, 
+import {
+  insertProjectSchema,
+  insertTaskSchema,
+  insertContactSchema,
+  insertExpenseSchema,
+  insertMaterialSchema,
+  insertLaborSchema,
   insertCategoryTemplateSchema,
   insertProjectCategorySchema,
   insertTaskTemplateSchema,
@@ -21,11 +21,15 @@ import {
   insertTaskAttachmentSchema,
   insertInvoiceSchema,
   insertInvoiceLineItemSchema,
-  projects, 
-  tasks, 
+  inviteProjectMemberSchema,
+  updateProjectMemberRoleSchema,
+  projects,
+  tasks,
   labor,
+  users,
   categoryTemplates,
   projectCategories,
+  projectMembers,
   taskTemplates,
   subtasks,
   checklistItems,
@@ -421,6 +425,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Project not found" });
       }
 
+      // Check if user has access to this project
+      const userId = req.session?.userId;
+      if (userId) {
+        const access = await storage.checkProjectAccess?.(userId, id);
+        if (!access?.hasAccess) {
+          return res.status(403).json({ message: "You don't have access to this project" });
+        }
+        // Add the user's role to the response
+        (project as any).memberRole = access.role;
+      }
+
       res.json(project);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch project" });
@@ -474,6 +489,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid project ID" });
       }
 
+      // Check if user has edit access
+      const userId = req.session?.userId;
+      if (userId) {
+        const access = await storage.checkProjectAccess?.(userId, id);
+        if (!access?.hasAccess || !['owner', 'admin', 'editor'].includes(access.role || '')) {
+          return res.status(403).json({ message: "You don't have permission to edit this project" });
+        }
+      }
+
       const result = insertProjectSchema.partial().safeParse(req.body);
       if (!result.success) {
         const validationError = fromZodError(result.error);
@@ -497,6 +521,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      // Check if user has edit access
+      const userId = req.session?.userId;
+      if (userId) {
+        const access = await storage.checkProjectAccess?.(userId, id);
+        if (!access?.hasAccess || !['owner', 'admin', 'editor'].includes(access.role || '')) {
+          return res.status(403).json({ message: "You don't have permission to edit this project" });
+        }
       }
 
       const result = insertProjectSchema.partial().safeParse(req.body);
@@ -523,6 +556,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid project ID" });
       }
 
+      // Check if user is the owner (only owners can delete projects)
+      const userId = req.session?.userId;
+      if (userId) {
+        const access = await storage.checkProjectAccess?.(userId, id);
+        if (!access?.hasAccess || access.role !== 'owner') {
+          return res.status(403).json({ message: "Only the project owner can delete this project" });
+        }
+      }
+
       const success = await storage.deleteProject(id);
       if (!success) {
         return res.status(404).json({ message: "Project not found" });
@@ -531,6 +573,318 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).end();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete project" });
+    }
+  });
+
+  // ==================== PROJECT SHARING / MEMBERS ====================
+
+  // Get project members
+  app.get("/api/projects/:id/members", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      const userId = req.session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Check if user has access to this project
+      const access = await storage.checkProjectAccess?.(userId, projectId);
+      if (!access?.hasAccess) {
+        return res.status(403).json({ message: "You don't have access to this project" });
+      }
+
+      const members = await storage.getProjectMembers?.(projectId) || [];
+
+      // Also include the owner as a "member" for display purposes
+      const project = await storage.getProject(projectId);
+      if (project?.createdBy) {
+        const owner = await storage.getUserByEmail?.(req.session?.userEmail || '');
+        // Get owner info from the database
+        const ownerUser = await db.select({
+          id: users.id,
+          email: users.email,
+          name: users.name
+        }).from(users).where(eq(users.id, project.createdBy));
+
+        if (ownerUser[0]) {
+          // Add owner to members list if not already there
+          const ownerMember = {
+            id: 0, // Special ID for owner
+            projectId,
+            userId: project.createdBy,
+            role: 'owner',
+            status: 'accepted',
+            invitedEmail: ownerUser[0].email,
+            invitedAt: null,
+            acceptedAt: null,
+            user: ownerUser[0]
+          };
+
+          // Check if owner is not already in members list
+          const ownerInMembers = members.some(m => m.userId === project.createdBy);
+          if (!ownerInMembers) {
+            members.unshift(ownerMember);
+          }
+        }
+      }
+
+      res.json(members);
+    } catch (error) {
+      console.error("Error fetching project members:", error);
+      res.status(500).json({ message: "Failed to fetch project members" });
+    }
+  });
+
+  // Invite a user to a project
+  app.post("/api/projects/:id/members/invite", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      const userId = req.session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Check if user has permission to invite (owner or admin)
+      const access = await storage.checkProjectAccess?.(userId, projectId);
+      if (!access?.hasAccess || !['owner', 'admin'].includes(access.role || '')) {
+        return res.status(403).json({ message: "You don't have permission to invite members" });
+      }
+
+      // Validate input
+      const result = inviteProjectMemberSchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const { email, role } = result.data;
+
+      // Admins can only invite editors/viewers, not other admins
+      if (access.role === 'admin' && role === 'admin') {
+        return res.status(403).json({ message: "Only project owners can invite admins" });
+      }
+
+      // Check if inviting self
+      if (email.toLowerCase() === req.session?.userEmail?.toLowerCase()) {
+        return res.status(400).json({ message: "You cannot invite yourself" });
+      }
+
+      // Check if user is already the owner
+      const project = await storage.getProject(projectId);
+      const ownerUser = project?.createdBy ? await db.select({ email: users.email }).from(users).where(eq(users.id, project.createdBy)) : [];
+      if (ownerUser[0]?.email.toLowerCase() === email.toLowerCase()) {
+        return res.status(400).json({ message: "This user is already the owner of this project" });
+      }
+
+      const member = await storage.inviteProjectMember?.(projectId, email, role, userId);
+      res.status(201).json(member);
+    } catch (error: any) {
+      console.error("Error inviting project member:", error);
+      if (error.message?.includes('already a member')) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to invite member" });
+    }
+  });
+
+  // Update member role
+  app.put("/api/projects/:id/members/:memberId", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const memberId = parseInt(req.params.memberId);
+
+      if (isNaN(projectId) || isNaN(memberId)) {
+        return res.status(400).json({ message: "Invalid ID" });
+      }
+
+      const userId = req.session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Check if user has permission (owner or admin)
+      const access = await storage.checkProjectAccess?.(userId, projectId);
+      if (!access?.hasAccess || !['owner', 'admin'].includes(access.role || '')) {
+        return res.status(403).json({ message: "You don't have permission to update members" });
+      }
+
+      // Validate input
+      const result = updateProjectMemberRoleSchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+
+      const { role } = result.data;
+
+      // Get the member to check their current role
+      const member = await storage.getProjectMemberById?.(memberId);
+      if (!member || member.projectId !== projectId) {
+        return res.status(404).json({ message: "Member not found" });
+      }
+
+      // Admins can only change viewers/editors, not other admins
+      if (access.role === 'admin') {
+        if (member.role === 'admin' || role === 'admin') {
+          return res.status(403).json({ message: "Only project owners can manage admin roles" });
+        }
+      }
+
+      const updated = await storage.updateProjectMemberRole?.(memberId, role);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating project member:", error);
+      res.status(500).json({ message: "Failed to update member" });
+    }
+  });
+
+  // Remove member from project
+  app.delete("/api/projects/:id/members/:memberId", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const memberId = parseInt(req.params.memberId);
+
+      if (isNaN(projectId) || isNaN(memberId)) {
+        return res.status(400).json({ message: "Invalid ID" });
+      }
+
+      const userId = req.session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Check if user has permission (owner or admin)
+      const access = await storage.checkProjectAccess?.(userId, projectId);
+      if (!access?.hasAccess || !['owner', 'admin'].includes(access.role || '')) {
+        return res.status(403).json({ message: "You don't have permission to remove members" });
+      }
+
+      // Get the member to check their role
+      const member = await storage.getProjectMemberById?.(memberId);
+      if (!member || member.projectId !== projectId) {
+        return res.status(404).json({ message: "Member not found" });
+      }
+
+      // Admins cannot remove other admins
+      if (access.role === 'admin' && member.role === 'admin') {
+        return res.status(403).json({ message: "Only project owners can remove admins" });
+      }
+
+      // Users can also remove themselves (leave the project)
+      if (member.userId === userId && access.role !== 'owner') {
+        // Allow self-removal
+      }
+
+      const success = await storage.removeProjectMember?.(memberId);
+      if (success) {
+        res.status(204).end();
+      } else {
+        res.status(500).json({ message: "Failed to remove member" });
+      }
+    } catch (error) {
+      console.error("Error removing project member:", error);
+      res.status(500).json({ message: "Failed to remove member" });
+    }
+  });
+
+  // Get user's pending invitations
+  app.get("/api/invitations", async (req: Request, res: Response) => {
+    try {
+      const userEmail = req.session?.userEmail;
+      if (!userEmail) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const invitations = await storage.getUserInvitations?.(userEmail) || [];
+      res.json(invitations);
+    } catch (error) {
+      console.error("Error fetching invitations:", error);
+      res.status(500).json({ message: "Failed to fetch invitations" });
+    }
+  });
+
+  // Accept invitation
+  app.post("/api/invitations/:id/accept", async (req: Request, res: Response) => {
+    try {
+      const invitationId = parseInt(req.params.id);
+      if (isNaN(invitationId)) {
+        return res.status(400).json({ message: "Invalid invitation ID" });
+      }
+
+      const userId = req.session?.userId;
+      const userEmail = req.session?.userEmail;
+      if (!userId || !userEmail) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Get the invitation
+      const invitation = await storage.getProjectMemberById?.(invitationId);
+      if (!invitation) {
+        return res.status(404).json({ message: "Invitation not found" });
+      }
+
+      // Verify this invitation is for the current user
+      if (invitation.invitedEmail.toLowerCase() !== userEmail.toLowerCase()) {
+        return res.status(403).json({ message: "This invitation is not for you" });
+      }
+
+      if (invitation.status !== 'pending') {
+        return res.status(400).json({ message: "This invitation has already been processed" });
+      }
+
+      const updated = await storage.acceptProjectInvitation?.(invitationId, userId);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error accepting invitation:", error);
+      res.status(500).json({ message: "Failed to accept invitation" });
+    }
+  });
+
+  // Decline invitation
+  app.post("/api/invitations/:id/decline", async (req: Request, res: Response) => {
+    try {
+      const invitationId = parseInt(req.params.id);
+      if (isNaN(invitationId)) {
+        return res.status(400).json({ message: "Invalid invitation ID" });
+      }
+
+      const userEmail = req.session?.userEmail;
+      if (!userEmail) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Get the invitation
+      const invitation = await storage.getProjectMemberById?.(invitationId);
+      if (!invitation) {
+        return res.status(404).json({ message: "Invitation not found" });
+      }
+
+      // Verify this invitation is for the current user
+      if (invitation.invitedEmail.toLowerCase() !== userEmail.toLowerCase()) {
+        return res.status(403).json({ message: "This invitation is not for you" });
+      }
+
+      if (invitation.status !== 'pending') {
+        return res.status(400).json({ message: "This invitation has already been processed" });
+      }
+
+      const success = await storage.declineProjectInvitation?.(invitationId);
+      if (success) {
+        res.json({ message: "Invitation declined" });
+      } else {
+        res.status(500).json({ message: "Failed to decline invitation" });
+      }
+    } catch (error) {
+      console.error("Error declining invitation:", error);
+      res.status(500).json({ message: "Failed to decline invitation" });
     }
   });
 

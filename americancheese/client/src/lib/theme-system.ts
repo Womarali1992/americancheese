@@ -138,10 +138,8 @@ export function getGenericColor(category: string | number, projectId?: number, c
   if (colorTheme) {
     const normalizedKey = colorTheme.toLowerCase().replace(/\s+/g, '-');
     theme = COLOR_THEMES[normalizedKey] || getActiveColorTheme();
-    console.log(`🎨 getGenericColor: "${category}" with colorTheme="${colorTheme}" → key="${normalizedKey}" → found=${!!COLOR_THEMES[normalizedKey]}`);
   } else {
     theme = projectId ? getProjectTheme(projectId) : getActiveColorTheme();
-    console.log(`🎨 getGenericColor: "${category}" NO colorTheme, using projectId=${projectId}`);
   }
 
   // Build a distinct color palette from the 5 main tier1 subcategories

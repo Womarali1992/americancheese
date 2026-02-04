@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40" fill="none">
+  <!-- Icon -->
+  <g transform="translate(0, 4)">
+    <path d="M3 9L12 4.5L21 9L12 13.5L3 9Z" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="#6366f1" fill-opacity="0.1"/>
+    <path d="M3 14L12 18.5L21 14" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- Text -->
+  <text x="28" y="24" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#1f2937">SiteSetups</text>
+  <text x="28" y="36" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#6b7280">Construction Management Platform</text>
+</svg>

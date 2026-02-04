@@ -4,12 +4,14 @@ import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SimpleStatusBadge } from "@/components/ui/simple-status-badge";
 import { SimpleProgressBar } from "@/components/ui/simple-progress-bar";
 import { CreateProjectDialog } from "./CreateProjectDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
+import { ShareProjectDialog } from "@/components/project/ShareProjectDialog";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -24,7 +26,8 @@ import {
   Trash2,
   Eye,
   Download,
-  Upload
+  Upload,
+  Share2
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -49,6 +52,8 @@ interface Project {
   budget?: number;
   startDate: string;
   endDate: string;
+  memberRole?: string;
+  createdBy?: number;
 }
 
 interface Task {
@@ -60,6 +65,7 @@ interface Task {
 export default function SimpleProjectsPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -322,8 +328,15 @@ export default function SimpleProjectsPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <CardTitle className="text-lg truncate">{project.name}</CardTitle>
-                        <div className={`inline-block px-2 py-1 text-xs rounded-full border mt-2 ${getStatusColor(project.status)}`}>
-                          {project.status.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                        <div className="flex items-center gap-2 mt-2">
+                          <div className={`inline-block px-2 py-1 text-xs rounded-full border ${getStatusColor(project.status)}`}>
+                            {project.status.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                          </div>
+                          {project.memberRole && project.memberRole !== 'owner' && (
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {project.memberRole === 'viewer' ? 'View Only' : 'Shared'}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       <DropdownMenu>
@@ -344,6 +357,13 @@ export default function SimpleProjectsPage() {
                           <DropdownMenuItem onClick={() => handleExportProject(project.id, project.name)}>
                             <Download className="w-4 h-4 mr-2" />
                             Export
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedProject(project);
+                            setShareDialogOpen(true);
+                          }}>
+                            <Share2 className="w-4 h-4 mr-2" />
+                            Share
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleDeleteProject(project.id)}
@@ -417,6 +437,18 @@ export default function SimpleProjectsPage() {
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
           project={selectedProject}
+        />
+      )}
+
+      {/* Share Project Dialog */}
+      {selectedProject && (
+        <ShareProjectDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          projectId={selectedProject.id}
+          projectName={selectedProject.name}
+          isOwner={selectedProject.memberRole === 'owner' || !selectedProject.memberRole}
+          userRole={selectedProject.memberRole || null}
         />
       )}
 

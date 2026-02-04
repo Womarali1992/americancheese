@@ -951,15 +951,6 @@ export function applyThemeToCSS(theme: ColorTheme): void {
   document.documentElement.style.setProperty('--tier1-subcategory4', theme.tier1.subcategory4);
   document.documentElement.style.setProperty('--tier1-subcategory5', theme.tier1.subcategory5);
 
-  // Log that we've applied the theme to CSS variables
-  console.log("Applied theme colors to CSS variables:", {
-    subcategory1: theme.tier1.subcategory1,
-    subcategory2: theme.tier1.subcategory2,
-    subcategory3: theme.tier1.subcategory3,
-    subcategory4: theme.tier1.subcategory4,
-    subcategory5: theme.tier1.subcategory5
-  });
-
   // Store theme in global state for immediate access
   if (typeof window !== 'undefined') {
     (window as any).currentTheme = theme;
@@ -1011,10 +1002,9 @@ export function getActiveColorTheme(): ColorTheme {
           }
         }
         
-        console.log(`Theme name "${themeName}" not found in available themes:`, Object.keys(COLOR_THEMES));
       }
     } catch (error) {
-      console.error("Error loading theme from localStorage:", error);
+      // Theme loading failed, will use default
     }
   }
   
@@ -1082,15 +1072,12 @@ export function getThemeTier1Color(category: string, theme?: ColorTheme): string
 
   const mappedKey = categoryMap[normalizedCategory];
   if (mappedKey && mappedKey in activeTheme.tier1) {
-    const color = activeTheme.tier1[mappedKey];
-    console.log(`🎨 getThemeTier1Color: "${category}" → normalized: "${normalizedCategory}" → key: "${mappedKey}" → color: ${color} (theme: ${activeTheme.name})`);
-    return color;
+    return activeTheme.tier1[mappedKey];
   }
 
   // No mapping found? Return the theme's default color.
   // This allows the unified color system to use its index-based assignment
   // which is much more stable than name-based hashing.
-  console.log(`🎨 getThemeTier1Color: "${category}" → NO MATCH → returning default: ${activeTheme.tier1.default}`);
   return activeTheme.tier1.default;
 }
 
@@ -1188,8 +1175,6 @@ export function getThemeTier2Color(category: string, theme?: ColorTheme, parentC
 
     const tierKey = `tier2_${colorIndex}` as keyof typeof activeTheme.tier2;
 
-    console.log(`🎨 Tier2 color assignment: "${category}" (parent: "${parentCategory}") → tier2_${colorIndex} (hash: ${hash}, range: ${startIndex}-${endIndex})`);
-
     if (tierKey in activeTheme.tier2) {
       return activeTheme.tier2[tierKey];
     }
@@ -1216,64 +1201,7 @@ export function getThemeTier2Color(category: string, theme?: ColorTheme, parentC
   }
 
   const colorIndex = Math.abs(hash) % tier2Colors.length;
-  const fallbackColor = tier2Colors[colorIndex];
-
-  console.log(`🎨 getThemeTier2Color: "${category}" → HASH FALLBACK → index: ${colorIndex} → color: ${fallbackColor}`);
-  return fallbackColor;
-}
-
-/**
- * Get dynamic color based on entity ID (like project ID, contact ID, etc.)
- * This ensures consistent coloring across the entire application
- * @param entityId The ID of the entity (project, contact, etc.)
- * @param theme Optional theme to use (defaults to active theme)
- * @returns Object with hex color, lighter background color, and text color
- */
-export function getDynamicEntityColor(entityId: number, theme?: ColorTheme): {
-  primaryColor: string;
-  backgroundColor: string;
-  textColor: string;
-  borderColor: string;
-} {
-  const activeTheme = theme || getActiveColorTheme();
-  
-  // Use the same logic as project cards - cycle through tier1 categories
-  const tier1Categories = ['subcategory1', 'subcategory2', 'subcategory3', 'subcategory4', 'subcategory5'];
-  const categoryIndex = (entityId - 1) % tier1Categories.length;
-  const category = tier1Categories[categoryIndex];
-  
-  // Get the primary color from the active theme
-  const primaryColor = activeTheme.tier1[category as keyof typeof activeTheme.tier1];
-  
-  // Helper function to convert hex to RGB
-  const hexToRgb = (hex: string) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : { r: 59, g: 130, b: 246 }; // fallback to blue
-  };
-  
-  // Helper function to create lighter background color
-  const createLightBackground = (hex: string, opacity: number = 0.1) => {
-    const rgb = hexToRgb(hex);
-    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`;
-  };
-  
-  // Helper function to determine text color (light or dark) based on background brightness
-  const getTextColor = (hex: string) => {
-    const rgb = hexToRgb(hex);
-    const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
-    return brightness > 128 ? '#1f2937' : '#ffffff'; // dark gray or white
-  };
-  
-  return {
-    primaryColor,
-    backgroundColor: createLightBackground(primaryColor, 0.1),
-    textColor: getTextColor(primaryColor),
-    borderColor: primaryColor
-  };
+  return tier2Colors[colorIndex];
 }
 
 /**

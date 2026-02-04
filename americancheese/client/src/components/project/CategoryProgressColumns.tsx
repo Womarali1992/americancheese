@@ -337,7 +337,7 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
         }
 
         return (
-          <div key={tier1} className="rounded-lg border shadow-sm overflow-hidden" style={{ backgroundColor: lightenColor(tier1Color, 0.92) }}>
+          <div key={tier1} className="rounded-lg border shadow-sm overflow-hidden" style={{ backgroundColor: lightenColor(tier1Color, 0.92) }} onClick={(e) => e.stopPropagation()}>
             {/* Tier 1 Header */}
             <div
               className="p-4 border-b"
@@ -353,7 +353,8 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                 ></div>
                 <h3
                   className="text-base font-semibold cursor-pointer transition-colors text-black hover:text-gray-700"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     const projectParam = projectId ? `projectId=${projectId}` : '';
                     const tier1Param = `tier1=${encodeURIComponent(tier1)}`;
                     const params = [projectParam, tier1Param].filter(Boolean).join('&');
@@ -370,14 +371,15 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                 <span className="text-sm font-medium text-black">{progress}%</span>
               </div>
               
-              <ProgressBar 
-                value={progress} 
+              <ProgressBar
+                value={progress}
                 color={tier1Color}
                 variant="meter"
                 showLabel={false}
                 className="h-2"
                 navigable={true}
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   const projectParam = projectId ? `projectId=${projectId}` : '';
                   const tier1Param = `tier1=${encodeURIComponent(tier1)}`;
                   const params = [projectParam, tier1Param].filter(Boolean).join('&');
@@ -462,14 +464,15 @@ export const CategoryProgressColumns: React.FC<CategoryProgressColumnsProps> = (
                             </div>
                           </div>
                           
-                          <ProgressBar 
-                            value={tier2Progress.progress} 
+                          <ProgressBar
+                            value={tier2Progress.progress}
                             color={tier2Color}
                             variant="meter"
                             showLabel={false}
                             className="h-1.5 mb-1"
                             navigable={true}
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               const projectParam = projectId ? `projectId=${projectId}` : '';
                               const tier1Param = `tier1=${encodeURIComponent(tier1)}`;
                               const tier2Param = `tier2=${encodeURIComponent(tier2)}`;

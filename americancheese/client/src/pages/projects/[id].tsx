@@ -32,10 +32,12 @@ import {
   Check,
   FileCode2,
   ChevronDown,
-  Download
+  Download,
+  Share2
 } from "lucide-react";
 import { CreateTaskDialog } from "@/pages/tasks/CreateTaskDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
+import { ShareProjectDialog } from "@/components/project/ShareProjectDialog";
 import { ProjectDescriptionEditor } from "@/components/project/ProjectDescriptionEditor";
 import { useProjectTheme } from "@/hooks/useProjectTheme";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -64,6 +66,7 @@ export default function ProjectDetailPage() {
   const projectId = Number(params.id);
   const [showTaskDialog, setShowTaskDialog] = useState(false);
   const [showEditProjectDialog, setShowEditProjectDialog] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
   const [showThemeDialog, setShowThemeDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [preselectedCategory, setPreselectedCategory] = useState<{ tier1Category: string, tier2Category: string } | null>(null);
@@ -325,6 +328,11 @@ export default function ProjectDetailPage() {
               <h1 className="text-3xl font-bold">{project.name}</h1>
               <div className="flex items-center gap-2 mt-1">
                 <StatusBadge status={project.status} />
+                {project.memberRole && project.memberRole !== 'owner' && (
+                  <Badge variant="outline" className="text-xs capitalize">
+                    {project.memberRole === 'viewer' ? 'View Only' : `Shared (${project.memberRole})`}
+                  </Badge>
+                )}
                 <span className="text-sm text-muted-foreground">{formatDate(project.startDate)} - {formatDate(project.endDate)}</span>
               </div>
             </div>
@@ -350,6 +358,13 @@ export default function ProjectDetailPage() {
             >
               <Download className="h-4 w-4 mr-2" />
               Export
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowShareDialog(true)}
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
             </Button>
             <Button
               variant="outline"
@@ -558,6 +573,16 @@ export default function ProjectDetailPage() {
             // Redirect to projects page after deletion
             setLocation('/projects');
           }}
+        />
+
+        {/* Share Project Dialog */}
+        <ShareProjectDialog
+          open={showShareDialog}
+          onOpenChange={setShowShareDialog}
+          projectId={projectId}
+          projectName={project?.name || ""}
+          isOwner={project?.memberRole === "owner" || !project?.memberRole}
+          userRole={project?.memberRole || null}
         />
 
         {/* Theme Dialog */}

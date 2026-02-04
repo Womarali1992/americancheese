@@ -6,6 +6,7 @@ import { Logo } from "./Logo";
 import { getDynamicModuleColor } from "@/lib/color-themes";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { InvitationsBadge } from "./InvitationsBadge";
 import { LogOut, User } from "lucide-react";
 import {
   DropdownMenu,
@@ -41,7 +42,7 @@ export function TopNav() {
           <Logo className="h-8 w-8 text-primary mr-3" />
           <div className="hidden sm:block">
             <h1 className="text-xl font-bold text-gray-800 tracking-tight">SiteSetups</h1>
-            <p className="text-xs text-gray-500 hidden md:block">Construction Management Platform</p>
+            <p className="text-xs text-gray-500 hidden md:block">Automated Development Platform</p>
           </div>
         </div>
 
@@ -128,6 +129,9 @@ export function TopNav() {
               );
             })}
           </div>
+
+          {/* Invitations badge */}
+          <InvitationsBadge />
 
           {/* User profile with dropdown */}
           <div className="ml-4 pl-4 border-l border-gray-200">

@@ -153,6 +153,41 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
   id: true,
 });
 
+// Project Members Schema - for sharing projects between users
+export const projectMembers = pgTable("project_members", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }), // null for pending invites to non-existing users
+  role: text("role").notNull().default("viewer"), // admin, editor, viewer
+  invitedBy: integer("invited_by").references(() => users.id),
+  invitedEmail: text("invited_email").notNull(), // Email used for invitation
+  status: text("status").notNull().default("pending"), // pending, accepted, declined
+  invitedAt: timestamp("invited_at").notNull().defaultNow(),
+  acceptedAt: timestamp("accepted_at"),
+});
+
+export const insertProjectMemberSchema = createInsertSchema(projectMembers).omit({
+  id: true,
+  invitedAt: true,
+  acceptedAt: true,
+});
+
+// Schema for inviting a member to a project
+export const inviteProjectMemberSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  role: z.enum(["admin", "editor", "viewer"]).default("viewer"),
+});
+
+// Schema for updating member role
+export const updateProjectMemberRoleSchema = z.object({
+  role: z.enum(["admin", "editor", "viewer"]),
+});
+
+export type ProjectMember = typeof projectMembers.$inferSelect;
+export type InsertProjectMember = z.infer<typeof insertProjectMemberSchema>;
+export type InviteProjectMember = z.infer<typeof inviteProjectMemberSchema>;
+export type UpdateProjectMemberRole = z.infer<typeof updateProjectMemberRoleSchema>;
+
 // Global Settings Schema
 export const globalSettings = pgTable("global_settings", {
   id: serial("id").primaryKey(),

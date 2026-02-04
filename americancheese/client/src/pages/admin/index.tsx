@@ -9,8 +9,6 @@ import CategoryOrderManager from "@/components/admin/CategoryOrderManager";
 import ProjectSelector from "@/components/admin/project-selector";
 import { ThemeAvailability } from "@/components/admin/ThemeAvailability";
 import { PresetAvailability } from "@/components/admin/PresetAvailability";
-import PresetEditor from "@/components/admin/PresetEditor";
-import ThemeEditor from "@/components/admin/ThemeEditor";
 import TaskCatalogTable from "@/components/admin/TaskCatalogTable";
 
 export default function AdminPage() {

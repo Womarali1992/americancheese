@@ -934,22 +934,29 @@ export default function TasksPage() {
   // Note: Function to activate a task from a template is already defined above
 
   // Prepare the data for the Gantt chart
-  const ganttTasks = (tasks || []).map(task => ({
-    id: task.id,
-    title: task.title && task.title.length > 20 ? task.title.substring(0, 20) + '...' : (task.title || 'Untitled Task'),
-    description: task.description || null,
-    startDate: new Date(task.startDate),
-    endDate: new Date(task.endDate),
-    status: task.status,
-    assignedTo: task.assignedTo || null,
-    category: task.category || 'general',
-    contactIds: task.contactIds || null,
-    materialIds: task.materialIds || null,
-    projectId: task.projectId,
-    completed: task.completed || null,
-    materialsNeeded: task.materialsNeeded || null,
-    durationDays: Math.ceil((new Date(task.endDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24)),
-  }));
+  // Uses effective dates: calendarStartDate/calendarEndDate when available (actual schedule),
+  // falls back to startDate/endDate (planned schedule) - synced with calendar views
+  const ganttTasks = (tasks || []).map(task => {
+    // Use calendar dates if available (actual schedule), otherwise use task dates (planned schedule)
+    const effectiveStartDate = task.calendarStartDate || task.startDate;
+    const effectiveEndDate = task.calendarEndDate || task.endDate;
+    return {
+      id: task.id,
+      title: task.title && task.title.length > 20 ? task.title.substring(0, 20) + '...' : (task.title || 'Untitled Task'),
+      description: task.description || null,
+      startDate: new Date(effectiveStartDate),
+      endDate: new Date(effectiveEndDate),
+      status: task.status,
+      assignedTo: task.assignedTo || null,
+      category: task.category || 'general',
+      contactIds: task.contactIds || null,
+      materialIds: task.materialIds || null,
+      projectId: task.projectId,
+      completed: task.completed || null,
+      materialsNeeded: task.materialsNeeded || null,
+      durationDays: Math.ceil((new Date(effectiveEndDate).getTime() - new Date(effectiveStartDate).getTime()) / (1000 * 60 * 60 * 24)),
+    };
+  });
 
   // hiddenCategories is now managed as state variable above
 

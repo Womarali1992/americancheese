@@ -30,9 +30,8 @@ export function initializeTheme(): void {
     // Set up theme change listener for components
     setupThemeChangeListener();
     
-    console.log('Theme system initialized with:', activeTheme.name);
   } catch (error) {
-    console.error('Error initializing theme system:', error);
+    // Theme initialization failed, will use defaults
   }
 }
 
@@ -53,7 +52,6 @@ function setupThemeChangeListener(): void {
     // Force re-render of any components that might be using inline styles
     triggerComponentRefresh();
     
-    console.log('Theme changed to:', theme.name);
   });
 }
 
@@ -100,15 +98,3 @@ export function updateTheme(theme: any): void {
   window.dispatchEvent(themeChangeEvent);
 }
 
-/**
- * Apply theme on DOM ready
- * NOTE: Disabled to prevent conflicts with new theme-system.ts
- * The new theme system auto-initializes and handles all theme logic
- */
-// if (typeof window !== 'undefined') {
-//   if (document.readyState === 'loading') {
-//     document.addEventListener('DOMContentLoaded', initializeTheme);
-//   } else {
-//     initializeTheme();
-//   }
-// }

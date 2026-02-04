@@ -1,4 +1,4 @@
-import { eq, and, isNull, asc } from "drizzle-orm";
+import { eq, and, isNull, asc, or, inArray } from "drizzle-orm";
 import { db } from "./db";
 import {
   projects,
@@ -17,6 +17,8 @@ import {
   subtaskComments,
   sectionStates,
   sectionComments,
+  users,
+  projectMembers,
   type Project,
   type InsertProject,
   type Task,
@@ -46,7 +48,9 @@ import {
   type SectionState,
   type InsertSectionState,
   type SectionComment,
-  type InsertSectionComment
+  type InsertSectionComment,
+  type ProjectMember,
+  type InsertProjectMember
 } from "@shared/schema";
 import { IStorage } from "./storage";
 
@@ -60,14 +64,48 @@ export class PostgresStorage implements IStorage {
   }
 
   // Project CRUD operations
-  async getProjects(userId?: number): Promise<Project[]> {
+  async getProjects(userId?: number): Promise<(Project & { memberRole?: string })[]> {
     if (!this.isDbAvailable()) {
       console.warn("[DB] Database not connected, returning empty array");
       return [];
     }
-    // If userId provided, filter by owner; otherwise return all (for backwards compatibility)
+    // If userId provided, filter by owner OR shared projects; otherwise return all (for backwards compatibility)
     if (userId) {
-      return await db.select().from(projects).where(eq(projects.createdBy, userId));
+      // Get projects owned by user
+      const ownedProjects = await db.select().from(projects).where(eq(projects.createdBy, userId));
+
+      // Get projects shared with user (where they are an accepted member)
+      const sharedMemberships = await db.select()
+        .from(projectMembers)
+        .where(and(
+          eq(projectMembers.userId, userId),
+          eq(projectMembers.status, 'accepted')
+        ));
+
+      // Get shared project IDs
+      const sharedProjectIds = sharedMemberships.map(m => m.projectId);
+
+      // Fetch shared projects if any
+      let sharedProjects: Project[] = [];
+      if (sharedProjectIds.length > 0) {
+        sharedProjects = await db.select().from(projects).where(inArray(projects.id, sharedProjectIds));
+      }
+
+      // Combine and add memberRole
+      const projectMap = new Map<number, Project & { memberRole?: string }>();
+
+      // Add owned projects with 'owner' role
+      ownedProjects.forEach(p => projectMap.set(p.id, { ...p, memberRole: 'owner' }));
+
+      // Add shared projects with their role (don't overwrite if already owner)
+      sharedProjects.forEach(p => {
+        if (!projectMap.has(p.id)) {
+          const membership = sharedMemberships.find(m => m.projectId === p.id);
+          projectMap.set(p.id, { ...p, memberRole: membership?.role || 'viewer' });
+        }
+      });
+
+      return Array.from(projectMap.values());
     }
     return await db.select().from(projects);
   }
@@ -1376,5 +1414,219 @@ export class PostgresStorage implements IStorage {
       .returning({ id: sectionComments.id });
 
     return result.length > 0;
+  }
+
+  // Project Member CRUD operations (for project sharing)
+  async getProjectMembers(projectId: number): Promise<(ProjectMember & { user?: { id: number; email: string; name: string } })[]> {
+    if (!this.isDbAvailable()) {
+      console.warn("[DB] Database not connected, returning empty array");
+      return [];
+    }
+
+    // Get all members for the project
+    const members = await db.select().from(projectMembers).where(eq(projectMembers.projectId, projectId));
+
+    // Enrich with user data
+    const enrichedMembers = await Promise.all(members.map(async (member) => {
+      if (member.userId) {
+        const userResult = await db.select({
+          id: users.id,
+          email: users.email,
+          name: users.name
+        }).from(users).where(eq(users.id, member.userId));
+
+        return {
+          ...member,
+          user: userResult[0] || undefined
+        };
+      }
+      return { ...member, user: undefined };
+    }));
+
+    return enrichedMembers;
+  }
+
+  async getProjectMember(projectId: number, userId: number): Promise<ProjectMember | undefined> {
+    if (!this.isDbAvailable()) return undefined;
+
+    const result = await db.select()
+      .from(projectMembers)
+      .where(and(
+        eq(projectMembers.projectId, projectId),
+        eq(projectMembers.userId, userId)
+      ));
+
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async getProjectMemberById(id: number): Promise<ProjectMember | undefined> {
+    if (!this.isDbAvailable()) return undefined;
+
+    const result = await db.select().from(projectMembers).where(eq(projectMembers.id, id));
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async getProjectMemberByEmail(projectId: number, email: string): Promise<ProjectMember | undefined> {
+    if (!this.isDbAvailable()) return undefined;
+
+    const result = await db.select()
+      .from(projectMembers)
+      .where(and(
+        eq(projectMembers.projectId, projectId),
+        eq(projectMembers.invitedEmail, email.toLowerCase())
+      ));
+
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async inviteProjectMember(projectId: number, email: string, role: string, invitedBy: number): Promise<ProjectMember> {
+    if (!this.isDbAvailable()) {
+      throw new Error("Database not connected");
+    }
+
+    const normalizedEmail = email.toLowerCase();
+
+    // Check if user exists
+    const existingUser = await db.select()
+      .from(users)
+      .where(eq(users.email, normalizedEmail));
+
+    // Check if already a member
+    const existingMember = await this.getProjectMemberByEmail(projectId, normalizedEmail);
+    if (existingMember) {
+      throw new Error('User is already a member or has a pending invitation for this project');
+    }
+
+    // Create the membership
+    const result = await db.insert(projectMembers).values({
+      projectId,
+      userId: existingUser[0]?.id || null,
+      invitedEmail: normalizedEmail,
+      role,
+      invitedBy,
+      status: 'pending',
+      invitedAt: new Date()
+    }).returning();
+
+    return result[0];
+  }
+
+  async acceptProjectInvitation(memberId: number, userId: number): Promise<ProjectMember | undefined> {
+    if (!this.isDbAvailable()) return undefined;
+
+    const result = await db.update(projectMembers)
+      .set({
+        userId,
+        status: 'accepted',
+        acceptedAt: new Date()
+      })
+      .where(eq(projectMembers.id, memberId))
+      .returning();
+
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async declineProjectInvitation(memberId: number): Promise<boolean> {
+    if (!this.isDbAvailable()) return false;
+
+    const result = await db.update(projectMembers)
+      .set({ status: 'declined' })
+      .where(eq(projectMembers.id, memberId))
+      .returning();
+
+    return result.length > 0;
+  }
+
+  async updateProjectMemberRole(memberId: number, role: string): Promise<ProjectMember | undefined> {
+    if (!this.isDbAvailable()) return undefined;
+
+    const result = await db.update(projectMembers)
+      .set({ role })
+      .where(eq(projectMembers.id, memberId))
+      .returning();
+
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async removeProjectMember(memberId: number): Promise<boolean> {
+    if (!this.isDbAvailable()) return false;
+
+    const result = await db.delete(projectMembers)
+      .where(eq(projectMembers.id, memberId))
+      .returning({ id: projectMembers.id });
+
+    return result.length > 0;
+  }
+
+  async getUserInvitations(userEmail: string): Promise<(ProjectMember & { project?: Project })[]> {
+    if (!this.isDbAvailable()) return [];
+
+    const normalizedEmail = userEmail.toLowerCase();
+
+    // Get pending invitations for this email
+    const invitations = await db.select()
+      .from(projectMembers)
+      .where(and(
+        eq(projectMembers.invitedEmail, normalizedEmail),
+        eq(projectMembers.status, 'pending')
+      ));
+
+    // Enrich with project data
+    const enrichedInvitations = await Promise.all(invitations.map(async (invitation) => {
+      const projectResult = await db.select().from(projects).where(eq(projects.id, invitation.projectId));
+      return {
+        ...invitation,
+        project: projectResult[0] || undefined
+      };
+    }));
+
+    return enrichedInvitations;
+  }
+
+  async getUserByEmail(email: string): Promise<{ id: number; email: string; name: string } | undefined> {
+    if (!this.isDbAvailable()) return undefined;
+
+    const result = await db.select({
+      id: users.id,
+      email: users.email,
+      name: users.name
+    }).from(users).where(eq(users.email, email.toLowerCase()));
+
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  // Check if a user has access to a project (owner or accepted member)
+  async checkProjectAccess(userId: number, projectId: number): Promise<{ hasAccess: boolean; role: string | null }> {
+    if (!this.isDbAvailable()) {
+      return { hasAccess: false, role: null };
+    }
+
+    // Check if user is the owner
+    const project = await db.select()
+      .from(projects)
+      .where(eq(projects.id, projectId));
+
+    if (project.length === 0) {
+      return { hasAccess: false, role: null };
+    }
+
+    if (project[0].createdBy === userId) {
+      return { hasAccess: true, role: 'owner' };
+    }
+
+    // Check if user is a member
+    const membership = await db.select()
+      .from(projectMembers)
+      .where(and(
+        eq(projectMembers.projectId, projectId),
+        eq(projectMembers.userId, userId),
+        eq(projectMembers.status, 'accepted')
+      ));
+
+    if (membership.length > 0) {
+      return { hasAccess: true, role: membership[0].role };
+    }
+
+    return { hasAccess: false, role: null };
   }
 }
