@@ -1540,10 +1540,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Task routes
-  app.get("/api/tasks", async (_req: Request, res: Response) => {
+  app.get("/api/tasks", async (req: Request, res: Response) => {
     try {
-      console.log("[Route] Attempting to fetch tasks...");
-      const tasks = await storage.getTasks();
+      const userId = req.session?.userId;
+      console.log("[Route] Attempting to fetch tasks for user:", userId);
+      const tasks = await storage.getTasks(userId);
       console.log("[Route] Successfully fetched tasks:", tasks?.length || 0);
       res.json(tasks);
     } catch (error) {
@@ -1556,13 +1557,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tasks/search", async (req: Request, res: Response) => {
     try {
       const query = req.query.q as string;
+      const userId = req.session?.userId;
 
       if (!query || query.trim() === "") {
         return res.json([]);
       }
 
-      console.log("[Route] Searching tasks with query:", query);
-      const allTasks = await storage.getTasks();
+      console.log("[Route] Searching tasks with query:", query, "for user:", userId);
+      const allTasks = await storage.getTasks(userId);
 
       // Search in title and description (case-insensitive)
       const searchLower = query.toLowerCase();
@@ -2344,14 +2346,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all subtasks (for calendar view)
   app.get("/api/subtasks", async (req: Request, res: Response) => {
     try {
-      console.log("[API] GET /api/subtasks - Fetching all subtasks");
-      // Use direct query to avoid any issues with storage layer
-      const allSubtasks = await db
-        .select()
-        .from(subtasks)
-        .orderBy(subtasks.parentTaskId, subtasks.sortOrder);
-      console.log(`[API] GET /api/subtasks - Found ${allSubtasks.length} subtasks`);
-      res.json(allSubtasks);
+      const userId = req.session?.userId;
+      console.log("[API] GET /api/subtasks - Fetching subtasks for user:", userId);
+
+      if (userId) {
+        // Filter subtasks by user's projects
+        const userSubtasks = await db
+          .select({
+            id: subtasks.id,
+            parentTaskId: subtasks.parentTaskId,
+            title: subtasks.title,
+            description: subtasks.description,
+            status: subtasks.status,
+            completed: subtasks.completed,
+            sortOrder: subtasks.sortOrder,
+            assignedTo: subtasks.assignedTo,
+            startDate: subtasks.startDate,
+            endDate: subtasks.endDate,
+            startTime: subtasks.startTime,
+            endTime: subtasks.endTime,
+            estimatedCost: subtasks.estimatedCost,
+            actualCost: subtasks.actualCost,
+            calendarActive: subtasks.calendarActive,
+            calendarStartDate: subtasks.calendarStartDate,
+            calendarEndDate: subtasks.calendarEndDate
+          })
+          .from(subtasks)
+          .innerJoin(tasks, eq(subtasks.parentTaskId, tasks.id))
+          .innerJoin(projects, eq(tasks.projectId, projects.id))
+          .where(eq(projects.createdBy, userId))
+          .orderBy(subtasks.parentTaskId, subtasks.sortOrder);
+        console.log(`[API] GET /api/subtasks - Found ${userSubtasks.length} subtasks for user ${userId}`);
+        res.json(userSubtasks);
+      } else {
+        // Fallback for unauthenticated requests (shouldn't happen in production)
+        const allSubtasks = await db
+          .select()
+          .from(subtasks)
+          .orderBy(subtasks.parentTaskId, subtasks.sortOrder);
+        console.log(`[API] GET /api/subtasks - Found ${allSubtasks.length} subtasks (no user filter)`);
+        res.json(allSubtasks);
+      }
     } catch (error) {
       console.error("[API] GET /api/subtasks - Error:", error);
       res.status(500).json({ message: "Failed to fetch subtasks" });

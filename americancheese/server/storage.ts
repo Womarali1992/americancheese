@@ -57,7 +57,7 @@ export interface IStorage {
   deleteProject(id: number): Promise<boolean>;
 
   // Task CRUD operations
-  getTasks(): Promise<Task[]>;
+  getTasks(userId?: number): Promise<Task[]>;
   getTask(id: number): Promise<Task | undefined>;
   getTasksByProject(projectId: number): Promise<Task[]>;
   createTask(task: InsertTask): Promise<Task>;

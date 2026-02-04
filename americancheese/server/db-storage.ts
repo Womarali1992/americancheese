@@ -195,12 +195,31 @@ export class PostgresStorage implements IStorage {
   }
 
   // Task CRUD operations
-  async getTasks(): Promise<Task[]> {
+  async getTasks(userId?: number): Promise<Task[]> {
     if (!this.isDbAvailable()) {
       console.warn("[DB] Database not connected, returning empty array");
       return [];
     }
     try {
+      // If userId provided, filter tasks by user's projects
+      if (userId) {
+        console.log(`[DB] Fetching tasks for user ${userId}...`);
+        // Get user's project IDs first
+        const userProjects = await db.select({ id: projects.id }).from(projects).where(eq(projects.createdBy, userId));
+        const projectIds = userProjects.map(p => p.id);
+
+        if (projectIds.length === 0) {
+          console.log(`[DB] User ${userId} has no projects, returning empty array`);
+          return [];
+        }
+
+        // Get tasks for those projects
+        const { inArray } = await import('drizzle-orm');
+        const result = await db.select().from(tasks).where(inArray(tasks.projectId, projectIds));
+        console.log(`[DB] Successfully fetched ${result.length} tasks for user ${userId}`);
+        return result;
+      }
+
       console.log("[DB] Fetching all tasks from database...");
       const result = await db.select().from(tasks);
       console.log(`[DB] Successfully fetched ${result.length} tasks`);

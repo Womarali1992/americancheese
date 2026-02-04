@@ -1503,7 +1503,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
         let materials = await apiRequest("GET", endpoint);
         if (args?.status) materials = materials.filter(m => m.status === args.status);
-        if (args?.tier2Category) materials = materials.filter(m => m.tier2category === args.tier2Category);
+        if (args?.tier2Category) materials = materials.filter(m => m.tier2Category === args.tier2Category);
         if (args?.limit) materials = materials.slice(0, args.limit);
         return { content: [{ type: "text", text: JSON.stringify(materials, null, 2) }] };
       }
@@ -1518,7 +1518,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           projectId: args.projectId,
           name: args.name,
           type: args.type,
-          tier2category: args.tier2Category || null,
+          tier2Category: args.tier2Category || null,
           quantity: args.quantity,
           unit: args.unit || null,
           cost: args.cost || null,
@@ -1534,7 +1534,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const fields = ["name", "type", "tier2Category", "quantity", "unit", "cost", "supplier", "status", "details"];
         for (const field of fields) {
           if (args[field] !== undefined) {
-            updateData[field === "tier2Category" ? "tier2category" : field] = args[field];
+            updateData[field] = args[field];
           }
         }
         const material = await apiRequest("PUT", `/api/materials/${args.id}`, updateData);
