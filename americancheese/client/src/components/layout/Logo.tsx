@@ -12,8 +12,10 @@ export function Logo({ className = "h-8 w-8" }: { className?: string }) {
       strokeLinejoin="round"
       className={className}
     >
-      <path d="M3 9L12 4.5L21 9L12 13.5L3 9Z" />
-      <path d="M3 14L12 18.5L21 14" />
+      {/* Code brackets with lightning bolt */}
+      <path d="M7 7L3 12L7 17" />
+      <path d="M17 7L21 12L17 17" />
+      <path d="M14 8L10 12.5H14L10 17" />
     </svg>
   );
 }

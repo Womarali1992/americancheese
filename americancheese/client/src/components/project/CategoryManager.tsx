@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +24,8 @@ import {
   MoreVertical,
   Copy,
   FileText,
-  ChevronDown
+  ChevronDown,
+  ExternalLink
 } from "lucide-react";
 
 interface CategoryManagerProps {
@@ -34,8 +36,20 @@ interface CategoryManagerProps {
 }
 
 export function CategoryManager({ projectId, projectCategories, tasks, onAddTask }: CategoryManagerProps) {
+  const [, setLocation] = useLocation();
   const { theme: currentTheme } = useProjectTheme(projectId);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
+
+  // Navigate to tasks page filtered by category
+  const navigateToCategory = (tier1Category: string, tier2Category?: string) => {
+    const params = new URLSearchParams();
+    params.set('projectId', projectId.toString());
+    params.set('tier1', tier1Category);
+    if (tier2Category) {
+      params.set('tier2', tier2Category);
+    }
+    setLocation(`/tasks?${params.toString()}`);
+  };
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryDescription, setNewCategoryDescription] = useState("");
   const [newCategoryType, setNewCategoryType] = useState<"tier1" | "tier2">("tier1");
@@ -511,7 +525,14 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
                                           <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing" />
                                         </div>
                                         <Tags className="h-4 w-4 flex-shrink-0" style={{ color: mainColor }} />
-                                        <span className="font-semibold text-base truncate">{mainCategory.name}</span>
+                                        <button
+                                          onClick={() => navigateToCategory(mainCategory.name)}
+                                          className="font-semibold text-base truncate hover:underline hover:text-blue-600 transition-colors flex items-center gap-1 group"
+                                          title={`View all ${mainCategory.name} tasks`}
+                                        >
+                                          {mainCategory.name}
+                                          <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity text-blue-600" />
+                                        </button>
                                       </div>
                                       {mainCategory.description && (
                                         <div className="mt-1 ml-10">
@@ -608,7 +629,14 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
                                             <div className="flex-1 min-w-0">
                                               <div className="flex items-center gap-2">
                                                 <Tags className="h-3 w-3 ml-2 flex-shrink-0" style={{ color: mainColor }} />
-                                                <span className="font-medium text-sm truncate">{subCategory.name}</span>
+                                                <button
+                                                  onClick={() => navigateToCategory(mainCategory.name, subCategory.name)}
+                                                  className="font-medium text-sm truncate hover:underline hover:text-blue-600 transition-colors flex items-center gap-1 group"
+                                                  title={`View all ${subCategory.name} tasks`}
+                                                >
+                                                  {subCategory.name}
+                                                  <ExternalLink className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 transition-opacity text-blue-600" />
+                                                </button>
                                               </div>
                                               {subCategory.description && (
                                                 <div className="mt-0.5 ml-7">
