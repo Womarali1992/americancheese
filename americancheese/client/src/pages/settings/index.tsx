@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MainLayout } from '@/components/layout/MainLayout';
+import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -174,7 +174,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <MainLayout>
+    <Layout>
       <div className="p-6 max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
@@ -396,6 +396,6 @@ export default function SettingsPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </MainLayout>
+    </Layout>
   );
 }
