@@ -8309,7 +8309,37 @@ IMPORTANT RULES:
       if (name !== undefined) config.name = name;
       if (description !== undefined) config.description = description;
       if (recommendedTheme !== undefined) config.recommendedTheme = recommendedTheme;
-      if (categories !== undefined) config.categories = categories;
+      if (categories !== undefined) {
+        // Ensure tier2 keys match tier1 names to prevent orphaned categories
+        if (categories.tier1 && categories.tier2) {
+          const tier1Names = new Set(categories.tier1.map((c: any) => c.name));
+          const fixedTier2: Record<string, any[]> = {};
+
+          // For each tier1 category, try to find its tier2 entries
+          for (const tier1 of categories.tier1) {
+            // First check if there's a direct match
+            if (categories.tier2[tier1.name]) {
+              fixedTier2[tier1.name] = categories.tier2[tier1.name];
+            }
+          }
+
+          // Copy any tier2 entries that already have valid tier1 keys
+          for (const [key, value] of Object.entries(categories.tier2)) {
+            if (tier1Names.has(key) && !fixedTier2[key]) {
+              fixedTier2[key] = value as any[];
+            }
+          }
+
+          // Log any orphaned tier2 keys that couldn't be matched
+          const orphanedKeys = Object.keys(categories.tier2).filter(k => !tier1Names.has(k) && !fixedTier2[k]);
+          if (orphanedKeys.length > 0) {
+            console.warn(`⚠️ Orphaned tier2 keys found (no matching tier1): ${orphanedKeys.join(', ')}`);
+          }
+
+          categories.tier2 = fixedTier2;
+        }
+        config.categories = categories;
+      }
 
       const configValue = JSON.stringify(config);
 

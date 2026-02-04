@@ -350,10 +350,24 @@ export default function PresetEditor({ onPresetChange }: PresetEditorProps) {
 
   const updateTier1Category = (index: number, field: string, value: string | number) => {
     const updated = [...formData.tier1Categories];
+    const oldName = updated[index].name;
     updated[index] = { ...updated[index], [field]: value };
+
+    // If the name field changed, we need to update the tier2 key as well
+    let updatedTier2 = formData.tier2Categories;
+    if (field === 'name' && typeof value === 'string' && oldName !== value) {
+      updatedTier2 = { ...formData.tier2Categories };
+      // Move tier2 categories from old key to new key
+      if (oldName && updatedTier2[oldName]) {
+        updatedTier2[value] = updatedTier2[oldName];
+        delete updatedTier2[oldName];
+      }
+    }
+
     setFormData({
       ...formData,
-      tier1Categories: updated
+      tier1Categories: updated,
+      tier2Categories: updatedTier2
     });
   };
 

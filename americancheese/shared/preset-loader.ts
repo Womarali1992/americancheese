@@ -130,11 +130,58 @@ export async function applyPresetToProject(projectId: number, presetId: string, 
     }
 
     // Create tier2 categories
-    for (const [tier1Name, tier2List] of Object.entries(preset.categories.tier2)) {
+    // First, try to match tier2 entries by tier1 name
+    // If that fails, try matching by position (sortOrder) as a fallback
+    const tier1Names = preset.categories.tier1.map(t => t.name);
+    const tier2Keys = Object.keys(preset.categories.tier2);
+
+    // Build a mapping from tier1 name to tier2 key (handles renamed categories)
+    const tier1ToTier2Key = new Map<string, string>();
+    for (const tier1Name of tier1Names) {
+      if (preset.categories.tier2[tier1Name]) {
+        // Direct match
+        tier1ToTier2Key.set(tier1Name, tier1Name);
+      }
+    }
+
+    // For any tier1 without a direct match, try to find an orphaned tier2 key by position
+    if (tier1ToTier2Key.size < tier1Names.length) {
+      const matchedTier2Keys = new Set(tier1ToTier2Key.values());
+      const unmatchedTier2Keys = tier2Keys.filter(k => !matchedTier2Keys.has(k));
+
+      if (unmatchedTier2Keys.length > 0) {
+        console.warn(`⚠️ Found ${unmatchedTier2Keys.length} tier2 keys that don't match tier1 names: ${unmatchedTier2Keys.join(', ')}`);
+        console.warn(`⚠️ Tier1 names: ${tier1Names.join(', ')}`);
+
+        // Try position-based matching for unmatched tier1 categories
+        for (let i = 0; i < tier1Names.length; i++) {
+          const tier1Name = tier1Names[i];
+          if (!tier1ToTier2Key.has(tier1Name) && i < unmatchedTier2Keys.length) {
+            // Use position-based fallback
+            console.warn(`⚠️ Using position-based match: tier1[${i}]="${tier1Name}" -> tier2 key="${unmatchedTier2Keys[i]}"`);
+            tier1ToTier2Key.set(tier1Name, unmatchedTier2Keys[i]);
+          }
+        }
+      }
+    }
+
+    // Now create tier2 categories using the mapping
+    for (const tier1Name of tier1Names) {
       const parentId = categoryIdMap.get(tier1Name);
       if (!parentId) {
-        console.warn(`Parent category '${tier1Name}' not found for tier2 categories`);
+        console.warn(`Parent category '${tier1Name}' not found in categoryIdMap`);
         continue;
+      }
+
+      const tier2Key = tier1ToTier2Key.get(tier1Name);
+      if (!tier2Key) {
+        console.warn(`⚠️ No tier2 key found for tier1 category '${tier1Name}' - skipping tier2 categories`);
+        continue;
+      }
+
+      const tier2List = preset.categories.tier2[tier2Key] || [];
+      if (tier2List.length === 0) {
+        console.warn(`⚠️ Tier2 list is empty for tier1 category '${tier1Name}' (key: '${tier2Key}')`);
       }
 
       for (let j = 0; j < tier2List.length; j++) {
