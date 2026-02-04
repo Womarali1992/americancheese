@@ -52,10 +52,20 @@ jobs:
           # Navigate to the americancheese subfolder (where the actual app is)
           cd /var/www/americancheese/americancheese
 
-          # Load NVM
+          # Load NVM (try multiple locations)
           export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          nvm use 18 || nvm install 18
+          if [ -s "$NVM_DIR/nvm.sh" ]; then
+            \. "$NVM_DIR/nvm.sh"
+            nvm use 18 || nvm install 18
+          elif [ -s "/root/.nvm/nvm.sh" ]; then
+            \. "/root/.nvm/nvm.sh"
+            nvm use 18 || nvm install 18
+          else
+            echo "NVM not found, using system node..."
+            # Check if node exists
+            which node || echo "Node not found in PATH"
+            node -v || echo "Could not get node version"
+          fi
 
           # Install dependencies
           npm install
