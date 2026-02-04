@@ -1017,6 +1017,22 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            {/* Mini Ticker Metrics - Desktop inline */}
+            <div className="hidden lg:flex items-center gap-1.5 mr-2">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-full border border-slate-200 shadow-sm">
+                <Building className="h-3 w-3 text-indigo-500" />
+                <span className="text-xs font-semibold text-slate-800">{metrics.activeProjects}</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-full border border-slate-200 shadow-sm">
+                <CheckSquare className="h-3 w-3 text-green-500" />
+                <span className="text-xs font-semibold text-slate-800">{metrics.openTasks}</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-full border border-slate-200 shadow-sm">
+                <Package className="h-3 w-3 text-orange-500" />
+                <span className="text-xs font-semibold text-slate-800">{metrics.pendingMaterials}</span>
+              </div>
+            </div>
+
             <div className="relative flex-1 sm:flex-initial">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
@@ -1052,8 +1068,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Mini Ticker Metrics */}
-        <div className="flex flex-wrap items-center gap-2 mb-6">
+        {/* Mini Ticker Metrics - Mobile only */}
+        <div className="flex lg:hidden flex-wrap items-center gap-2 mb-6">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
             <Building className="h-3.5 w-3.5 text-indigo-500" />
             <span className="text-sm font-semibold text-slate-800">{metrics.activeProjects}</span>
@@ -1062,17 +1078,12 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
             <CheckSquare className="h-3.5 w-3.5 text-green-500" />
             <span className="text-sm font-semibold text-slate-800">{metrics.openTasks}</span>
-            <span className="text-xs text-slate-500">Open Tasks</span>
+            <span className="text-xs text-slate-500">Tasks</span>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
             <Package className="h-3.5 w-3.5 text-orange-500" />
             <span className="text-sm font-semibold text-slate-800">{metrics.pendingMaterials}</span>
             <span className="text-xs text-slate-500">Pending</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
-            <DollarSign className="h-3.5 w-3.5 text-blue-500" />
-            <span className="text-sm font-semibold text-slate-800">{metrics.budgetUtilization}%</span>
-            <span className="text-xs text-slate-500">Budget</span>
           </div>
         </div>
 
