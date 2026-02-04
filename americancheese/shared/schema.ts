@@ -52,6 +52,8 @@ export const projects = pgTable("projects", {
   description: text("description"),
   status: text("status").notNull().default("active"),
   progress: integer("progress").notNull().default(0),
+  // User ownership - each project belongs to a user
+  createdBy: integer("created_by").references(() => users.id),
   // Category visibility preferences for task management
   hiddenCategories: text("hidden_categories").array(), // Store hidden tier1 categories (e.g., ["systems", "sheathing"])
   // Template selection for this project

@@ -60,10 +60,14 @@ export class PostgresStorage implements IStorage {
   }
 
   // Project CRUD operations
-  async getProjects(): Promise<Project[]> {
+  async getProjects(userId?: number): Promise<Project[]> {
     if (!this.isDbAvailable()) {
       console.warn("[DB] Database not connected, returning empty array");
       return [];
+    }
+    // If userId provided, filter by owner; otherwise return all (for backwards compatibility)
+    if (userId) {
+      return await db.select().from(projects).where(eq(projects.createdBy, userId));
     }
     return await db.select().from(projects);
   }

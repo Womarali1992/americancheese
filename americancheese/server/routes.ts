@@ -379,9 +379,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Auth middleware is now applied in index.ts for the entire app
   // Project routes
-  app.get("/api/projects", async (_req: Request, res: Response) => {
+  app.get("/api/projects", async (req: Request, res: Response) => {
     try {
-      const projects = await storage.getProjects();
+      // Get projects only for the logged-in user
+      const userId = req.session?.userId;
+      const projects = await storage.getProjects(userId);
       res.json(projects);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch projects" });
@@ -415,11 +417,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log("Attempting to create project with data:", JSON.stringify(result.data));
-      
+
       try {
-        // Create the project
+        // Create the project with owner set to logged-in user
         // Note: Preset categories are now loaded by the client via /load-preset-categories endpoint
-        const project = await storage.createProject(result.data);
+        const projectData = {
+          ...result.data,
+          createdBy: req.session?.userId || null
+        };
+        const project = await storage.createProject(projectData);
 
         // Return the created project
         res.status(201).json({
