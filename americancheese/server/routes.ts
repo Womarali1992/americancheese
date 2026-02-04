@@ -3159,20 +3159,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Material routes
   app.get("/api/materials", async (req: Request, res: Response) => {
     try {
+      const userId = req.session?.userId;
       let materials = await storage.getMaterials();
-      
+
+      // Filter materials by user's accessible projects
+      if (userId) {
+        // Get all projects the user has access to (owned or shared)
+        const userProjects = await storage.getProjects(userId);
+        const accessibleProjectIds = new Set(userProjects.map(p => p.id));
+        materials = materials.filter(m => m.projectId && accessibleProjectIds.has(m.projectId));
+      }
+
       // Filter by supplierId if provided
       const supplierId = req.query.supplierId ? parseInt(req.query.supplierId as string) : null;
       if (supplierId) {
         materials = materials.filter(m => m.supplierId === supplierId);
       }
-      
+
       // Filter by isQuote if provided
       if (req.query.isQuote !== undefined) {
         const isQuote = req.query.isQuote === 'true';
         materials = materials.filter(m => m.isQuote === isQuote);
       }
-      
+
       res.json(materials);
     } catch (error) {
       console.error("Error fetching materials:", error);
@@ -4880,10 +4889,19 @@ IMPORTANT RULES:
   });
 
   // Labor routes
-  app.get("/api/labor", async (_req: Request, res: Response) => {
+  app.get("/api/labor", async (req: Request, res: Response) => {
     try {
-      console.log("[API] GET /api/labor - Fetching all labor entries");
-      const laborEntries = await storage.getLabor();
+      const userId = req.session?.userId;
+      console.log("[API] GET /api/labor - Fetching labor entries for user:", userId);
+      let laborEntries = await storage.getLabor();
+
+      // Filter labor by user's accessible projects
+      if (userId) {
+        const userProjects = await storage.getProjects(userId);
+        const accessibleProjectIds = new Set(userProjects.map(p => p.id));
+        laborEntries = laborEntries.filter(l => l.projectId && accessibleProjectIds.has(l.projectId));
+      }
+
       console.log(`[API] GET /api/labor - Successfully retrieved ${laborEntries.length} labor entries`);
       res.json(laborEntries);
     } catch (error) {
