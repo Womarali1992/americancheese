@@ -21,7 +21,19 @@ import {
   Ruler,
   BoxSelect,
   Edit,
-  Sparkles
+  Sparkles,
+  Lock,
+  Key,
+  Database,
+  FileKey,
+  Globe,
+  Eye,
+  Pencil,
+  Trash2,
+  AlertCircle,
+  Clock,
+  MoreVertical,
+  Shield
 } from "lucide-react";
 
 import { getTier1CategoryColor as getCategoryColor } from "@/lib/unified-color-system";
@@ -47,7 +59,16 @@ import { EditMaterialDialog } from "@/pages/materials/EditMaterialDialog";
 import { ImportMaterialsDialog } from "@/pages/materials/ImportMaterialsDialog";
 import { ImportInvoiceDialog } from "@/pages/materials/ImportInvoiceDialog";
 import { CreateInvoiceFromMaterials } from "@/components/invoices/CreateInvoiceFromMaterials";
+import { CredentialDialog } from "@/components/credentials/CredentialDialog";
+import { RevealCredentialDialog } from "@/components/credentials/RevealCredentialDialog";
+import { DeleteCredentialDialog } from "@/components/credentials/DeleteCredentialDialog";
 import { apiRequest } from "@/lib/queryClient";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -61,6 +82,40 @@ import { useTier2CategoriesByTier1Name } from "@/hooks/useTemplateCategories";
 import { cn } from "@/lib/utils";
 
 type Material = SimplifiedMaterial;
+
+// Credential types
+interface Credential {
+  id: number;
+  name: string;
+  category: string;
+  website: string | null;
+  username: string | null;
+  maskedValue: string;
+  notes: string | null;
+  expiresAt: string | null;
+  lastAccessedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  isExpired: boolean;
+}
+
+// Credential category icons
+const credentialCategoryIcons: Record<string, React.ElementType> = {
+  api_key: Key,
+  password: Lock,
+  connection_string: Database,
+  certificate: FileKey,
+  other: Lock,
+};
+
+// Credential category labels
+const credentialCategoryLabels: Record<string, string> = {
+  api_key: 'API Key',
+  password: 'Password',
+  connection_string: 'Connection String',
+  certificate: 'Certificate',
+  other: 'Other',
+};
 
 interface ResourcesTabNewProps {
   projectId?: number;
@@ -82,6 +137,12 @@ export function ResourcesTabNew({ projectId, searchQuery = "", onCategoryChange 
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [detailMaterial, setDetailMaterial] = useState<Material | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+
+  // Credential dialog states
+  const [showCredentialCreateDialog, setShowCredentialCreateDialog] = useState(false);
+  const [editingCredential, setEditingCredential] = useState<Credential | null>(null);
+  const [revealingCredential, setRevealingCredential] = useState<Credential | null>(null);
+  const [deletingCredential, setDeletingCredential] = useState<Credential | null>(null);
 
   // View states
   const [materialsGroupBy, setMaterialsGroupBy] = useState<"category" | "supplier" | "list">("category");
@@ -113,6 +174,29 @@ export function ResourcesTabNew({ projectId, searchQuery = "", onCategoryChange 
       return await response.json();
     },
   });
+
+  // Fetch credentials
+  const { data: credentialsData, isLoading: credentialsLoading } = useQuery({
+    queryKey: ['credentials'],
+    queryFn: async () => {
+      const response = await fetch('/api/credentials');
+      if (!response.ok) throw new Error('Failed to fetch credentials');
+      return response.json();
+    }
+  });
+
+  const credentials: Credential[] = credentialsData?.credentials || [];
+
+  // Filter credentials by search
+  const filteredCredentials = useMemo(() => {
+    if (!searchQuery) return credentials;
+    const query = searchQuery.toLowerCase();
+    return credentials.filter(cred =>
+      cred.name.toLowerCase().includes(query) ||
+      cred.username?.toLowerCase().includes(query) ||
+      cred.website?.toLowerCase().includes(query)
+    );
+  }, [credentials, searchQuery]);
 
   // Fetch contacts for supplier info
   const { data: contacts = [] } = useQuery<any[]>({
@@ -298,6 +382,35 @@ export function ResourcesTabNew({ projectId, searchQuery = "", onCategoryChange 
     }
   });
 
+  // Delete credential
+  const deleteCredentialMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest(`/api/credentials/${id}`, 'DELETE');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['credentials'] });
+      setDeletingCredential(null);
+      toast({ title: 'Deleted', description: 'Credential deleted successfully' });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to delete credential', variant: 'destructive' });
+    }
+  });
+
+  // Get credential category icon
+  const getCredentialCategoryIcon = (category: string) => {
+    const Icon = credentialCategoryIcons[category] || Lock;
+    return <Icon className="h-4 w-4" />;
+  };
+
+  // Format credential date
+  const formatCredentialDate = (dateString: string | null) => {
+    if (!dateString) return 'Never';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric'
+    });
+  };
+
   // Duplicate material handler
   const handleDuplicate = (material: Material) => {
     setSelectedMaterial({
@@ -332,10 +445,9 @@ export function ResourcesTabNew({ projectId, searchQuery = "", onCategoryChange 
 
   return (
     <div className="space-y-4">
-      {/* Main Tabs: Materials | Quotes */}
-      {/* Main Tabs: Materials | Quotes */}
+      {/* Main Tabs: Materials | Quotes | Credentials */}
       <Tabs defaultValue="materials" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2 bg-slate-100 p-1 rounded-lg">
+        <TabsList className="grid w-full max-w-xl grid-cols-3 bg-slate-100 p-1 rounded-lg">
           <TabsTrigger
             value="materials"
             className="rounded-md data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
@@ -349,6 +461,13 @@ export function ResourcesTabNew({ projectId, searchQuery = "", onCategoryChange 
           >
             <FileText className="h-4 w-4 mr-2" />
             Quotes <span className="ml-1.5 text-xs bg-slate-100 px-1.5 py-0.5 rounded-full text-slate-600 group-data-[state=active]:bg-slate-50">{quotes.length}</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="credentials"
+            className="rounded-md data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all"
+          >
+            <Shield className="h-4 w-4 mr-2" />
+            Credentials <span className="ml-1.5 text-xs bg-slate-100 px-1.5 py-0.5 rounded-full text-slate-600 group-data-[state=active]:bg-slate-50">{credentials.length}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -949,6 +1068,127 @@ export function ResourcesTabNew({ projectId, searchQuery = "", onCategoryChange 
             )}
           </div>
         </TabsContent>
+
+        {/* Credentials Tab */}
+        <TabsContent value="credentials" className="mt-6 space-y-6">
+          {/* Header & Actions */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+            <div className="flex items-center gap-2 text-xs text-violet-700 bg-violet-50 px-3 py-2 rounded-md">
+              <Lock className="h-3.5 w-3.5 flex-shrink-0" />
+              <span>Encrypted with AES-256-GCM. Reveal requires password verification.</span>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => setShowCredentialCreateDialog(true)}
+              className="bg-violet-600 hover:bg-violet-700 text-white"
+            >
+              <Plus className="h-4 w-4 mr-1.5" />
+              Add Credential
+            </Button>
+          </div>
+
+          {/* Credentials Grid */}
+          {credentialsLoading ? (
+            <div className="text-center py-8 text-slate-500">Loading credentials...</div>
+          ) : filteredCredentials.length === 0 ? (
+            <Card className="border-slate-200">
+              <CardContent className="p-8 text-center">
+                <Shield className="h-12 w-12 mx-auto text-slate-300 mb-3" />
+                <p className="text-slate-500 font-medium">
+                  {searchQuery ? 'No credentials match your search' : 'No credentials stored yet'}
+                </p>
+                <p className="text-sm text-slate-400 mt-1">
+                  Store API keys, passwords, and connection strings securely
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredCredentials.map((credential) => (
+                <Card
+                  key={credential.id}
+                  className={cn(
+                    "hover:shadow-md transition-shadow border-slate-200",
+                    credential.isExpired && "border-amber-300 bg-amber-50/50"
+                  )}
+                >
+                  <CardHeader className="pb-2 pt-3 px-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={cn(
+                          "p-2 rounded-md",
+                          credential.isExpired ? "bg-amber-100" : "bg-violet-100"
+                        )}>
+                          {getCredentialCategoryIcon(credential.category)}
+                        </div>
+                        <div>
+                          <CardTitle className="text-sm font-medium">{credential.name}</CardTitle>
+                          <CardDescription className="text-xs">
+                            {credentialCategoryLabels[credential.category] || 'Other'}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setRevealingCredential(credential)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            Reveal
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setEditingCredential(credential)}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setDeletingCredential(credential)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0 pb-3 px-3">
+                    {credential.isExpired && (
+                      <div className="flex items-center gap-1 text-amber-600 text-xs mb-1.5">
+                        <AlertCircle className="h-3 w-3" />
+                        Expired
+                      </div>
+                    )}
+
+                    {credential.website && (
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+                        <Globe className="h-3 w-3" />
+                        <span className="truncate">{credential.website}</span>
+                      </div>
+                    )}
+
+                    {credential.username && (
+                      <div className="text-xs text-slate-600 mb-1.5">
+                        <span className="text-slate-400">User:</span> {credential.username}
+                      </div>
+                    )}
+
+                    <div className="font-mono text-xs bg-slate-100 px-2 py-1.5 rounded text-slate-600">
+                      {credential.maskedValue}
+                    </div>
+
+                    <div className="flex items-center gap-1 text-[10px] text-slate-400 mt-2">
+                      <Clock className="h-2.5 w-2.5" />
+                      Accessed: {formatCredentialDate(credential.lastAccessedAt)}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
 
       {/* Dialogs */}
@@ -1205,6 +1445,33 @@ export function ResourcesTabNew({ projectId, searchQuery = "", onCategoryChange 
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Credential Dialogs */}
+      <CredentialDialog
+        open={showCredentialCreateDialog}
+        onOpenChange={setShowCredentialCreateDialog}
+        credential={null}
+      />
+
+      <CredentialDialog
+        open={!!editingCredential}
+        onOpenChange={(open) => !open && setEditingCredential(null)}
+        credential={editingCredential}
+      />
+
+      <RevealCredentialDialog
+        open={!!revealingCredential}
+        onOpenChange={(open) => !open && setRevealingCredential(null)}
+        credential={revealingCredential}
+      />
+
+      <DeleteCredentialDialog
+        open={!!deletingCredential}
+        onOpenChange={(open) => !open && setDeletingCredential(null)}
+        credential={deletingCredential}
+        onConfirm={() => deletingCredential && deleteCredentialMutation.mutate(deletingCredential.id)}
+        isDeleting={deleteCredentialMutation.isPending}
+      />
     </div>
   );
 }
