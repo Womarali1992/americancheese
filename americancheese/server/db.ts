@@ -95,6 +95,7 @@ import { addTaskTimeFields } from './migrations/add-task-time-fields.js';
 import { addCalendarScheduleFields } from './migrations/add-calendar-schedule-fields.js';
 import { addReferencedTaskIdsField } from './migrations/add-referenced-task-ids.js';
 import { addProjectMembersTable } from './migrations/add-project-members.js';
+import { addContactsCreatedBy } from './migrations/add-contacts-created-by.js';
 
 // Export a function to initialize the database and create tables
 export async function initDatabase() {
@@ -289,6 +290,7 @@ export async function initDatabase() {
     await addCalendarScheduleFields(queryClient);
     await addReferencedTaskIdsField(queryClient);
     await addProjectMembersTable(queryClient);
+    await addContactsCreatedBy(queryClient);
 
     console.log('Database initialization complete.');
   } catch (error) {

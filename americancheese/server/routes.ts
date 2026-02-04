@@ -2959,18 +2959,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.session?.userId;
       let contacts = await storage.getContacts();
 
-      // Filter contacts by user's accessible projects (via labor entries)
+      // Filter contacts by createdBy (user ownership)
       if (userId) {
-        const userProjects = await storage.getProjects(userId);
-        const accessibleProjectIds = new Set(userProjects.map(p => p.id));
-
-        // Get all labor entries for accessible projects
-        const allLabor = await storage.getLabor();
-        const accessibleLabor = allLabor.filter(l => l.projectId && accessibleProjectIds.has(l.projectId));
-        const accessibleContactIds = new Set(accessibleLabor.map(l => l.contactId));
-
-        // Filter contacts to only those used in accessible projects
-        contacts = contacts.filter(c => accessibleContactIds.has(c.id));
+        contacts = contacts.filter(c => (c as any).createdBy === userId);
       }
 
       res.json(contacts);
@@ -2999,13 +2990,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/contacts", async (req: Request, res: Response) => {
     try {
+      const userId = req.session?.userId;
       const result = insertContactSchema.safeParse(req.body);
       if (!result.success) {
         const validationError = fromZodError(result.error);
         return res.status(400).json({ message: validationError.message });
       }
 
-      const contact = await storage.createContact(result.data);
+      // Add createdBy to associate contact with the user
+      const contactData = { ...result.data, createdBy: userId };
+      const contact = await storage.createContact(contactData);
       res.status(201).json(contact);
     } catch (error) {
       res.status(500).json({ message: "Failed to create contact" });

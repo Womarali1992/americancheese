@@ -344,6 +344,7 @@ export const contacts = pgTable("contacts", {
   type: text("type").notNull(), // contractor, supplier, consultant, etc.
   category: text("category").notNull().default("other"), // electrical, plumbing, concrete, etc.
   initials: text("initials"),
+  createdBy: integer("created_by"), // User who created this contact
 });
 
 export const insertContactSchema = createInsertSchema(contacts).omit({
