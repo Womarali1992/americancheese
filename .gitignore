@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+
+# Environment files (NEVER commit these)
+.env
+.env.local
+.env.production
+.env.*.local
+*.env
+
+# Build outputs
+dist/
+build/
+*.tar.gz
+
+# IDE and editor files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Database exports and backups (may contain sensitive data)
+# Note: tracked SQL files in subdirectories are not affected
+/*.sql
+*_backup.csv
+*_export.csv
+project-data-export-*.json
+
+# Temporary files
+*.tmp
+.auto-deploy-test
+
+# PM2 ecosystem configs with credentials
+ecosystem.config.cjs
+
+# MCP server credentials
+mcp-server/.env
+
+# Test artifacts
+coverage/
+.nyc_output/

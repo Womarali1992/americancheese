@@ -81,77 +81,115 @@ jobs:
           echo "=== Existing databases ==="
           sudo -u postgres psql -l 2>&1 || echo "Could not list databases"
           
-          # Create realestateos database
-          echo "Creating database realestateos..."
-          sudo -u postgres createdb realestateos 2>&1 || echo "Database may already exist or creation failed"
-          
-          # Alternative: try with psql
-          sudo -u postgres psql -c "CREATE DATABASE realestateos;" 2>&1 || echo "psql create also tried"
-          
+          # Ensure americancheese database and user exist
+          echo "Setting up americancheese database..."
+          sudo -u postgres createdb americancheese 2>&1 || echo "Database may already exist"
+          sudo -u postgres psql -c "CREATE USER americancheese WITH PASSWORD 'richman';" 2>&1 || echo "User may already exist"
+          sudo -u postgres psql -c "ALTER USER americancheese WITH PASSWORD 'richman';" 2>&1 || echo "Password set failed"
+          sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE americancheese TO americancheese;" 2>&1
+          sudo -u postgres psql -d americancheese -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO americancheese;" 2>&1 || true
+          sudo -u postgres psql -d americancheese -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO americancheese;" 2>&1 || true
+
+          # Also set postgres password for backward compatibility
+          sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'richman';" 2>&1 || echo "Password set failed"
+
           # Verify database exists
           echo "=== Verifying database exists ==="
-          sudo -u postgres psql -l 2>&1 | grep realestateos || echo "WARNING: realestateos not found in database list!"
-          
-          # Set password for postgres user
-          echo "Setting postgres password..."
-          sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'richman';" 2>&1 || echo "Password set failed"
-          
+          sudo -u postgres psql -l 2>&1 | grep americancheese || echo "WARNING: americancheese not found in database list!"
+
           # Test connection with password
           echo "Testing database connection..."
-          PGPASSWORD=richman psql -h localhost -U postgres -d realestateos -c "SELECT 1;" 2>&1 || echo "Connection test failed"
+          PGPASSWORD=richman psql -h localhost -U americancheese -d americancheese -c "SELECT 1;" 2>&1 || echo "Connection test failed"
 
           # Create production .env FIRST (needed for db:push)
+          # IMPORTANT: Preserve existing SESSION_SECRET to prevent user disconnections
+          EXISTING_SESSION_SECRET=""
+          if [ -f .env ]; then
+            EXISTING_SESSION_SECRET=$(grep "^SESSION_SECRET=" .env | cut -d'=' -f2 || echo "")
+          fi
+
           echo "NODE_ENV=production" > .env
           echo "PORT=5001" >> .env
           echo "DB_HOST=localhost" >> .env
           echo "DB_PORT=5432" >> .env
-          echo "DB_NAME=realestateos" >> .env
-          echo "DB_USER=postgres" >> .env
+          echo "DB_NAME=americancheese" >> .env
+          echo "DB_USER=americancheese" >> .env
           echo "DB_PASSWORD=richman" >> .env
-          echo "DATABASE_URL=postgresql://postgres:richman@localhost:5432/realestateos" >> .env
-          echo "SESSION_SECRET=$(openssl rand -hex 32)" >> .env
+          echo "DATABASE_URL=postgresql://americancheese:richman@localhost:5432/americancheese" >> .env
+
+          # Reuse existing SESSION_SECRET or generate new one only on first deploy
+          if [ -n "$EXISTING_SESSION_SECRET" ]; then
+            echo "SESSION_SECRET=$EXISTING_SESSION_SECRET" >> .env
+            echo "Preserved existing SESSION_SECRET (users stay logged in)"
+          else
+            echo "SESSION_SECRET=$(openssl rand -hex 32)" >> .env
+            echo "Generated new SESSION_SECRET (first deployment)"
+          fi
+
           chmod 600 .env
-          echo "Production .env configured with realestateos database"
+          echo "Production .env configured with americancheese database"
 
           # Run database schema push FIRST (creates tables)
           echo "Pushing database schema to create tables..."
           npm run db:push 2>&1
           echo "Schema push complete"
 
-          # NOW run data migration (tables exist)
-          echo "Running data migration..."
-          sudo -u postgres psql -d realestateos -f export-superx.sql 2>&1
-          echo "Projects in database after migration:"
-          sudo -u postgres psql -d realestateos -c "SELECT id, name FROM projects;" || true
-
-          # Run database fixes
+          # Run database fixes (americancheese database already has data)
           echo "Running database fixes..."
-          sudo -u postgres psql -d realestateos -c "UPDATE tasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
-          sudo -u postgres psql -d realestateos -c "UPDATE subtasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
+          sudo -u postgres psql -d americancheese -c "UPDATE tasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
+          sudo -u postgres psql -d americancheese -c "UPDATE subtasks SET calendar_active = false WHERE calendar_active IS NULL;" || true
           echo "Database fixes applied"
+
+          # Show current projects
+          echo "Projects in database:"
+          sudo -u postgres psql -d americancheese -c "SELECT id, name FROM projects ORDER BY id;" || true
 
           # Run database verification
           echo "Verifying database state..."
           export DB_HOST=localhost
           export DB_PORT=5432
-          export DB_NAME=realestateos
-          export DB_USER=postgres
+          export DB_NAME=americancheese
+          export DB_USER=americancheese
           export DB_PASSWORD=richman
           node check-db-state.js || echo "Verification script failed"
 
-          # Stop any existing PM2 process
-          pm2 delete americancheese 2>/dev/null || true
+          # Create PM2 ecosystem config for consistent deployments
+          cat > ecosystem.config.cjs << 'PMEOF'
+          module.exports = {
+            apps: [{
+              name: 'americancheese',
+              script: 'npm',
+              args: 'run start',
+              cwd: '/var/www/americancheese/americancheese',
+              env: {
+                NODE_ENV: 'production',
+                PORT: 5001,
+                DB_HOST: 'localhost',
+                DB_PORT: 5432,
+                DB_NAME: 'americancheese',
+                DB_USER: 'americancheese',
+                DB_PASSWORD: 'richman'
+              },
+              watch: false,
+              max_memory_restart: '500M',
+              error_file: '/var/log/americancheese/error.log',
+              out_file: '/var/log/americancheese/out.log'
+            }]
+          };
+          PMEOF
 
-          # Start the app with PM2 on port 5001 with explicit env vars
-          # PM2 needs env vars passed explicitly since dotenv may not load correctly
-          DB_HOST=localhost \
-          DB_PORT=5432 \
-          DB_NAME=realestateos \
-          DB_USER=postgres \
-          DB_PASSWORD=richman \
-          PORT=5001 \
-          NODE_ENV=production \
-          pm2 start npm --name americancheese -- run start
+          # Create log directory
+          sudo mkdir -p /var/log/americancheese
+          sudo chmod 755 /var/log/americancheese
+
+          # Zero-downtime restart: Use reload if process exists, otherwise start fresh
+          if pm2 describe americancheese > /dev/null 2>&1; then
+            echo "Reloading existing PM2 process (zero-downtime)..."
+            pm2 reload ecosystem.config.cjs --update-env
+          else
+            echo "Starting new PM2 process..."
+            pm2 start ecosystem.config.cjs
+          fi
           pm2 save
 
           # Wait for app to start
@@ -160,9 +198,11 @@ jobs:
 
           # Check database connection and show projects
           echo "Testing database connection..."
-          echo "=== PROJECTS IN REALESTATEOS DATABASE ==="
-          sudo -u postgres psql -d realestateos -c "SELECT id, name FROM projects ORDER BY id;" || echo "DB query failed!"
-          echo "=== END PROJECTS ==="
+          echo "=== PROJECTS IN AMERICANCHEESE DATABASE ==="
+          sudo -u postgres psql -d americancheese -c "SELECT id, name FROM projects ORDER BY id;" || echo "DB query failed!"
+          echo "=== USERS IN DATABASE ==="
+          sudo -u postgres psql -d americancheese -c "SELECT id, email, name FROM users ORDER BY id;" || echo "Users query failed!"
+          echo "=== END VERIFICATION ==="
           
           # Check if app is running on port 5001
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5001/api/projects 2>/dev/null || echo "000")
