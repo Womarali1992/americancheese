@@ -1184,6 +1184,71 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["id"],
         },
       },
+
+      // ==================== TASK ATTACHMENT TOOLS ====================
+      {
+        name: "list_attachments",
+        description: "List all attachments for a specific task. Returns attachment metadata including file name, type, size, and upload date.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID to list attachments for" },
+          },
+          required: ["taskId"],
+        },
+      },
+      {
+        name: "get_attachment",
+        description: "Get a specific attachment by ID including its base64-encoded content. Use this to download or view attachment contents.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            id: { type: "number", description: "The attachment ID" },
+          },
+          required: ["id"],
+        },
+      },
+      {
+        name: "create_attachment",
+        description: "Upload a new attachment to a task. Accepts base64-encoded file content. Supports images, documents, PDFs, and other file types.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID to attach the file to" },
+            fileName: { type: "string", description: "The name of the file (e.g., 'blueprint.pdf', 'photo.jpg')" },
+            fileType: { type: "string", description: "MIME type of the file (e.g., 'image/jpeg', 'application/pdf', 'text/plain')" },
+            fileSize: { type: "number", description: "Size of the file in bytes" },
+            fileContent: { type: "string", description: "Base64-encoded file content" },
+            notes: { type: "string", description: "Optional notes or description about the attachment" },
+            type: { type: "string", description: "Attachment type: document, image, note, video, audio, other (default: document)" },
+          },
+          required: ["taskId", "fileName", "fileType", "fileSize", "fileContent"],
+        },
+      },
+      {
+        name: "update_attachment",
+        description: "Update an existing attachment's metadata (notes, type). Cannot update the file content itself - delete and recreate for that.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            id: { type: "number", description: "The attachment ID to update" },
+            notes: { type: "string", description: "Updated notes or description" },
+            type: { type: "string", description: "Updated attachment type: document, image, note, video, audio, other" },
+          },
+          required: ["id"],
+        },
+      },
+      {
+        name: "delete_attachment",
+        description: "Delete an attachment permanently from a task",
+        inputSchema: {
+          type: "object",
+          properties: {
+            id: { type: "number", description: "The attachment ID to delete" },
+          },
+          required: ["id"],
+        },
+      },
     ],
   };
 });
@@ -2100,6 +2165,116 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           return { content: [{ type: "text", text: `Credential ${args.id} deleted successfully.` }] };
         }
         return { content: [{ type: "text", text: `Failed to delete credential: ${result?.message || "Unknown error"}` }], isError: true };
+      }
+
+      // ==================== TASK ATTACHMENT HANDLERS ====================
+      case "list_attachments": {
+        const attachments = await apiRequest("GET", `/api/tasks/${args.taskId}/attachments`);
+
+        if (!attachments || attachments.length === 0) {
+          return { content: [{ type: "text", text: `No attachments found for task ${args.taskId}.` }] };
+        }
+
+        let output = `## Attachments for Task ${args.taskId}\n\n`;
+        output += `| ID | File Name | Type | Size | Uploaded |\n`;
+        output += `|----|-----------|------|------|----------|\n`;
+
+        for (const att of attachments) {
+          const sizeKB = (att.fileSize / 1024).toFixed(1);
+          const uploaded = att.uploadedAt ? new Date(att.uploadedAt).toLocaleDateString() : 'N/A';
+          output += `| ${att.id} | ${att.fileName} | ${att.type || 'document'} | ${sizeKB} KB | ${uploaded} |\n`;
+        }
+
+        output += `\n*Total: ${attachments.length} attachment(s)*`;
+        if (attachments.some(a => a.notes)) {
+          output += `\n\n### Notes:\n`;
+          attachments.filter(a => a.notes).forEach(a => {
+            output += `- **${a.fileName}**: ${a.notes}\n`;
+          });
+        }
+
+        return { content: [{ type: "text", text: output }] };
+      }
+
+      case "get_attachment": {
+        const attachment = await apiRequest("GET", `/api/attachments/${args.id}`);
+
+        if (!attachment) {
+          return { content: [{ type: "text", text: `Attachment ${args.id} not found.` }], isError: true };
+        }
+
+        // Return metadata without the full content for display, but include content info
+        const sizeKB = (attachment.fileSize / 1024).toFixed(1);
+        const uploaded = attachment.uploadedAt ? new Date(attachment.uploadedAt).toISOString() : 'N/A';
+        const hasContent = !!attachment.fileContent;
+        const contentPreview = hasContent ? `${attachment.fileContent.substring(0, 50)}...` : 'N/A';
+
+        let output = `## Attachment Details\n\n`;
+        output += `- **ID**: ${attachment.id}\n`;
+        output += `- **Task ID**: ${attachment.taskId}\n`;
+        output += `- **File Name**: ${attachment.fileName}\n`;
+        output += `- **File Type**: ${attachment.fileType}\n`;
+        output += `- **Category**: ${attachment.type || 'document'}\n`;
+        output += `- **Size**: ${sizeKB} KB (${attachment.fileSize} bytes)\n`;
+        output += `- **Uploaded**: ${uploaded}\n`;
+        if (attachment.notes) {
+          output += `- **Notes**: ${attachment.notes}\n`;
+        }
+        output += `\n**Content Available**: ${hasContent ? 'Yes (base64 encoded)' : 'No'}\n`;
+        if (hasContent) {
+          output += `**Content Preview**: \`${contentPreview}\`\n`;
+        }
+
+        // Also return the raw JSON for programmatic access
+        return {
+          content: [
+            { type: "text", text: output },
+            { type: "text", text: `\n---\n**Raw JSON:**\n\`\`\`json\n${JSON.stringify(attachment, null, 2)}\n\`\`\`` }
+          ]
+        };
+      }
+
+      case "create_attachment": {
+        const attachment = await apiRequest("POST", `/api/tasks/${args.taskId}/attachments`, {
+          taskId: args.taskId,
+          fileName: args.fileName,
+          fileType: args.fileType,
+          fileSize: args.fileSize,
+          fileContent: args.fileContent,
+          notes: args.notes || null,
+          type: args.type || "document",
+        });
+
+        const sizeKB = (attachment.fileSize / 1024).toFixed(1);
+        return {
+          content: [{
+            type: "text",
+            text: `Successfully uploaded attachment:\n- **ID**: ${attachment.id}\n- **File**: ${attachment.fileName}\n- **Size**: ${sizeKB} KB\n- **Type**: ${attachment.type || 'document'}\n- **Task**: ${attachment.taskId}`
+          }]
+        };
+      }
+
+      case "update_attachment": {
+        const updateData = {};
+        if (args.notes !== undefined) updateData.notes = args.notes;
+        if (args.type !== undefined) updateData.type = args.type;
+
+        if (Object.keys(updateData).length === 0) {
+          return { content: [{ type: "text", text: "No update fields provided. Specify 'notes' or 'type' to update." }], isError: true };
+        }
+
+        const attachment = await apiRequest("PUT", `/api/attachments/${args.id}`, updateData);
+        return {
+          content: [{
+            type: "text",
+            text: `Attachment ${args.id} updated successfully.\n- **File**: ${attachment.fileName}\n- **Type**: ${attachment.type}\n- **Notes**: ${attachment.notes || '(none)'}`
+          }]
+        };
+      }
+
+      case "delete_attachment": {
+        await apiRequest("DELETE", `/api/attachments/${args.id}`);
+        return { content: [{ type: "text", text: `Attachment ${args.id} deleted successfully.` }] };
       }
 
       default:

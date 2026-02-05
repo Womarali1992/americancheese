@@ -929,6 +929,71 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["taskId"],
         },
       },
+
+      // ==================== TASK ATTACHMENT TOOLS ====================
+      {
+        name: "list_attachments",
+        description: "List all attachments for a specific task. Returns attachment metadata including file name, type, size, and upload date.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID to list attachments for" },
+          },
+          required: ["taskId"],
+        },
+      },
+      {
+        name: "get_attachment",
+        description: "Get a specific attachment by ID including its base64-encoded content. Use this to download or view attachment contents.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            id: { type: "number", description: "The attachment ID" },
+          },
+          required: ["id"],
+        },
+      },
+      {
+        name: "create_attachment",
+        description: "Upload a new attachment to a task. Accepts base64-encoded file content. Supports images, documents, PDFs, and other file types.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID to attach the file to" },
+            fileName: { type: "string", description: "The name of the file (e.g., 'blueprint.pdf', 'photo.jpg')" },
+            fileType: { type: "string", description: "MIME type of the file (e.g., 'image/jpeg', 'application/pdf', 'text/plain')" },
+            fileSize: { type: "number", description: "Size of the file in bytes" },
+            fileContent: { type: "string", description: "Base64-encoded file content" },
+            notes: { type: "string", description: "Optional notes or description about the attachment" },
+            type: { type: "string", description: "Attachment type: document, image, note, video, audio, other (default: document)" },
+          },
+          required: ["taskId", "fileName", "fileType", "fileSize", "fileContent"],
+        },
+      },
+      {
+        name: "update_attachment",
+        description: "Update an existing attachment's metadata (notes, type). Cannot update the file content itself - delete and recreate for that.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            id: { type: "number", description: "The attachment ID to update" },
+            notes: { type: "string", description: "Updated notes or description" },
+            type: { type: "string", description: "Updated attachment type: document, image, note, video, audio, other" },
+          },
+          required: ["id"],
+        },
+      },
+      {
+        name: "delete_attachment",
+        description: "Delete an attachment permanently from a task",
+        inputSchema: {
+          type: "object",
+          properties: {
+            id: { type: "number", description: "The attachment ID to delete" },
+          },
+          required: ["id"],
+        },
+      },
     ],
   };
 });
@@ -2630,6 +2695,167 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         );
 
         return { content: [{ type: "text", text: `Created calendar event from task "${task.title}":\n${JSON.stringify(result[0], null, 2)}` }] };
+      }
+
+      // ==================== TASK ATTACHMENT HANDLERS ====================
+      case "list_attachments": {
+        const attachments = await query(
+          "SELECT * FROM task_attachments WHERE task_id = $1 ORDER BY uploaded_at DESC",
+          [args.taskId]
+        );
+
+        if (!attachments || attachments.length === 0) {
+          return { content: [{ type: "text", text: `No attachments found for task ${args.taskId}.` }] };
+        }
+
+        let output = `## Attachments for Task ${args.taskId}\n\n`;
+        output += `| ID | File Name | Type | Size | Uploaded |\n`;
+        output += `|----|-----------|------|------|----------|\n`;
+
+        for (const att of attachments) {
+          const sizeKB = (att.file_size / 1024).toFixed(1);
+          const uploaded = att.uploaded_at ? new Date(att.uploaded_at).toLocaleDateString() : 'N/A';
+          output += `| ${att.id} | ${att.file_name} | ${att.type || 'document'} | ${sizeKB} KB | ${uploaded} |\n`;
+        }
+
+        output += `\n*Total: ${attachments.length} attachment(s)*`;
+        if (attachments.some(a => a.notes)) {
+          output += `\n\n### Notes:\n`;
+          attachments.filter(a => a.notes).forEach(a => {
+            output += `- **${a.file_name}**: ${a.notes}\n`;
+          });
+        }
+
+        return { content: [{ type: "text", text: output }] };
+      }
+
+      case "get_attachment": {
+        const result = await query(
+          "SELECT * FROM task_attachments WHERE id = $1",
+          [args.id]
+        );
+
+        if (!result || result.length === 0) {
+          return { content: [{ type: "text", text: `Attachment ${args.id} not found.` }], isError: true };
+        }
+
+        const attachment = result[0];
+        const sizeKB = (attachment.file_size / 1024).toFixed(1);
+        const uploaded = attachment.uploaded_at ? new Date(attachment.uploaded_at).toISOString() : 'N/A';
+        const hasContent = !!attachment.file_content;
+        const contentPreview = hasContent ? `${attachment.file_content.substring(0, 50)}...` : 'N/A';
+
+        let output = `## Attachment Details\n\n`;
+        output += `- **ID**: ${attachment.id}\n`;
+        output += `- **Task ID**: ${attachment.task_id}\n`;
+        output += `- **File Name**: ${attachment.file_name}\n`;
+        output += `- **File Type**: ${attachment.file_type}\n`;
+        output += `- **Category**: ${attachment.type || 'document'}\n`;
+        output += `- **Size**: ${sizeKB} KB (${attachment.file_size} bytes)\n`;
+        output += `- **Uploaded**: ${uploaded}\n`;
+        if (attachment.notes) {
+          output += `- **Notes**: ${attachment.notes}\n`;
+        }
+        output += `\n**Content Available**: ${hasContent ? 'Yes (base64 encoded)' : 'No'}\n`;
+        if (hasContent) {
+          output += `**Content Preview**: \`${contentPreview}\`\n`;
+        }
+
+        // Convert snake_case to camelCase for output
+        const camelCaseAttachment = {
+          id: attachment.id,
+          taskId: attachment.task_id,
+          fileName: attachment.file_name,
+          fileType: attachment.file_type,
+          fileSize: attachment.file_size,
+          fileContent: attachment.file_content,
+          uploadedAt: attachment.uploaded_at,
+          notes: attachment.notes,
+          type: attachment.type
+        };
+
+        return {
+          content: [
+            { type: "text", text: output },
+            { type: "text", text: `\n---\n**Raw JSON:**\n\`\`\`json\n${JSON.stringify(camelCaseAttachment, null, 2)}\n\`\`\`` }
+          ]
+        };
+      }
+
+      case "create_attachment": {
+        const result = await query(
+          `INSERT INTO task_attachments (task_id, file_name, file_type, file_size, file_content, notes, type)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           RETURNING *`,
+          [
+            args.taskId,
+            args.fileName,
+            args.fileType,
+            args.fileSize,
+            args.fileContent,
+            args.notes || null,
+            args.type || 'document'
+          ]
+        );
+
+        const attachment = result[0];
+        const sizeKB = (attachment.file_size / 1024).toFixed(1);
+        return {
+          content: [{
+            type: "text",
+            text: `Successfully uploaded attachment:\n- **ID**: ${attachment.id}\n- **File**: ${attachment.file_name}\n- **Size**: ${sizeKB} KB\n- **Type**: ${attachment.type || 'document'}\n- **Task**: ${attachment.task_id}`
+          }]
+        };
+      }
+
+      case "update_attachment": {
+        const updates = [];
+        const values = [];
+        let paramCount = 1;
+
+        if (args.notes !== undefined) {
+          updates.push(`notes = $${paramCount++}`);
+          values.push(args.notes);
+        }
+        if (args.type !== undefined) {
+          updates.push(`type = $${paramCount++}`);
+          values.push(args.type);
+        }
+
+        if (updates.length === 0) {
+          return { content: [{ type: "text", text: "No update fields provided. Specify 'notes' or 'type' to update." }], isError: true };
+        }
+
+        values.push(args.id);
+        const result = await query(
+          `UPDATE task_attachments SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`,
+          values
+        );
+
+        if (!result || result.length === 0) {
+          return { content: [{ type: "text", text: `Attachment ${args.id} not found.` }], isError: true };
+        }
+
+        const attachment = result[0];
+        return {
+          content: [{
+            type: "text",
+            text: `Attachment ${args.id} updated successfully.\n- **File**: ${attachment.file_name}\n- **Type**: ${attachment.type}\n- **Notes**: ${attachment.notes || '(none)'}`
+          }]
+        };
+      }
+
+      case "delete_attachment": {
+        const result = await query(
+          "DELETE FROM task_attachments WHERE id = $1 RETURNING id",
+          [args.id]
+        );
+
+        if (!result || result.length === 0) {
+          return { content: [{ type: "text", text: `Attachment ${args.id} not found.` }], isError: true };
+        }
+
+        return { content: [{ type: "text", text: `Attachment ${args.id} deleted successfully.` }] };
       }
 
       default:

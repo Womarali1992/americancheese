@@ -140,6 +140,15 @@ Add the server to your Claude Desktop configuration file:
 - **delete_calendar_event** - Delete an event
 - **create_event_from_task** - Create calendar event from task
 
+### Task Attachments
+- **list_attachments** - List all attachments for a task (metadata only)
+- **get_attachment** - Get attachment details including base64 content
+- **create_attachment** - Upload a new attachment (base64 encoded)
+- **update_attachment** - Update attachment metadata (notes, type)
+- **delete_attachment** - Delete an attachment
+
+*Note: Attachments are stored as base64-encoded content. Supported types: document, image, note, video, audio, other.*
+
 ## Available Category Presets
 
 - `ai-agent` - AI/ML agent development workflow
@@ -162,6 +171,8 @@ Once connected, you can ask Claude things like:
 - "List all materials that are ordered but not delivered"
 - "Store my LinkedIn API key securely"
 - "List my saved credentials"
+- "Show me all attachments for task 123"
+- "Upload this blueprint PDF to task 45"
 
 ## Two Server Modes
 
