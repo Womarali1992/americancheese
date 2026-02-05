@@ -233,11 +233,11 @@ jobs:
             # Copy the config
             sudo cp /var/www/americancheese/americancheese/deploy/nginx.conf /etc/nginx/sites-available/americancheese
 
-            # Update server_name to sitesetups.com
-            sudo sed -i 's/YOUR_DOMAIN_OR_IP/sitesetups.com/g' /etc/nginx/sites-available/americancheese
-
             # Ensure symlink exists
             sudo ln -sf /etc/nginx/sites-available/americancheese /etc/nginx/sites-enabled/americancheese
+
+            # Remove default site if it exists (so our config catches all requests)
+            sudo rm -f /etc/nginx/sites-enabled/default
 
             # Test and reload
             if sudo nginx -t; then
