@@ -227,21 +227,40 @@ jobs:
           echo "Recent PM2 logs:"
           pm2 logs americancheese --lines 100 --nostream 2>/dev/null || true
 
-          # Fix Nginx to proxy to port 5001 for all relevant configs
-          echo "Checking Nginx configs..."
-          for config in /etc/nginx/sites-enabled/*; do
-            if grep -q "proxy_pass http://localhost:5000" "$config" 2>/dev/null; then
-              echo "Fixing Nginx config: $config to use port 5001..."
-              sudo sed -i 's/proxy_pass http:\/\/localhost:5000/proxy_pass http:\/\/localhost:5001/g' "$config"
-              NGINX_RELOAD=true
+          # Update Nginx config from repo
+          echo "Updating Nginx configuration..."
+          if [ -f "/var/www/americancheese/americancheese/deploy/nginx.conf" ]; then
+            # Copy the config
+            sudo cp /var/www/americancheese/americancheese/deploy/nginx.conf /etc/nginx/sites-available/americancheese
+
+            # Update server_name to sitesetups.com
+            sudo sed -i 's/YOUR_DOMAIN_OR_IP/sitesetups.com/g' /etc/nginx/sites-available/americancheese
+
+            # Ensure symlink exists
+            sudo ln -sf /etc/nginx/sites-available/americancheese /etc/nginx/sites-enabled/americancheese
+
+            # Test and reload
+            if sudo nginx -t; then
+              sudo systemctl reload nginx
+              echo "Nginx config updated and reloaded successfully"
+            else
+              echo "Nginx config test failed - keeping old config"
             fi
-          done
-          
-          if [ "$NGINX_RELOAD" = true ]; then
-            sudo nginx -t && sudo systemctl reload nginx
-            echo "Nginx reloaded with port 5001"
           else
-            echo "No Nginx configs needed updating"
+            echo "No nginx.conf found in deploy folder, checking for port fixes..."
+            # Fallback: Fix Nginx to proxy to port 5001 for all relevant configs
+            for config in /etc/nginx/sites-enabled/*; do
+              if grep -q "proxy_pass http://localhost:5000" "$config" 2>/dev/null; then
+                echo "Fixing Nginx config: $config to use port 5001..."
+                sudo sed -i 's/proxy_pass http:\/\/localhost:5000/proxy_pass http:\/\/localhost:5001/g' "$config"
+                NGINX_RELOAD=true
+              fi
+            done
+
+            if [ "$NGINX_RELOAD" = true ]; then
+              sudo nginx -t && sudo systemctl reload nginx
+              echo "Nginx reloaded with port 5001"
+            fi
           fi
 
           echo "Deployment complete!"
