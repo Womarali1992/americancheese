@@ -4,6 +4,7 @@ import cors from "cors";
 import { registerRoutes } from "./routes";
 import unifiedCategoryRoutes from "./unified-category-routes";
 import contextRoutes from "./context-routes";
+import socialRoutes from "./social-routes";
 import { registerAutomationRoutes } from "./automation-routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initDatabase } from "./db";
@@ -72,6 +73,9 @@ app.use((req, res, next) => {
 
   // Add context control center routes
   app.use('/api', contextRoutes);
+
+  // Add social media routes
+  app.use('/api/social', socialRoutes);
 
   // Add automation and webhook routes
   registerAutomationRoutes(app);
