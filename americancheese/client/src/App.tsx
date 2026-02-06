@@ -51,7 +51,8 @@ function AuthCheck({ children }: { children: React.ReactNode }) {
   }, []);
   
   useEffect(() => {
-    if (location === '/login' || location === '/signup' || location === '/privacy' || location === '/privacy-policy') {
+    const cleanLocation = location.replace(/\/$/, '') || '/';
+    if (cleanLocation === '/login' || cleanLocation === '/signup' || cleanLocation === '/privacy' || cleanLocation === '/privacy-policy') {
       setIsAuthenticated(true);
       return;
     }

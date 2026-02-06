@@ -76,10 +76,11 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     req.path === '/_debug_apis';
 
   // Skip auth for public pages and endpoints
-  if (req.path === '/login' ||
-      req.path === '/signup' ||
-      req.path === '/privacy' ||
-      req.path === '/privacy-policy' ||
+  const cleanPath = req.path.replace(/\/$/, '') || '/'; // Remove trailing slash
+  if (cleanPath === '/login' ||
+      cleanPath === '/signup' ||
+      cleanPath === '/privacy' ||
+      cleanPath === '/privacy-policy' ||
       req.path === '/api/auth/login' ||
       req.path === '/api/auth/register' ||
       req.path === '/api/auth/logout' ||
