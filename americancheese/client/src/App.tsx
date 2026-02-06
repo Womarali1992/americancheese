@@ -26,6 +26,7 @@ import ProjectTemplatesPage from "@/pages/admin/project-templates";
 import CalendarPage from "@/pages/calendar";
 import SettingsPage from "@/pages/settings";
 import CredentialsPage from "@/pages/credentials";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
 
 import { queryClient } from "./lib/queryClient";
 
@@ -50,7 +51,7 @@ function AuthCheck({ children }: { children: React.ReactNode }) {
   }, []);
   
   useEffect(() => {
-    if (location === '/login' || location === '/signup') {
+    if (location === '/login' || location === '/signup' || location === '/privacy' || location === '/privacy-policy') {
       setIsAuthenticated(true);
       return;
     }
@@ -118,6 +119,8 @@ function Router() {
     <Switch>
       <Route path="/login" component={LoginPage} />
       <Route path="/signup" component={SignupPage} />
+      <Route path="/privacy" component={PrivacyPolicy} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/" component={(props) => <ProtectedRoute component={DashboardPage} {...props} />} />
       <Route path="/dashboard" component={(props) => <ProtectedRoute component={DashboardPage} {...props} />} />
       <Route path="/projects" component={(props) => <ProtectedRoute component={ProjectsPage} {...props} />} />
