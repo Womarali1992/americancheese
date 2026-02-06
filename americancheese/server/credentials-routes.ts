@@ -10,6 +10,11 @@ import {
 } from '../shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { encryptCredential, decryptCredential } from './crypto';
+import {
+  getCredentialByName,
+  getCredentialsForService,
+  getCredentialsAsEnv
+} from './credentials-service';
 
 const router = Router();
 
@@ -359,6 +364,198 @@ router.post('/:id/reveal', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error revealing credential:', error);
     return res.status(500).json({ success: false, message: 'Failed to reveal credential' });
+  }
+});
+
+// ==================== INTERNAL/AUTOMATION ENDPOINTS ====================
+
+/**
+ * GET /api/credentials/by-name/:name
+ * Get a decrypted credential by exact name (for internal/automation use)
+ * Requires valid session, no password verification needed
+ */
+router.get('/by-name/:name', async (req: Request, res: Response) => {
+  if (!req.session?.userId) {
+    return res.status(401).json({ success: false, message: 'Not authenticated' });
+  }
+
+  try {
+    const credentialName = decodeURIComponent(req.params.name);
+    const credential = await getCredentialByName(req.session.userId, credentialName);
+
+    if (!credential) {
+      return res.status(404).json({ success: false, message: 'Credential not found' });
+    }
+
+    console.log('Credential fetched by name:', credentialName, 'for user:', req.session.userId);
+
+    return res.json({
+      success: true,
+      credential
+    });
+  } catch (error) {
+    console.error('Error fetching credential by name:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch credential' });
+  }
+});
+
+/**
+ * GET /api/credentials/service/:service
+ * Get all credentials for a specific service (e.g., 'facebook', 'x.com')
+ */
+router.get('/service/:service', async (req: Request, res: Response) => {
+  if (!req.session?.userId) {
+    return res.status(401).json({ success: false, message: 'Not authenticated' });
+  }
+
+  try {
+    const service = decodeURIComponent(req.params.service);
+    const serviceCredentials = await getCredentialsForService(req.session.userId, service);
+
+    console.log('Credentials fetched for service:', service, 'count:', serviceCredentials.length);
+
+    return res.json({
+      success: true,
+      service,
+      credentials: serviceCredentials
+    });
+  } catch (error) {
+    console.error('Error fetching credentials for service:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch credentials' });
+  }
+});
+
+/**
+ * POST /api/credentials/batch
+ * Get multiple credentials by names, returns as env-style object
+ * Body: { names: ["Facebook Page Token", "X API Bearer Token"] }
+ */
+router.post('/batch', async (req: Request, res: Response) => {
+  if (!req.session?.userId) {
+    return res.status(401).json({ success: false, message: 'Not authenticated' });
+  }
+
+  try {
+    const { names } = req.body;
+
+    if (!names || !Array.isArray(names)) {
+      return res.status(400).json({ success: false, message: 'names array is required' });
+    }
+
+    const envCredentials = await getCredentialsAsEnv(req.session.userId, names);
+    const foundCount = Object.keys(envCredentials).length;
+
+    console.log('Batch credentials fetched:', foundCount, 'of', names.length, 'for user:', req.session.userId);
+
+    return res.json({
+      success: true,
+      found: foundCount,
+      requested: names.length,
+      credentials: envCredentials
+    });
+  } catch (error) {
+    console.error('Error fetching batch credentials:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch credentials' });
+  }
+});
+
+/**
+ * GET /api/credentials/test-connection/:service
+ * Test API connection using stored credentials
+ * Supports: facebook, x (twitter)
+ */
+router.get('/test-connection/:service', async (req: Request, res: Response) => {
+  if (!req.session?.userId) {
+    return res.status(401).json({ success: false, message: 'Not authenticated' });
+  }
+
+  try {
+    const service = req.params.service.toLowerCase();
+
+    if (service === 'facebook') {
+      // Get Facebook credentials
+      const pageToken = await getCredentialByName(req.session.userId, 'Facebook Page Token');
+      const pageId = await getCredentialByName(req.session.userId, 'Facebook Page ID');
+
+      if (!pageToken || !pageId) {
+        return res.status(404).json({
+          success: false,
+          message: 'Facebook credentials not found. Need: Facebook Page Token, Facebook Page ID'
+        });
+      }
+
+      // Test the connection
+      const response = await fetch(
+        `https://graph.facebook.com/v18.0/${pageId.value}?access_token=${pageToken.value}&fields=name,id`
+      );
+      const data = await response.json();
+
+      if (data.error) {
+        return res.json({
+          success: false,
+          message: 'Facebook API error',
+          error: data.error.message
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: 'Facebook connection successful',
+        page: {
+          id: data.id,
+          name: data.name
+        }
+      });
+    }
+
+    if (service === 'x' || service === 'twitter') {
+      // Get X credentials
+      const bearerToken = await getCredentialByName(req.session.userId, 'X API Bearer Token');
+
+      if (!bearerToken) {
+        return res.status(404).json({
+          success: false,
+          message: 'X credentials not found. Need: X API Bearer Token'
+        });
+      }
+
+      // Test the connection - get authenticated user info
+      const response = await fetch(
+        'https://api.twitter.com/2/users/me',
+        {
+          headers: {
+            'Authorization': `Bearer ${bearerToken.value}`
+          }
+        }
+      );
+      const data = await response.json();
+
+      if (data.errors) {
+        return res.json({
+          success: false,
+          message: 'X API error',
+          error: data.errors[0]?.message || 'Unknown error'
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: 'X (Twitter) connection successful',
+        user: data.data
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      message: `Unsupported service: ${service}. Supported: facebook, x`
+    });
+  } catch (error) {
+    console.error('Error testing connection:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Connection test failed',
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 });
 
