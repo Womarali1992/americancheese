@@ -78,6 +78,8 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
   // Skip auth for public pages and endpoints
   if (req.path === '/login' ||
       req.path === '/signup' ||
+      req.path === '/privacy' ||
+      req.path === '/privacy-policy' ||
       req.path === '/api/auth/login' ||
       req.path === '/api/auth/register' ||
       req.path === '/api/auth/logout' ||
