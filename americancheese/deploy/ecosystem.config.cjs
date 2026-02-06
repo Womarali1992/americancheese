@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'americancheese',
       script: 'dist/index.js',
-      cwd: '/var/www/americancheese',
+      cwd: '/var/www/americancheese/americancheese',
       instances: 1,
       autorestart: true,
       watch: false,
