@@ -909,6 +909,29 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: "get_project_context",
+        description: "Get the AI context (structured context) for a project. Returns mission, scope, tech stack, casting (agents/personas), deliverables, strategy tags, and constraints. Use this to understand the AI/LLM context configuration for a project.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectId: { type: "number", description: "The project ID" },
+          },
+          required: ["projectId"],
+        },
+      },
+      {
+        name: "update_project_context",
+        description: "Update the AI context (structured context) for a project. Accepts structured context data or a JSON string.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectId: { type: "number", description: "The project ID" },
+            context: { type: "object", description: "The context data object (ContextData structure with sections like mission, scope, tech, casting, deliverables, strategy_tags, constraints)" },
+          },
+          required: ["projectId", "context"],
+        },
+      },
+      {
         name: "get_category_context",
         description: "Get the AI context for a category. Returns structured context data (mission, scope, tech, casting, deliverables, etc.).",
         inputSchema: {
@@ -1907,6 +1930,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "delete_category": {
         await apiRequest("DELETE", `/api/project-categories/${args.id}`);
         return { content: [{ type: "text", text: `Category ${args.id} deleted successfully` }] };
+      }
+
+      case "get_project_context": {
+        const result = await apiRequest("GET", `/api/projects/${args.projectId}/context`);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "update_project_context": {
+        const result = await apiRequest("PUT", `/api/projects/${args.projectId}/context`, {
+          context: args.context
+        });
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "get_category_context": {
