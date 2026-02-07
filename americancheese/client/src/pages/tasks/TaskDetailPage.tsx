@@ -127,7 +127,9 @@ export default function TaskDetailPage() {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
+  const [taskContextOpen, setTaskContextOpen] = useState(true); // Task context open by default
   const [projectContext, setProjectContext] = useState<ContextData | null>(null);
+  const [taskContext, setTaskContext] = useState<ContextData | null>(null);
 
   const numericTaskId = parseInt(taskId);
 
@@ -308,6 +310,20 @@ export default function TaskDetailPage() {
     }
   }, [projectDetails]);
 
+  // Initialize task context when task is loaded
+  useEffect(() => {
+    if (task?.structuredContext) {
+      try {
+        const parsed = JSON.parse(task.structuredContext);
+        setTaskContext(parsed);
+      } catch {
+        setTaskContext(createEmptyContext(`task-${task.id}`, 'task'));
+      }
+    } else if (task) {
+      setTaskContext(createEmptyContext(`task-${task.id}`, 'task'));
+    }
+  }, [task]);
+
   // Mutation to save project context
   const saveContextMutation = useMutation({
     mutationFn: async (context: ContextData) => {
@@ -337,6 +353,35 @@ export default function TaskDetailPage() {
   const handleContextChange = (newContext: ContextData) => {
     setProjectContext(newContext);
     saveContextMutation.mutate(newContext);
+  };
+
+  // Mutation to save task context
+  const saveTaskContextMutation = useMutation({
+    mutationFn: async (context: ContextData) => {
+      if (!task?.id) throw new Error('No task ID');
+      const response = await apiRequest(`/api/tasks/${task.id}/context`, "PUT", { context });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Context Saved",
+        description: "Task AI context has been updated.",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${task?.id}`] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save task context.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle task context change with auto-save
+  const handleTaskContextChange = (newContext: ContextData) => {
+    setTaskContext(newContext);
+    saveTaskContextMutation.mutate(newContext);
   };
 
   // Handle edit click
@@ -964,6 +1009,45 @@ export default function TaskDetailPage() {
                     console.log('Description checklist progress:', progress);
                   }}
                 />
+              </div>
+            </ExportableSection>
+          )}
+
+          {/* Task AI Context Section */}
+          {task && (
+            <ExportableSection id="task-context">
+              <div className="rounded-xl border border-emerald-200 bg-white shadow-sm overflow-hidden">
+                <Collapsible open={taskContextOpen} onOpenChange={setTaskContextOpen}>
+                  <CollapsibleTrigger asChild>
+                    <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-emerald-50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
+                          <Brain className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-slate-900">Agent AI Context</h3>
+                          <p className="text-sm text-slate-500">Mission, scope, methods, deliverables, and handoffs for this agent</p>
+                        </div>
+                      </div>
+                      <ChevronRight
+                        className={`h-5 w-5 text-slate-400 transition-transform ${taskContextOpen ? 'rotate-90' : ''}`}
+                      />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="px-4 pb-4 pt-0 border-t border-emerald-100">
+                      <div className="pt-4">
+                        <ContextEditor
+                          entityId={`task-${task.id}`}
+                          entityType="task"
+                          initialContext={taskContext || undefined}
+                          onChange={handleTaskContextChange}
+                          compact
+                        />
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             </ExportableSection>
           )}

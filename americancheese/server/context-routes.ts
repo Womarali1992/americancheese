@@ -6,7 +6,7 @@
 
 import { Router, Request, Response } from 'express';
 import { db } from './db';
-import { aiContextTemplates, projects, insertAiContextTemplateSchema } from '../shared/schema';
+import { aiContextTemplates, projects, tasks, insertAiContextTemplateSchema } from '../shared/schema';
 import { eq, and, or, isNull } from 'drizzle-orm';
 import { generateContextXml, generateFullContextXml } from '../shared/context-xml-generator';
 import { ContextData } from '../shared/context-types';
@@ -425,6 +425,156 @@ router.post('/projects/:id/context/apply-template', async (req: Request, res: Re
   } catch (error) {
     console.error('Error applying template:', error);
     res.status(500).json({ error: 'Failed to apply template' });
+  }
+});
+
+// ==========================================
+// Task Context Management
+// ==========================================
+
+/**
+ * GET /api/tasks/:id/context
+ * Get the structured context for a task
+ */
+router.get('/tasks/:id/context', async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid task ID' });
+    }
+
+    const [task] = await db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        structuredContext: tasks.structuredContext,
+      })
+      .from(tasks)
+      .where(eq(tasks.id, id));
+
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    // Parse the context if it exists
+    let context = null;
+    if (task.structuredContext) {
+      try {
+        context = JSON.parse(task.structuredContext);
+      } catch {
+        context = null;
+      }
+    }
+
+    res.json({
+      taskId: task.id,
+      taskTitle: task.title,
+      context,
+      raw: task.structuredContext,
+    });
+  } catch (error) {
+    console.error('Error fetching task context:', error);
+    res.status(500).json({ error: 'Failed to fetch task context' });
+  }
+});
+
+/**
+ * PUT /api/tasks/:id/context
+ * Update the structured context for a task
+ */
+router.put('/tasks/:id/context', async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid task ID' });
+    }
+
+    const { context } = req.body;
+    if (!context) {
+      return res.status(400).json({ error: 'Context data is required' });
+    }
+
+    // Stringify if object
+    const contextString = typeof context === 'string'
+      ? context
+      : JSON.stringify(context);
+
+    const [task] = await db
+      .update(tasks)
+      .set({ structuredContext: contextString })
+      .where(eq(tasks.id, id))
+      .returning();
+
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    res.json({
+      success: true,
+      taskId: task.id,
+      context: JSON.parse(contextString),
+    });
+  } catch (error) {
+    console.error('Error updating task context:', error);
+    res.status(500).json({ error: 'Failed to update task context' });
+  }
+});
+
+/**
+ * GET /api/tasks/:id/context/export
+ * Export task context as XML
+ */
+router.get('/tasks/:id/context/export', async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid task ID' });
+    }
+
+    const full = req.query.full === 'true';
+
+    const [task] = await db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        structuredContext: tasks.structuredContext,
+      })
+      .from(tasks)
+      .where(eq(tasks.id, id));
+
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    if (!task.structuredContext) {
+      return res.status(404).json({ error: 'Task has no context data' });
+    }
+
+    const context: ContextData = JSON.parse(task.structuredContext);
+    const entityId = `task-${task.id}`;
+
+    const xml = full
+      ? generateFullContextXml(context, entityId)
+      : generateContextXml(context, entityId);
+
+    // Check if client wants XML file download
+    if (req.query.download === 'true') {
+      res.setHeader('Content-Type', 'application/xml');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="context-task-${task.id}.xml"`
+      );
+      return res.send(xml);
+    }
+
+    res.json({
+      taskId: task.id,
+      taskTitle: task.title,
+      xml,
+    });
+  } catch (error) {
+    console.error('Error exporting task context:', error);
+    res.status(500).json({ error: 'Failed to export task context' });
   }
 });
 
