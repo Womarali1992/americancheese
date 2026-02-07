@@ -465,6 +465,68 @@ export const MARKETING_SALES_PRESET: CategoryPreset = {
 };
 
 /**
+ * BMAD Agent Teams Preset
+ * Multi-team AI agent workflow using BMAD methodology (Brief, Motivated, Aligned, Detailed)
+ * Organized by workflow phases: Discovery, Planning, Architecture, Delivery
+ */
+export const BMAD_AGENT_TEAMS_PRESET: CategoryPreset = {
+  id: 'bmad-agent-teams',
+  name: 'BMAD Agent Teams',
+  description: 'Multi-team AI agent workflow with Discovery, Planning, Architecture, and Delivery phases using BMAD methodology',
+  recommendedTheme: 'futuristic',
+  categories: {
+    tier1: [
+      {
+        name: 'Discovery & Analysis',
+        description: 'Turn fuzzy ideas into solid product briefs and validated assumptions',
+        sortOrder: 1
+      },
+      {
+        name: 'Product & UX Planning',
+        description: 'Produce PRD and UX spec that is implementation-ready',
+        sortOrder: 2
+      },
+      {
+        name: 'Architecture & Solutioning',
+        description: 'Decide how to build with architecture decisions and ADRs',
+        sortOrder: 3
+      },
+      {
+        name: 'Delivery & Quality',
+        description: 'Execute stories with tight scope, tests, review, and course-correction',
+        sortOrder: 4
+      }
+    ],
+    tier2: {
+      'Discovery & Analysis': [
+        { name: 'Analyst', description: 'Research, discovery, product brief - Mary' },
+        { name: 'Brainstorming Coach', description: 'Creative Intelligence Suite - Structured ideation' },
+        { name: 'Innovation Strategist', description: 'Creative Intelligence Suite - Framing and strategy angles' },
+        { name: 'Design Thinking Coach', description: 'Creative Intelligence Suite - Problem/solution exploration' }
+      ],
+      'Product & UX Planning': [
+        { name: 'Product Manager', description: 'PRD, epics/stories, implementation readiness - John' },
+        { name: 'UX Designer', description: 'UX spec, user journeys, interaction flows - Sally' },
+        { name: 'Technical Writer', description: 'Standards, structured docs, documentation quality - Paige' },
+        { name: 'Storyteller', description: 'Creative Intelligence Suite - Narrative clarity, positioning, onboarding' }
+      ],
+      'Architecture & Solutioning': [
+        { name: 'Architect', description: 'Architecture decisions, ADRs, technical standards - Winston' },
+        { name: 'Test Architect', description: 'TEA module - Test strategy, quality gates, NFR checks - Murat' },
+        { name: 'Problem Solver', description: 'Creative Intelligence Suite - Systematic solution exploration' },
+        { name: 'Creative Problem Solver', description: 'Creative Intelligence Suite - Lateral options and tradeoffs' }
+      ],
+      'Delivery & Quality': [
+        { name: 'Scrum Master', description: 'Sprint planning, story prep, tracking - Bob' },
+        { name: 'Developer', description: 'Implement stories, write tests, code review - Amelia' },
+        { name: 'QA Engineer', description: 'Automate tests, built-in QA validation - Quinn' },
+        { name: 'Release Manager', description: 'Release gates, traceability, deployment coordination' }
+      ]
+    }
+  }
+};
+
+/**
  * Available presets registry
  */
 export const AVAILABLE_PRESETS: Record<string, CategoryPreset> = {
@@ -475,7 +537,8 @@ export const AVAILABLE_PRESETS: Record<string, CategoryPreset> = {
   'digital-marketing': DIGITAL_MARKETING_PRESET,
   'digital-marketing-plan': DIGITAL_MARKETING_PLAN_PRESET,
   'marketing-sales': MARKETING_SALES_PRESET,
-  'ai-agent': AI_AGENT_PRESET
+  'ai-agent': AI_AGENT_PRESET,
+  'bmad-agent-teams': BMAD_AGENT_TEAMS_PRESET
 };
 
 /**
