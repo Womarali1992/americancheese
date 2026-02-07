@@ -570,3 +570,54 @@ export type InsertSectionComment = z.infer<typeof insertSectionCommentSchema>;
 
 export type GlobalSettings = typeof globalSettings.$inferSelect;
 export type InsertGlobalSettings = z.infer<typeof insertGlobalSettingsSchema>;
+
+// Credentials Schema - for storing encrypted API keys and tokens
+export const credentials = pgTable("credentials", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // e.g., "Facebook Page Token"
+  service: text("service").notNull(), // e.g., "facebook", "x", "instagram"
+  category: text("category").notNull().default("api_key"), // api_key, oauth_token, password, other
+  encryptedValue: text("encrypted_value").notNull(), // AES-256-GCM encrypted
+  website: text("website"), // Associated website
+  username: text("username"), // Username if applicable
+  notes: text("notes"), // Optional notes
+  expiresAt: timestamp("expires_at"), // Token expiration
+  lastAccessedAt: timestamp("last_accessed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertCredentialSchema = createInsertSchema(credentials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type Credential = typeof credentials.$inferSelect;
+export type InsertCredential = z.infer<typeof insertCredentialSchema>;
+
+// Social Posts Schema - for scheduling and tracking social media posts
+export const socialPosts = pgTable("social_posts", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id"), // Optional: link to a project
+  platform: text("platform").notNull(), // facebook, x, instagram, linkedin
+  content: text("content").notNull(), // The post content
+  link: text("link"), // Optional link to include
+  imageUrl: text("image_url"), // Optional image URL
+  scheduledAt: timestamp("scheduled_at"), // When to post (null = immediate)
+  postedAt: timestamp("posted_at"), // When it was actually posted
+  status: text("status").notNull().default("draft"), // draft, scheduled, posted, failed
+  externalId: text("external_id"), // Post ID from the platform
+  errorMessage: text("error_message"), // Error if failed
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSocialPostSchema = createInsertSchema(socialPosts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type SocialPost = typeof socialPosts.$inferSelect;
+export type InsertSocialPost = z.infer<typeof insertSocialPostSchema>;

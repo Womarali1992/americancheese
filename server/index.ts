@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import unifiedCategoryRoutes from "./unified-category-routes";
+import socialRoutes from "./social-routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initDatabase } from "./db";
 import { authMiddleware, sessionMiddleware } from "./auth";
@@ -59,6 +60,9 @@ app.use((req, res, next) => {
   
   // Add unified category management routes
   app.use(unifiedCategoryRoutes);
+  
+  // Add social media automation routes
+  app.use('/api/social', socialRoutes);
 
   // We're removing this middleware as it's redundant with the authMiddleware
   // and may be interfering with Vite module loading
