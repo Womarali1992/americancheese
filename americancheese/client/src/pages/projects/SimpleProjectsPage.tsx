@@ -386,7 +386,7 @@ export default function SimpleProjectsPage() {
                     )}
                     
                     {project.description && (
-                      <p className="text-sm text-gray-600 line-clamp-2">
+                      <p className="text-sm text-gray-600 line-clamp-2 whitespace-pre-wrap">
                         {project.description}
                       </p>
                     )}

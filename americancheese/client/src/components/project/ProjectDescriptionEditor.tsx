@@ -151,7 +151,7 @@ export function ProjectDescriptionEditor({
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <p className="text-gray-600 text-sm leading-relaxed min-h-[60px]">
+                        <p className="text-gray-600 text-sm leading-relaxed min-h-[60px] whitespace-pre-wrap">
                           {project.description || 'No description provided. Click edit to add a description for this project.'}
                         </p>
                         <button className="justify-center whitespace-nowrap font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-slate-200 bg-white text-slate-700 hover:text-slate-900 h-9 rounded-md px-3 text-xs flex items-center gap-1 hover:bg-green-50 hover:border-green-300"
