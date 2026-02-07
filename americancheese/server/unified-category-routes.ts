@@ -411,6 +411,102 @@ router.post('/api/projects/:projectId/categories/:categoryId/duplicate', async (
   }
 });
 
+// ==================== CATEGORY CONTEXT ====================
+
+/**
+ * GET /api/projects/:projectId/categories/:categoryId/context
+ * Get the AI context for a category
+ */
+router.get('/api/projects/:projectId/categories/:categoryId/context', async (req, res) => {
+  try {
+    const projectId = parseInt(req.params.projectId);
+    const categoryId = parseInt(req.params.categoryId);
+
+    if (isNaN(projectId) || isNaN(categoryId)) {
+      return res.status(400).json({ error: 'Invalid project ID or category ID' });
+    }
+
+    const [category] = await db.select()
+      .from(projectCategories)
+      .where(and(
+        eq(projectCategories.id, categoryId),
+        eq(projectCategories.projectId, projectId)
+      ));
+
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    let context = null;
+    if (category.structuredContext) {
+      try {
+        context = JSON.parse(category.structuredContext);
+      } catch {
+        context = null;
+      }
+    }
+
+    res.json({
+      categoryId: category.id,
+      categoryName: category.name,
+      context,
+      raw: category.structuredContext
+    });
+  } catch (error) {
+    console.error('Error fetching category context:', error);
+    res.status(500).json({ error: 'Failed to fetch category context' });
+  }
+});
+
+/**
+ * PUT /api/projects/:projectId/categories/:categoryId/context
+ * Update the AI context for a category
+ */
+router.put('/api/projects/:projectId/categories/:categoryId/context', async (req, res) => {
+  try {
+    const projectId = parseInt(req.params.projectId);
+    const categoryId = parseInt(req.params.categoryId);
+
+    if (isNaN(projectId) || isNaN(categoryId)) {
+      return res.status(400).json({ error: 'Invalid project ID or category ID' });
+    }
+
+    const { context } = req.body;
+    if (!context) {
+      return res.status(400).json({ error: 'Context data is required' });
+    }
+
+    const contextString = typeof context === 'string'
+      ? context
+      : JSON.stringify(context);
+
+    const [category] = await db
+      .update(projectCategories)
+      .set({
+        structuredContext: contextString,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(projectCategories.id, categoryId),
+        eq(projectCategories.projectId, projectId)
+      ))
+      .returning();
+
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    res.json({
+      success: true,
+      categoryId: category.id,
+      context: JSON.parse(contextString)
+    });
+  } catch (error) {
+    console.error('Error updating category context:', error);
+    res.status(500).json({ error: 'Failed to update category context' });
+  }
+});
+
 // ==================== PRESET OPERATIONS ====================
 
 /**

@@ -909,6 +909,31 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: "get_category_context",
+        description: "Get the AI context for a category. Returns structured context data (mission, scope, tech, casting, deliverables, etc.).",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectId: { type: "number", description: "The project ID" },
+            categoryId: { type: "number", description: "The category ID" },
+          },
+          required: ["projectId", "categoryId"],
+        },
+      },
+      {
+        name: "update_category_context",
+        description: "Update the AI context for a category. Accepts structured context data or a JSON string.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectId: { type: "number", description: "The project ID" },
+            categoryId: { type: "number", description: "The category ID" },
+            context: { type: "object", description: "The context data object (ContextData structure with sections like mission, scope, tech, casting, deliverables, strategy_tags, constraints)" },
+          },
+          required: ["projectId", "categoryId", "context"],
+        },
+      },
+      {
         name: "apply_preset_categories",
         description: "Apply a preset's categories to a project. Supports fuzzy matching (e.g., 'work' matches 'workout'). Use list_presets to see all available presets.",
         inputSchema: {
@@ -1882,6 +1907,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "delete_category": {
         await apiRequest("DELETE", `/api/project-categories/${args.id}`);
         return { content: [{ type: "text", text: `Category ${args.id} deleted successfully` }] };
+      }
+
+      case "get_category_context": {
+        const result = await apiRequest("GET", `/api/projects/${args.projectId}/categories/${args.categoryId}/context`);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "update_category_context": {
+        const result = await apiRequest("PUT", `/api/projects/${args.projectId}/categories/${args.categoryId}/context`, {
+          context: args.context
+        });
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "apply_preset_categories": {

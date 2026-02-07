@@ -488,6 +488,7 @@ export const projectCategories = pgTable("project_categories", {
   description: text("description"), // Optional description of the category
   templateId: integer("template_id"), // Optional reference to the template this was loaded from
   sortOrder: integer("sort_order").default(0), // For ordering categories
+  structuredContext: text("structured_context"), // JSON stringified ContextData for AI context
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

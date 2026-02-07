@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import { queryClient } from "@/lib/queryClient";
 import { useProjectTheme } from "@/hooks/useProjectTheme";
 import { FALLBACK_COLORS } from "@/lib/unified-color-system";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { ContextEditor } from "@/components/context";
+import { ContextData } from "@shared/context-types";
 import {
   Tags,
   Edit2,
@@ -25,7 +27,8 @@ import {
   Copy,
   FileText,
   ChevronDown,
-  ExternalLink
+  ExternalLink,
+  Brain
 } from "lucide-react";
 
 interface CategoryManagerProps {
@@ -67,6 +70,43 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
   const [categoryToDuplicate, setCategoryToDuplicate] = useState<any>(null);
   const [duplicateCategoryName, setDuplicateCategoryName] = useState("");
   
+  // AI Context dialog state
+  const [contextCategory, setContextCategory] = useState<any>(null);
+  const [contextData, setContextData] = useState<ContextData | null>(null);
+  const [contextLoading, setContextLoading] = useState(false);
+
+  // Load category context when dialog opens
+  useEffect(() => {
+    if (!contextCategory) return;
+    setContextLoading(true);
+    fetch(`/api/projects/${projectId}/categories/${contextCategory.id}/context`)
+      .then(res => res.json())
+      .then(data => {
+        setContextData(data.context || null);
+      })
+      .catch(err => {
+        console.error('Error loading category context:', err);
+        setContextData(null);
+      })
+      .finally(() => setContextLoading(false));
+  }, [contextCategory, projectId]);
+
+  const handleSaveContext = async (context: ContextData) => {
+    if (!contextCategory) return;
+    try {
+      const response = await fetch(`/api/projects/${projectId}/categories/${contextCategory.id}/context`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ context })
+      });
+      if (!response.ok) throw new Error('Failed to save context');
+      setContextData(context);
+    } catch (error) {
+      console.error('Error saving category context:', error);
+      alert('Failed to save AI context');
+    }
+  };
+
   // Track expanded descriptions
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<number>>(new Set());
   
@@ -567,6 +607,10 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
                                           <Edit2 className="h-3 w-3 mr-2" />
                                           Edit
                                         </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setContextCategory(mainCategory)}>
+                                          <Brain className="h-3 w-3 mr-2" />
+                                          AI Context
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => handleDuplicateCategory(mainCategory)}>
                                           <Copy className="h-3 w-3 mr-2" />
                                           Duplicate
@@ -678,6 +722,10 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
                                                 <DropdownMenuItem onClick={() => handleEditCategory(subCategory)}>
                                                   <Edit2 className="h-3 w-3 mr-2" />
                                                   Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => setContextCategory(subCategory)}>
+                                                  <Brain className="h-3 w-3 mr-2" />
+                                                  AI Context
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
                                                   onClick={() => handleDeleteCategory(subCategory.id, subCategory.name)}
@@ -983,6 +1031,31 @@ export function CategoryManager({ projectId, projectCategories, tasks, onAddTask
           })()}
         </div>
       )}
+
+      {/* AI Context Dialog */}
+      <Dialog open={!!contextCategory} onOpenChange={(open) => { if (!open) { setContextCategory(null); setContextData(null); } }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5" />
+              AI Context - {contextCategory?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            {contextLoading ? (
+              <p className="text-sm text-muted-foreground">Loading context...</p>
+            ) : (
+              <ContextEditor
+                entityId={`category-${contextCategory?.id}`}
+                entityType="category"
+                initialContext={contextData}
+                onChange={handleSaveContext}
+                compact={true}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Duplicate Category Dialog */}
       <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>

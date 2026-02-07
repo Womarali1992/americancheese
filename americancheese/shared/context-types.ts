@@ -51,7 +51,7 @@ export interface ContextSection {
 /**
  * Entity types that can have structured context
  */
-export type ContextEntityType = 'project' | 'task' | 'material' | 'labor';
+export type ContextEntityType = 'project' | 'task' | 'material' | 'labor' | 'category';
 
 /**
  * Metadata for context data
