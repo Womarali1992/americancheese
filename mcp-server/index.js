@@ -994,6 +994,157 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["id"],
         },
       },
+
+      // ==================== AI CONTEXT TOOLS ====================
+      {
+        name: "get_project_context",
+        description: "Get the AI context (structured context) for a project. Returns mission, scope, tech stack, casting (agents/personas), deliverables, strategy tags, and constraints. Use this to understand the AI/LLM context configuration for a project.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectId: { type: "number", description: "The project ID" },
+          },
+          required: ["projectId"],
+        },
+      },
+      {
+        name: "update_project_context",
+        description: "Update the AI context (structured context) for a project. Provide a full context object with sections for mission, scope, tech, casting, deliverables, strategy_tags, and constraints.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectId: { type: "number", description: "The project ID" },
+            context: {
+              type: "object",
+              description: "The structured context data",
+              properties: {
+                mission: { type: "string", description: "The project mission - explain WHY this matters" },
+                scope: { type: "string", description: "What's IN and OUT of scope" },
+                tech: { type: "array", items: { type: "string" }, description: "Tech stack - list of tools/technologies" },
+                casting: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      name: { type: "string" },
+                      role: { type: "string", enum: ["primary_agent", "target_user", "stakeholder", "reviewer"] },
+                      description: { type: "string" }
+                    }
+                  },
+                  description: "Agents/personas involved"
+                },
+                deliverables: { type: "array", items: { type: "string" }, description: "Expected outputs" },
+                strategyTags: { type: "array", items: { type: "string" }, description: "Keywords for approach" },
+                constraints: { type: "string", description: "Limitations and requirements" }
+              }
+            },
+          },
+          required: ["projectId", "context"],
+        },
+      },
+      {
+        name: "update_context_section",
+        description: "Update a single section of the AI context. Useful for updating just mission, scope, tech, casting, deliverables, strategy_tags, or constraints without touching other sections.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectId: { type: "number", description: "The project ID" },
+            section: {
+              type: "string",
+              description: "Section to update: mission, scope, tech, casting, deliverables, strategy_tags, constraints",
+              enum: ["mission", "scope", "tech", "casting", "deliverables", "strategy_tags", "constraints"]
+            },
+            content: {
+              type: ["string", "array"],
+              description: "New content - string for mission/scope/constraints, array for tech/deliverables/strategy_tags/casting"
+            },
+          },
+          required: ["projectId", "section", "content"],
+        },
+      },
+      {
+        name: "export_context_xml",
+        description: "Export project AI context as XML format, suitable for use in AI/LLM system prompts.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectId: { type: "number", description: "The project ID" },
+            full: { type: "boolean", description: "If true, include all sections even if empty (default: false)" },
+          },
+          required: ["projectId"],
+        },
+      },
+      {
+        name: "list_context_templates",
+        description: "List available AI context templates that can be applied to projects.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectId: { type: "number", description: "Optional: filter to show templates for this project plus global templates" },
+          },
+        },
+      },
+      {
+        name: "apply_context_template",
+        description: "Apply an AI context template to a project. Can merge with existing context or replace entirely.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectId: { type: "number", description: "The project ID" },
+            templateId: { type: "number", description: "The template ID to apply" },
+            merge: { type: "boolean", description: "If true, merge with existing context (keep existing values where present). Default: false (replace)" },
+          },
+          required: ["projectId", "templateId"],
+        },
+      },
+
+      // ==================== TASK-LEVEL AI CONTEXT TOOLS ====================
+      {
+        name: "get_task_context",
+        description: "Get the AI context for a specific task. Returns mission, scope, methods, deliverables, constraints, and handoffs for this agent/task.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID" },
+          },
+          required: ["taskId"],
+        },
+      },
+      {
+        name: "update_task_context",
+        description: "Update the AI context for a specific task. Provide structured context with mission, scope, methods, deliverables, constraints, and handoffs.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID" },
+            context: {
+              type: "object",
+              description: "The structured context data for this task/agent",
+              properties: {
+                mission: { type: "string", description: "The agent's mission - what it does and why" },
+                scopeIn: { type: "array", items: { type: "string" }, description: "What's IN scope for this agent" },
+                scopeOut: { type: "array", items: { type: "string" }, description: "What's OUT of scope for this agent" },
+                methods: { type: "array", items: { type: "string" }, description: "Methods and tools this agent uses" },
+                deliverables: { type: "array", items: { type: "string" }, description: "What this agent produces" },
+                constraints: { type: "array", items: { type: "string" }, description: "Rules and limitations for this agent" },
+                handoffs: { type: "array", items: { type: "string" }, description: "Downstream agents/roles that receive outputs" }
+              }
+            },
+          },
+          required: ["taskId", "context"],
+        },
+      },
+      {
+        name: "export_task_context_xml",
+        description: "Export task AI context as XML format, suitable for use in AI/LLM system prompts.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID" },
+          },
+          required: ["taskId"],
+        },
+      },
     ],
   };
 });
@@ -2856,6 +3007,530 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         return { content: [{ type: "text", text: `Attachment ${args.id} deleted successfully.` }] };
+      }
+
+      // ==================== AI CONTEXT HANDLERS ====================
+      case "get_project_context": {
+        const projects = await query(
+          "SELECT id, name, structured_context FROM projects WHERE id = $1",
+          [args.projectId]
+        );
+
+        if (projects.length === 0) {
+          return { content: [{ type: "text", text: `Project ${args.projectId} not found` }], isError: true };
+        }
+
+        const project = projects[0];
+        let context = null;
+
+        if (project.structured_context) {
+          try {
+            context = JSON.parse(project.structured_context);
+          } catch (e) {
+            context = null;
+          }
+        }
+
+        if (!context) {
+          return {
+            content: [{
+              type: "text",
+              text: `## Project: ${project.name} (ID: ${project.id})\n\n**AI Context**: Not configured\n\nUse update_project_context to set up AI context for this project.`
+            }]
+          };
+        }
+
+        // Format nice output
+        let output = `## AI Context: ${project.name} (ID: ${project.id})\n\n`;
+
+        for (const section of context.sections || []) {
+          if (!section.visible) continue;
+
+          output += `### ${section.label}\n`;
+          if (typeof section.content === 'string') {
+            output += section.content ? section.content + '\n' : '_Not set_\n';
+          } else if (Array.isArray(section.content)) {
+            if (section.type === 'casting') {
+              for (const persona of section.content) {
+                output += `- **${persona.name}** (${persona.role}): ${persona.description || ''}\n`;
+              }
+            } else {
+              output += section.content.length > 0
+                ? section.content.map(item => `- ${item}`).join('\n') + '\n'
+                : '_Not set_\n';
+            }
+          }
+          output += '\n';
+        }
+
+        return {
+          content: [{
+            type: "text",
+            text: output + "\n```json\n" + JSON.stringify(context, null, 2) + "\n```"
+          }]
+        };
+      }
+
+      case "update_project_context": {
+        const ctx = args.context;
+        const now = new Date().toISOString();
+
+        // Build structured context
+        const structuredContext = {
+          version: "1.0",
+          entityId: `project-${args.projectId}`,
+          entityType: "project",
+          sections: [
+            { id: "section-1", type: "mission", label: "Mission", content: ctx.mission || "", order: 1, visible: true },
+            { id: "section-2", type: "scope", label: "Scope", content: ctx.scope || "", order: 2, visible: true },
+            { id: "section-3", type: "tech", label: "Tech Stack", content: ctx.tech || [], order: 3, visible: true },
+            { id: "section-4", type: "casting", label: "Casting", content: (ctx.casting || []).map((c, i) => ({
+              id: `p${i+1}`,
+              name: c.name,
+              role: c.role || "primary_agent",
+              description: c.description || ""
+            })), order: 4, visible: true },
+            { id: "section-5", type: "deliverables", label: "Deliverables", content: ctx.deliverables || [], order: 5, visible: true },
+            { id: "section-6", type: "strategy_tags", label: "Strategy Tags", content: ctx.strategyTags || [], order: 6, visible: true },
+            { id: "section-7", type: "constraints", label: "Constraints", content: ctx.constraints || "", order: 7, visible: true },
+          ],
+          metadata: { createdAt: now, updatedAt: now }
+        };
+
+        const result = await query(
+          "UPDATE projects SET structured_context = $1 WHERE id = $2 RETURNING id, name",
+          [JSON.stringify(structuredContext), args.projectId]
+        );
+
+        if (result.length === 0) {
+          return { content: [{ type: "text", text: `Project ${args.projectId} not found` }], isError: true };
+        }
+
+        return {
+          content: [{
+            type: "text",
+            text: `✅ Updated AI context for project "${result[0].name}" (ID: ${result[0].id})\n\nSections updated: mission, scope, tech, casting, deliverables, strategy_tags, constraints`
+          }]
+        };
+      }
+
+      case "update_context_section": {
+        // Get current context
+        const projects = await query(
+          "SELECT id, name, structured_context FROM projects WHERE id = $1",
+          [args.projectId]
+        );
+
+        if (projects.length === 0) {
+          return { content: [{ type: "text", text: `Project ${args.projectId} not found` }], isError: true };
+        }
+
+        const project = projects[0];
+        let context;
+        const now = new Date().toISOString();
+
+        if (project.structured_context) {
+          try {
+            context = JSON.parse(project.structured_context);
+          } catch (e) {
+            context = null;
+          }
+        }
+
+        // Initialize if no context exists
+        if (!context) {
+          context = {
+            version: "1.0",
+            entityId: `project-${args.projectId}`,
+            entityType: "project",
+            sections: [
+              { id: "section-1", type: "mission", label: "Mission", content: "", order: 1, visible: true },
+              { id: "section-2", type: "scope", label: "Scope", content: "", order: 2, visible: true },
+              { id: "section-3", type: "tech", label: "Tech Stack", content: [], order: 3, visible: true },
+              { id: "section-4", type: "casting", label: "Casting", content: [], order: 4, visible: true },
+              { id: "section-5", type: "deliverables", label: "Deliverables", content: [], order: 5, visible: true },
+              { id: "section-6", type: "strategy_tags", label: "Strategy Tags", content: [], order: 6, visible: true },
+              { id: "section-7", type: "constraints", label: "Constraints", content: "", order: 7, visible: true },
+            ],
+            metadata: { createdAt: now, updatedAt: now }
+          };
+        }
+
+        // Find and update section
+        const sectionIndex = context.sections.findIndex(s => s.type === args.section);
+        if (sectionIndex === -1) {
+          return { content: [{ type: "text", text: `Section "${args.section}" not found` }], isError: true };
+        }
+
+        // Handle casting specially
+        if (args.section === 'casting' && Array.isArray(args.content)) {
+          context.sections[sectionIndex].content = args.content.map((c, i) => ({
+            id: `p${i+1}`,
+            name: c.name,
+            role: c.role || "primary_agent",
+            description: c.description || ""
+          }));
+        } else {
+          context.sections[sectionIndex].content = args.content;
+        }
+
+        context.metadata.updatedAt = now;
+
+        const result = await query(
+          "UPDATE projects SET structured_context = $1 WHERE id = $2 RETURNING id, name",
+          [JSON.stringify(context), args.projectId]
+        );
+
+        return {
+          content: [{
+            type: "text",
+            text: `✅ Updated "${args.section}" section for project "${result[0].name}"`
+          }]
+        };
+      }
+
+      case "export_context_xml": {
+        const projects = await query(
+          "SELECT id, name, structured_context FROM projects WHERE id = $1",
+          [args.projectId]
+        );
+
+        if (projects.length === 0) {
+          return { content: [{ type: "text", text: `Project ${args.projectId} not found` }], isError: true };
+        }
+
+        const project = projects[0];
+        if (!project.structured_context) {
+          return { content: [{ type: "text", text: `Project ${args.projectId} has no AI context configured` }], isError: true };
+        }
+
+        let context;
+        try {
+          context = JSON.parse(project.structured_context);
+        } catch (e) {
+          return { content: [{ type: "text", text: `Invalid context data for project ${args.projectId}` }], isError: true };
+        }
+
+        // Generate XML
+        let xml = `<context entity-id="project-${project.id}" version="${context.version || '1.0'}">\n`;
+
+        for (const section of context.sections || []) {
+          if (!args.full && !section.visible) continue;
+
+          const isEmpty = !section.content ||
+            (typeof section.content === 'string' && !section.content.trim()) ||
+            (Array.isArray(section.content) && section.content.length === 0);
+
+          if (!args.full && isEmpty) continue;
+
+          xml += `  <${section.type}>\n`;
+
+          if (typeof section.content === 'string') {
+            xml += `    ${section.content}\n`;
+          } else if (Array.isArray(section.content)) {
+            if (section.type === 'casting') {
+              for (const persona of section.content) {
+                xml += `    <persona role="${persona.role}">\n`;
+                xml += `      <name>${persona.name}</name>\n`;
+                if (persona.description) xml += `      <description>${persona.description}</description>\n`;
+                xml += `    </persona>\n`;
+              }
+            } else {
+              for (const item of section.content) {
+                xml += `    <item>${item}</item>\n`;
+              }
+            }
+          }
+
+          xml += `  </${section.type}>\n`;
+        }
+
+        xml += `</context>`;
+
+        return {
+          content: [{
+            type: "text",
+            text: `## XML Context for ${project.name}\n\n\`\`\`xml\n${xml}\n\`\`\``
+          }]
+        };
+      }
+
+      case "list_context_templates": {
+        let templates;
+        if (args.projectId) {
+          templates = await query(
+            `SELECT * FROM ai_context_templates
+             WHERE is_global = true OR project_id = $1
+             ORDER BY name`,
+            [args.projectId]
+          );
+        } else {
+          templates = await query(
+            `SELECT * FROM ai_context_templates WHERE is_global = true ORDER BY name`
+          );
+        }
+
+        if (templates.length === 0) {
+          return { content: [{ type: "text", text: "No context templates found." }] };
+        }
+
+        let output = "## AI Context Templates\n\n";
+        for (const t of templates) {
+          output += `**${t.name}** (ID: ${t.id})${t.is_global ? ' [Global]' : ''}\n`;
+          output += `${t.description || 'No description'}\n\n`;
+        }
+
+        return { content: [{ type: "text", text: output }] };
+      }
+
+      case "apply_context_template": {
+        // Get template
+        const templates = await query(
+          "SELECT * FROM ai_context_templates WHERE id = $1",
+          [args.templateId]
+        );
+
+        if (templates.length === 0) {
+          return { content: [{ type: "text", text: `Template ${args.templateId} not found` }], isError: true };
+        }
+
+        const template = templates[0];
+        let templateContext;
+        try {
+          templateContext = JSON.parse(template.context_data);
+        } catch (e) {
+          return { content: [{ type: "text", text: `Invalid template data` }], isError: true };
+        }
+
+        let finalContext = templateContext;
+        const now = new Date().toISOString();
+
+        // Merge if requested
+        if (args.merge) {
+          const projects = await query(
+            "SELECT structured_context FROM projects WHERE id = $1",
+            [args.projectId]
+          );
+
+          if (projects.length > 0 && projects[0].structured_context) {
+            try {
+              const currentContext = JSON.parse(projects[0].structured_context);
+
+              finalContext = {
+                ...templateContext,
+                entityId: `project-${args.projectId}`,
+                entityType: "project",
+                sections: templateContext.sections.map(templateSection => {
+                  const currentSection = currentContext.sections?.find(s => s.type === templateSection.type);
+                  if (currentSection && currentSection.content) {
+                    const hasContent = typeof currentSection.content === 'string'
+                      ? currentSection.content.trim()
+                      : Array.isArray(currentSection.content) && currentSection.content.length > 0;
+                    if (hasContent) {
+                      return { ...templateSection, content: currentSection.content };
+                    }
+                  }
+                  return templateSection;
+                }),
+                metadata: {
+                  ...templateContext.metadata,
+                  templateId: template.id,
+                  templateName: template.name,
+                  updatedAt: now,
+                },
+              };
+            } catch (e) {
+              // If current context is invalid, just use template
+            }
+          }
+        }
+
+        // Update with template data
+        finalContext.entityId = `project-${args.projectId}`;
+        finalContext.entityType = "project";
+        finalContext.metadata = {
+          ...finalContext.metadata,
+          templateId: template.id,
+          templateName: template.name,
+          updatedAt: now,
+        };
+
+        const result = await query(
+          "UPDATE projects SET structured_context = $1 WHERE id = $2 RETURNING id, name",
+          [JSON.stringify(finalContext), args.projectId]
+        );
+
+        if (result.length === 0) {
+          return { content: [{ type: "text", text: `Project ${args.projectId} not found` }], isError: true };
+        }
+
+        return {
+          content: [{
+            type: "text",
+            text: `✅ Applied template "${template.name}" to project "${result[0].name}"${args.merge ? ' (merged with existing context)' : ''}`
+          }]
+        };
+      }
+
+      // ==================== TASK-LEVEL AI CONTEXT HANDLERS ====================
+      case "get_task_context": {
+        const tasks = await query(
+          "SELECT id, title, structured_context FROM tasks WHERE id = $1",
+          [args.taskId]
+        );
+
+        if (tasks.length === 0) {
+          return { content: [{ type: "text", text: `Task ${args.taskId} not found` }], isError: true };
+        }
+
+        const task = tasks[0];
+        let context = null;
+
+        if (task.structured_context) {
+          try {
+            context = JSON.parse(task.structured_context);
+          } catch (e) {
+            context = null;
+          }
+        }
+
+        if (!context) {
+          return {
+            content: [{
+              type: "text",
+              text: `## Task: ${task.title} (ID: ${task.id})\n\n**AI Context**: Not configured\n\nUse update_task_context to set up AI context for this task.`
+            }]
+          };
+        }
+
+        let output = `## AI Context: ${task.title} (ID: ${task.id})\n\n`;
+
+        if (context.mission) {
+          output += `### 🎯 Mission\n${context.mission}\n\n`;
+        }
+        if (context.scopeIn && context.scopeIn.length > 0) {
+          output += `### 📋 Scope IN\n${context.scopeIn.map(s => `- ${s}`).join('\n')}\n\n`;
+        }
+        if (context.scopeOut && context.scopeOut.length > 0) {
+          output += `### 🚫 Scope OUT\n${context.scopeOut.map(s => `- ${s}`).join('\n')}\n\n`;
+        }
+        if (context.methods && context.methods.length > 0) {
+          output += `### 🛠️ Methods & Tools\n${context.methods.map(m => `- ${m}`).join('\n')}\n\n`;
+        }
+        if (context.deliverables && context.deliverables.length > 0) {
+          output += `### 📦 Deliverables\n${context.deliverables.map(d => `- ${d}`).join('\n')}\n\n`;
+        }
+        if (context.constraints && context.constraints.length > 0) {
+          output += `### ⚠️ Constraints\n${context.constraints.map(c => `- ${c}`).join('\n')}\n\n`;
+        }
+        if (context.handoffs && context.handoffs.length > 0) {
+          output += `### 🔄 Handoffs\n${context.handoffs.map(h => `- ${h}`).join('\n')}\n\n`;
+        }
+
+        return {
+          content: [{
+            type: "text",
+            text: output
+          }]
+        };
+      }
+
+      case "update_task_context": {
+        const ctx = args.context;
+        const now = new Date().toISOString();
+
+        // Build structured context for task
+        const structuredContext = {
+          version: "1.0",
+          entityId: `task-${args.taskId}`,
+          entityType: "task",
+          mission: ctx.mission || "",
+          scopeIn: ctx.scopeIn || [],
+          scopeOut: ctx.scopeOut || [],
+          methods: ctx.methods || [],
+          deliverables: ctx.deliverables || [],
+          constraints: ctx.constraints || [],
+          handoffs: ctx.handoffs || [],
+          metadata: {
+            createdAt: now,
+            updatedAt: now,
+          }
+        };
+
+        const result = await query(
+          "UPDATE tasks SET structured_context = $1 WHERE id = $2 RETURNING id, title",
+          [JSON.stringify(structuredContext), args.taskId]
+        );
+
+        if (result.length === 0) {
+          return { content: [{ type: "text", text: `Task ${args.taskId} not found` }], isError: true };
+        }
+
+        return {
+          content: [{
+            type: "text",
+            text: `✅ Updated AI context for task "${result[0].title}" (ID: ${result[0].id})\n\nSections updated: mission, scopeIn, scopeOut, methods, deliverables, constraints, handoffs`
+          }]
+        };
+      }
+
+      case "export_task_context_xml": {
+        const tasks = await query(
+          "SELECT id, title, structured_context FROM tasks WHERE id = $1",
+          [args.taskId]
+        );
+
+        if (tasks.length === 0) {
+          return { content: [{ type: "text", text: `Task ${args.taskId} not found` }], isError: true };
+        }
+
+        const task = tasks[0];
+
+        if (!task.structured_context) {
+          return { content: [{ type: "text", text: `Task ${args.taskId} has no AI context configured` }], isError: true };
+        }
+
+        let context;
+        try {
+          context = JSON.parse(task.structured_context);
+        } catch (e) {
+          return { content: [{ type: "text", text: `Invalid context data for task ${args.taskId}` }], isError: true };
+        }
+
+        // Build XML
+        let xml = `<agent-context entity-id="task-${task.id}" version="${context.version || '1.0'}">\n`;
+        xml += `  <name>${task.title}</name>\n`;
+
+        if (context.mission) {
+          xml += `  <mission>${context.mission}</mission>\n`;
+        }
+        if (context.scopeIn && context.scopeIn.length > 0) {
+          xml += `  <scope-in>\n${context.scopeIn.map(s => `    <item>${s}</item>`).join('\n')}\n  </scope-in>\n`;
+        }
+        if (context.scopeOut && context.scopeOut.length > 0) {
+          xml += `  <scope-out>\n${context.scopeOut.map(s => `    <item>${s}</item>`).join('\n')}\n  </scope-out>\n`;
+        }
+        if (context.methods && context.methods.length > 0) {
+          xml += `  <methods>\n${context.methods.map(m => `    <item>${m}</item>`).join('\n')}\n  </methods>\n`;
+        }
+        if (context.deliverables && context.deliverables.length > 0) {
+          xml += `  <deliverables>\n${context.deliverables.map(d => `    <item>${d}</item>`).join('\n')}\n  </deliverables>\n`;
+        }
+        if (context.constraints && context.constraints.length > 0) {
+          xml += `  <constraints>\n${context.constraints.map(c => `    <item>${c}</item>`).join('\n')}\n  </constraints>\n`;
+        }
+        if (context.handoffs && context.handoffs.length > 0) {
+          xml += `  <handoffs>\n${context.handoffs.map(h => `    <item>${h}</item>`).join('\n')}\n  </handoffs>\n`;
+        }
+
+        xml += `</agent-context>`;
+
+        return {
+          content: [{
+            type: "text",
+            text: `## XML Context for ${task.title}\n\n\`\`\`xml\n${xml}\n\`\`\``
+          }]
+        };
       }
 
       default:

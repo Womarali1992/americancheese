@@ -298,6 +298,8 @@ export const tasks = pgTable("tasks", {
   calendarEndDate: date("calendar_end_date"), // When task is actually scheduled to end on calendar
   calendarStartTime: text("calendar_start_time"), // Time in "HH:MM" format for calendar
   calendarEndTime: text("calendar_end_time"), // Time in "HH:MM" format for calendar
+  // AI Context for task-specific agent configuration
+  structuredContext: text("structured_context"), // JSON stringified ContextData for AI context
 });
 
 // Subtasks Schema - dedicated table for better organization
