@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { FileCode2, Copy, Check, Eye, EyeOff, Plus, Settings2 } from 'lucide-react';
+import { FileCode2, Copy, Check, Eye, EyeOff, Plus, Settings2, Lightbulb, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Accordion,
@@ -28,14 +28,24 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   ContextData,
   ContextSection,
   ContextEntityType,
+  ContextSectionType,
   CastingPersona,
   createEmptyContext,
   updateSectionContent,
   SUGGESTED_TECH_STACK,
   SUGGESTED_STRATEGY_TAGS,
+  BMAD_SECTION_GUIDANCE,
+  BMAD_PRINCIPLES,
+  calculateBmadScore,
 } from '../../../../shared/context-types';
 import { generateContextXml } from '../../../../shared/context-xml-generator';
 
@@ -60,7 +70,7 @@ export interface ContextEditorProps {
   showPreview?: boolean;
 }
 
-// Section icons and labels
+// Section icons and labels with BMAD guidance
 const SECTION_CONFIG: Record<string, { icon: string; label: string; description: string }> = {
   mission: {
     icon: '🎯',
@@ -103,6 +113,183 @@ const SECTION_CONFIG: Record<string, { icon: string; label: string; description:
     description: 'User-defined section',
   },
 };
+
+/**
+ * BMAD Quality Indicator Component
+ * Shows the overall BMAD score and principle breakdown
+ */
+interface BmadIndicatorProps {
+  context: ContextData;
+  compact?: boolean;
+}
+
+function BmadIndicator({ context, compact = false }: BmadIndicatorProps) {
+  const [expanded, setExpanded] = useState(false);
+  const { total, principles, suggestions } = useMemo(
+    () => calculateBmadScore(context),
+    [context]
+  );
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-500';
+    if (score >= 50) return 'text-amber-500';
+    return 'text-red-500';
+  };
+
+  const getScoreBg = (score: number) => {
+    if (score >= 80) return 'bg-green-500';
+    if (score >= 50) return 'bg-amber-500';
+    return 'bg-red-400';
+  };
+
+  if (compact) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1.5 cursor-help">
+              <TrendingUp className={cn('h-3.5 w-3.5', getScoreColor(total))} />
+              <span className={cn('text-xs font-medium', getScoreColor(total))}>
+                {total}%
+              </span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[250px]">
+            <div className="space-y-2">
+              <p className="font-medium text-xs">BMAD Quality Score</p>
+              <div className="grid grid-cols-2 gap-1 text-xs">
+                {Object.entries(BMAD_PRINCIPLES).map(([key, { label, color }]) => (
+                  <div key={key} className="flex items-center gap-1">
+                    <div
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span>{label}:</span>
+                    <span className="font-medium">
+                      {principles[key as keyof typeof principles]}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {suggestions.length > 0 && (
+                <div className="border-t pt-1 mt-1">
+                  <p className="text-xs text-muted-foreground">{suggestions[0]}</p>
+                </div>
+              )}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return (
+    <Collapsible open={expanded} onOpenChange={setExpanded}>
+      <CollapsibleTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 text-xs gap-1.5"
+        >
+          <TrendingUp className={cn('h-3.5 w-3.5', getScoreColor(total))} />
+          <span>BMAD</span>
+          <span className={cn('font-bold', getScoreColor(total))}>{total}%</span>
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="mt-2">
+        <div className="bg-muted/50 rounded-lg p-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium">Quality Score</span>
+            <span className={cn('text-sm font-bold', getScoreColor(total))}>
+              {total}/100
+            </span>
+          </div>
+
+          {/* Principle bars */}
+          <div className="space-y-2">
+            {Object.entries(BMAD_PRINCIPLES).map(([key, { label, color, description }]) => {
+              const score = principles[key as keyof typeof principles];
+              return (
+                <div key={key} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: color }}
+                      />
+                      <span className="font-medium">{label}</span>
+                    </div>
+                    <span className="text-muted-foreground">{score}%</span>
+                  </div>
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{
+                        width: `${score}%`,
+                        backgroundColor: color,
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Suggestions */}
+          {suggestions.length > 0 && (
+            <div className="border-t pt-2 space-y-1">
+              <p className="text-xs font-medium flex items-center gap-1">
+                <Lightbulb className="h-3 w-3 text-amber-500" />
+                Suggestions
+              </p>
+              {suggestions.map((suggestion, i) => (
+                <p key={i} className="text-xs text-muted-foreground pl-4">
+                  {suggestion}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+/**
+ * BMAD Hint Badge for individual sections
+ */
+interface BmadHintProps {
+  sectionType: ContextSectionType;
+}
+
+function BmadHint({ sectionType }: BmadHintProps) {
+  const guidance = BMAD_SECTION_GUIDANCE[sectionType];
+  if (!guidance) return null;
+
+  const principle = BMAD_PRINCIPLES[guidance.principle];
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge
+            variant="outline"
+            className="text-[10px] px-1.5 py-0 h-4 cursor-help"
+            style={{
+              borderColor: principle.color,
+              color: principle.color,
+            }}
+          >
+            {principle.label}
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="max-w-[200px]">
+          <p className="text-xs">{guidance.hint}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 
 // Persona role options
 const PERSONA_ROLES = [
@@ -340,7 +527,7 @@ export function ContextEditor({
 
   return (
     <div className={cn('space-y-4', className)}>
-      {/* Header with export button */}
+      {/* Header with BMAD indicator and export button */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileCode2 className="h-4 w-4 text-muted-foreground" />
@@ -348,6 +535,7 @@ export function ContextEditor({
           <Badge variant="outline" className="text-xs">
             {entityType}
           </Badge>
+          <BmadIndicator context={context} compact />
         </div>
         <div className="flex items-center gap-2">
           {showPreview && (
@@ -381,6 +569,9 @@ export function ContextEditor({
         </div>
       </div>
 
+      {/* BMAD Quality Panel */}
+      {!readOnly && <BmadIndicator context={context} />}
+
       {/* XML Preview */}
       {showPreview && previewOpen && (
         <div className="bg-slate-900 rounded-md p-3 overflow-auto max-h-64">
@@ -412,6 +603,7 @@ export function ContextEditor({
                 <div className="flex items-center gap-2 text-sm">
                   <span>{config.icon}</span>
                   <span className="font-medium">{section.label}</span>
+                  <BmadHint sectionType={section.type} />
                   {!section.visible && (
                     <Badge variant="outline" className="text-xs ml-2">
                       Hidden
@@ -421,9 +613,16 @@ export function ContextEditor({
               </AccordionTrigger>
               <AccordionContent className="pb-3">
                 <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">
-                    {config.description}
-                  </p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      {config.description}
+                    </p>
+                    {BMAD_SECTION_GUIDANCE[section.type] && (
+                      <p className="text-xs text-muted-foreground italic flex-shrink-0">
+                        {BMAD_SECTION_GUIDANCE[section.type].hint}
+                      </p>
+                    )}
+                  </div>
                   {renderSectionContent(section)}
                   {!readOnly && (
                     <div className="flex justify-end pt-2">

@@ -236,3 +236,166 @@ export const SUGGESTED_STRATEGY_TAGS = [
   'permit-required',
   'historic-preservation',
 ];
+
+/**
+ * BMAD Method - Prompt Engineering Principles
+ *
+ * Brief: Keep it concise and focused
+ * Motivated: Explain the purpose and why it matters
+ * Aligned: Ensure roles and approach are clear
+ * Detailed: Provide specific deliverables and constraints
+ */
+export interface BmadGuidance {
+  principle: 'brief' | 'motivated' | 'aligned' | 'detailed';
+  hint: string;
+  maxLength?: number;
+  minItems?: number;
+}
+
+/**
+ * BMAD guidance mapped to each section type
+ */
+export const BMAD_SECTION_GUIDANCE: Record<ContextSectionType, BmadGuidance> = {
+  mission: {
+    principle: 'motivated',
+    hint: 'Explain WHY this matters. Focus on purpose and impact, not just what.',
+    maxLength: 500,
+  },
+  scope: {
+    principle: 'brief',
+    hint: 'Be concise. Define clear boundaries - what\'s IN and what\'s OUT.',
+    maxLength: 300,
+  },
+  tech: {
+    principle: 'detailed',
+    hint: 'List specific tools and technologies. Avoid vague terms.',
+    minItems: 1,
+  },
+  casting: {
+    principle: 'aligned',
+    hint: 'Define WHO is involved and their roles. Clear ownership improves AI responses.',
+    minItems: 1,
+  },
+  deliverables: {
+    principle: 'detailed',
+    hint: 'Be specific about expected outputs. Measurable outcomes work best.',
+    minItems: 1,
+  },
+  strategy_tags: {
+    principle: 'aligned',
+    hint: 'Tags help AI understand approach and context. Choose meaningful keywords.',
+    minItems: 2,
+  },
+  constraints: {
+    principle: 'detailed',
+    hint: 'Specify limitations, requirements, and non-negotiables clearly.',
+    maxLength: 400,
+  },
+  custom: {
+    principle: 'brief',
+    hint: 'Keep custom sections focused on a single topic.',
+    maxLength: 500,
+  },
+};
+
+/**
+ * BMAD principle labels and colors
+ */
+export const BMAD_PRINCIPLES = {
+  brief: {
+    label: 'Brief',
+    color: '#3b82f6', // blue
+    description: 'Keep it concise and focused',
+  },
+  motivated: {
+    label: 'Motivated',
+    color: '#10b981', // green
+    description: 'Explain the purpose and why',
+  },
+  aligned: {
+    label: 'Aligned',
+    color: '#f59e0b', // amber
+    description: 'Clear roles and approach',
+  },
+  detailed: {
+    label: 'Detailed',
+    color: '#8b5cf6', // purple
+    description: 'Specific and measurable',
+  },
+} as const;
+
+/**
+ * Calculate BMAD score for a context
+ * Returns a score from 0-100 and individual principle scores
+ */
+export function calculateBmadScore(context: ContextData): {
+  total: number;
+  principles: Record<'brief' | 'motivated' | 'aligned' | 'detailed', number>;
+  suggestions: string[];
+} {
+  const scores = {
+    brief: 0,
+    motivated: 0,
+    aligned: 0,
+    detailed: 0,
+  };
+  const suggestions: string[] = [];
+
+  for (const section of context.sections) {
+    if (!section.visible) continue;
+
+    const guidance = BMAD_SECTION_GUIDANCE[section.type];
+    if (!guidance) continue;
+
+    const content = section.content;
+    let sectionScore = 0;
+
+    // Check content based on type
+    if (typeof content === 'string') {
+      const length = content.trim().length;
+      if (length > 0) {
+        // Has content
+        sectionScore = 50;
+        // Check if within recommended length
+        if (guidance.maxLength && length <= guidance.maxLength) {
+          sectionScore = 100;
+        } else if (guidance.maxLength && length > guidance.maxLength) {
+          sectionScore = 70;
+          suggestions.push(`${section.label}: Consider being more concise (${length}/${guidance.maxLength} chars)`);
+        } else {
+          sectionScore = 100;
+        }
+      } else {
+        suggestions.push(`${section.label}: Add content to improve ${guidance.principle} score`);
+      }
+    } else if (Array.isArray(content)) {
+      const count = content.length;
+      if (count > 0) {
+        sectionScore = 50;
+        if (guidance.minItems && count >= guidance.minItems) {
+          sectionScore = 100;
+        } else if (guidance.minItems) {
+          suggestions.push(`${section.label}: Add more items (${count}/${guidance.minItems} recommended)`);
+        } else {
+          sectionScore = 100;
+        }
+      } else {
+        suggestions.push(`${section.label}: Add items to improve ${guidance.principle} score`);
+      }
+    }
+
+    // Add to principle score (weighted average)
+    scores[guidance.principle] = Math.max(scores[guidance.principle], sectionScore);
+  }
+
+  // Calculate total as average of all principles
+  const total = Math.round(
+    (scores.brief + scores.motivated + scores.aligned + scores.detailed) / 4
+  );
+
+  return {
+    total,
+    principles: scores,
+    suggestions: suggestions.slice(0, 3), // Top 3 suggestions
+  };
+}
