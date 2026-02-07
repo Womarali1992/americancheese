@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { FileCode2, Copy, Check, Eye, EyeOff, Plus, Settings2, Lightbulb, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -328,6 +328,16 @@ export function ContextEditor({
   const [context, setContext] = useState<ContextData>(parseInitialContext);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Update context when initialContext prop changes (e.g., when data loads async)
+  useEffect(() => {
+    if (initialContext) {
+      const parsed = typeof initialContext === 'string'
+        ? JSON.parse(initialContext)
+        : initialContext;
+      setContext(parsed);
+    }
+  }, [initialContext]);
 
   // Generate XML
   const xml = useMemo(() => generateContextXml(context, entityId), [context, entityId]);
