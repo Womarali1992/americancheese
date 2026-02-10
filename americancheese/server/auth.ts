@@ -4,8 +4,8 @@ import MemoryStore from 'memorystore';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { db } from './db';
-import { users, apiTokens, registerUserSchema, loginUserSchema } from '../shared/schema';
-import { eq, and, isNull, desc } from 'drizzle-orm';
+import { users, apiTokens, sessionTokens, registerUserSchema, loginUserSchema } from '../shared/schema';
+import { eq, and, isNull, desc, gt } from 'drizzle-orm';
 
 // Extend express-session types
 declare module 'express-session' {
@@ -26,13 +26,70 @@ const TOKEN_EXPIRY_MS = 86400000; // 24 hours
 // Create memory store for sessions
 const MemoryStoreSession = MemoryStore(session);
 
-// Store for auth tokens (in production, use Redis or database)
-const tokenStore = new Map<string, { userId: number; email: string; expiresAt: Date }>();
-
 // Generate a secure token for sessions
 function generateToken(): string {
   return crypto.randomBytes(32).toString('hex');
 }
+
+// Database-backed token storage functions
+async function storeSessionToken(token: string, userId: number, email: string, expiresAt: Date): Promise<void> {
+  if (!db) return;
+  try {
+    await db.insert(sessionTokens).values({
+      token,
+      userId,
+      email,
+      expiresAt,
+    });
+  } catch (error) {
+    console.error('Error storing session token:', error);
+  }
+}
+
+async function getSessionToken(token: string): Promise<{ userId: number; email: string; expiresAt: Date } | null> {
+  if (!db) return null;
+  try {
+    const [result] = await db.select()
+      .from(sessionTokens)
+      .where(eq(sessionTokens.token, token))
+      .limit(1);
+
+    if (result) {
+      return {
+        userId: result.userId,
+        email: result.email,
+        expiresAt: result.expiresAt,
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting session token:', error);
+    return null;
+  }
+}
+
+async function deleteSessionToken(token: string): Promise<void> {
+  if (!db) return;
+  try {
+    await db.delete(sessionTokens).where(eq(sessionTokens.token, token));
+  } catch (error) {
+    console.error('Error deleting session token:', error);
+  }
+}
+
+async function cleanExpiredTokens(): Promise<void> {
+  if (!db) return;
+  try {
+    await db.delete(sessionTokens).where(
+      gt(new Date(), sessionTokens.expiresAt)
+    );
+  } catch (error) {
+    console.error('Error cleaning expired tokens:', error);
+  }
+}
+
+// Clean expired tokens periodically (every hour)
+setInterval(() => cleanExpiredTokens(), 60 * 60 * 1000);
 
 // Generate a secure API token (longer, with prefix)
 function generateApiToken(): string {
@@ -172,18 +229,20 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     }
   }
 
-  // Validate session token
-  if (token && tokenStore.has(token)) {
-    const tokenData = tokenStore.get(token)!;
-    if (tokenData.expiresAt > new Date()) {
-      // Set session data from token store
-      req.session.userId = tokenData.userId;
-      req.session.userEmail = tokenData.email;
-      req.session.authenticated = true;
-      return next();
-    } else {
-      // Token expired, remove it
-      tokenStore.delete(token);
+  // Validate session token from database
+  if (token) {
+    const tokenData = await getSessionToken(token);
+    if (tokenData) {
+      if (tokenData.expiresAt > new Date()) {
+        // Set session data from token store
+        req.session.userId = tokenData.userId;
+        req.session.userEmail = tokenData.email;
+        req.session.authenticated = true;
+        return next();
+      } else {
+        // Token expired, remove it
+        await deleteSessionToken(token);
+      }
     }
   }
 
@@ -248,13 +307,10 @@ export const handleRegister = async (req: Request, res: Response) => {
       isActive: true
     }).returning();
 
-    // Generate token
+    // Generate token and store in database
     const token = generateToken();
-    tokenStore.set(token, {
-      userId: newUser.id,
-      email: newUser.email,
-      expiresAt: new Date(Date.now() + TOKEN_EXPIRY_MS)
-    });
+    const expiresAt = new Date(Date.now() + TOKEN_EXPIRY_MS);
+    await storeSessionToken(token, newUser.id, newUser.email, expiresAt);
 
     // Set session
     req.session.authenticated = true;
@@ -352,13 +408,10 @@ export const handleLogin = async (req: Request, res: Response) => {
       updatedAt: new Date()
     }).where(eq(users.id, user.id));
 
-    // Generate token
+    // Generate token and store in database
     const token = generateToken();
-    tokenStore.set(token, {
-      userId: user.id,
-      email: user.email,
-      expiresAt: new Date(Date.now() + TOKEN_EXPIRY_MS)
-    });
+    const expiresAt = new Date(Date.now() + TOKEN_EXPIRY_MS);
+    await storeSessionToken(token, user.id, user.email, expiresAt);
 
     // Set session
     req.session.authenticated = true;
@@ -401,10 +454,10 @@ export const handleLogin = async (req: Request, res: Response) => {
 };
 
 // Logout handler
-export const handleLogout = (req: Request, res: Response) => {
-  // Remove token from store
+export const handleLogout = async (req: Request, res: Response) => {
+  // Remove token from database
   if (req.session && req.session.token) {
-    tokenStore.delete(req.session.token);
+    await deleteSessionToken(req.session.token);
   }
 
   // Clear session
@@ -452,20 +505,22 @@ export const handleGetCurrentUser = async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
-    if (token && tokenStore.has(token)) {
-      const tokenData = tokenStore.get(token)!;
-      if (tokenData.expiresAt > new Date()) {
-        userId = tokenData.userId;
-        // Restore session data
-        if (req.session) {
-          req.session.userId = tokenData.userId;
-          req.session.userEmail = tokenData.email;
-          req.session.authenticated = true;
-          req.session.token = token;
+    if (token) {
+      const tokenData = await getSessionToken(token);
+      if (tokenData) {
+        if (tokenData.expiresAt > new Date()) {
+          userId = tokenData.userId;
+          // Restore session data
+          if (req.session) {
+            req.session.userId = tokenData.userId;
+            req.session.userEmail = tokenData.email;
+            req.session.authenticated = true;
+            req.session.token = token;
+          }
+        } else {
+          // Token expired, remove it
+          await deleteSessionToken(token);
         }
-      } else {
-        // Token expired, remove it
-        tokenStore.delete(token);
       }
     }
   }

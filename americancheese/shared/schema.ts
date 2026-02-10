@@ -66,6 +66,18 @@ export const insertApiTokenSchema = createInsertSchema(apiTokens).omit({
 export type ApiToken = typeof apiTokens.$inferSelect;
 export type InsertApiToken = z.infer<typeof insertApiTokenSchema>;
 
+// Session Tokens Schema - for persistent login sessions
+export const sessionTokens = pgTable("session_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  token: text("token").notNull().unique(),
+  email: text("email").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type SessionToken = typeof sessionTokens.$inferSelect;
+
 // Credentials Vault Schema - for securely storing sensitive credentials
 export const credentials = pgTable("credentials", {
   id: serial("id").primaryKey(),
@@ -285,6 +297,7 @@ export const tasks = pgTable("tasks", {
   contactIds: text("contact_ids").array(), // Array of contact IDs attached to this task
   materialIds: text("material_ids").array(), // Array of material IDs attached to this task
   referencedTaskIds: text("referenced_task_ids").array(), // Array of task IDs whose materials are referenced by this task
+  referencedSubtaskIds: text("referenced_subtask_ids").array(), // Array of subtask IDs from other tasks that appear in this task's subtask list
   templateId: text("template_id"), // Reference to the template ID if this task was created from a template
   estimatedCost: doublePrecision("estimated_cost"), // Estimated cost for the task
   actualCost: doublePrecision("actual_cost"), // Actual cost of the task after completion
@@ -504,6 +517,26 @@ export const insertProjectCategorySchema = createInsertSchema(projectCategories)
   createdAt: true,
   updatedAt: true,
 });
+
+// Task-Category junction table for multi-category support
+export const taskCategories = pgTable("task_categories", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").notNull(),
+  projectCategoryId: integer("project_category_id"), // Reference to projectCategories table
+  tier1Category: text("tier1_category"), // Denormalized for fast queries
+  tier2Category: text("tier2_category"), // Denormalized for fast queries
+  isPrimary: boolean("is_primary").default(false), // Is this the primary category?
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertTaskCategorySchema = createInsertSchema(taskCategories).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type TaskCategory = typeof taskCategories.$inferSelect;
+export type InsertTaskCategory = z.infer<typeof insertTaskCategorySchema>;
 
 // Task Templates (Global templates that can be loaded into projects)
 export const taskTemplates = pgTable("task_templates", {
