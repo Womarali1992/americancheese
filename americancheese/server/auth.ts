@@ -444,7 +444,33 @@ export const handleLogout = (req: Request, res: Response) => {
 
 // Get current user handler
 export const handleGetCurrentUser = async (req: Request, res: Response) => {
-  if (!req.session || !req.session.userId) {
+  // First try session
+  let userId = req.session?.userId;
+
+  // If no session, try to validate token from Authorization header
+  if (!userId) {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+    if (token && tokenStore.has(token)) {
+      const tokenData = tokenStore.get(token)!;
+      if (tokenData.expiresAt > new Date()) {
+        userId = tokenData.userId;
+        // Restore session data
+        if (req.session) {
+          req.session.userId = tokenData.userId;
+          req.session.userEmail = tokenData.email;
+          req.session.authenticated = true;
+          req.session.token = token;
+        }
+      } else {
+        // Token expired, remove it
+        tokenStore.delete(token);
+      }
+    }
+  }
+
+  if (!userId) {
     return res.status(401).json({
       success: false,
       authenticated: false,
@@ -467,7 +493,7 @@ export const handleGetCurrentUser = async (req: Request, res: Response) => {
       company: users.company,
       role: users.role,
       createdAt: users.createdAt
-    }).from(users).where(eq(users.id, req.session.userId)).limit(1);
+    }).from(users).where(eq(users.id, userId)).limit(1);
 
     if (!user) {
       return res.status(404).json({
