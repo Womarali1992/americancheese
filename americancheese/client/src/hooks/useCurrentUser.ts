@@ -1,66 +1,34 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
+import { useAuth, User } from '@/contexts/AuthContext';
+import { useLocation } from 'wouter';
 
-export interface CurrentUser {
-  id: number;
-  email: string;
-  name: string;
-  company?: string;
+// Re-export User type for backward compatibility
+export type CurrentUser = User;
+
+// Helper to get initials from name
+function getInitials(name: string): string {
+  if (!name) return '??';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) {
+    return parts[0].substring(0, 2).toUpperCase();
+  }
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 export function useCurrentUser() {
-  const [user, setUser] = useState<CurrentUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, loading, logout: authLogout, isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
 
-  // Get initials from name
-  const getInitials = useCallback((name: string) => {
-    if (!name) return '??';
-    const parts = name.trim().split(/\s+/);
-    if (parts.length === 1) {
-      return parts[0].substring(0, 2).toUpperCase();
-    }
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  }, []);
-
-  // Load user from localStorage
-  useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-    } catch (error) {
-      console.error('Error loading user from localStorage:', error);
-    }
-    setIsLoading(false);
-  }, []);
-
-  // Logout function
+  // Wrap logout to redirect after
   const logout = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('authToken');
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token || ''}`
-        },
-        credentials: 'include'
-      });
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      // Always clear local data and redirect
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      sessionStorage.removeItem('authToken');
-      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      window.location.href = '/login';
-    }
-  }, []);
+    await authLogout();
+    setLocation('/login');
+  }, [authLogout, setLocation]);
 
   return {
     user,
-    isLoading,
-    isAuthenticated: !!user,
+    isLoading: loading,
+    isAuthenticated,
     initials: user ? getInitials(user.name) : '??',
     logout
   };

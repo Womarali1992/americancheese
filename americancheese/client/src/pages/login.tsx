@@ -6,76 +6,30 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const [, setLocation] = useLocation();
+
+  const { login, loading } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include'
-      });
+    const result = await login(email, password);
 
-      const data = await response.json();
-
-      if (response.ok && data.token) {
-        // Store token in multiple places for redundancy
-        localStorage.setItem('authToken', data.token);
-        sessionStorage.setItem('authToken', data.token);
-        document.cookie = `token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
-
-        // Store user info
-        if (data.user) {
-          localStorage.setItem('user', JSON.stringify(data.user));
-        }
-
-        // Setup global fetch interceptor
-        const originalFetch = window.fetch;
-        window.fetch = function(url, options = {}) {
-          const token = localStorage.getItem('authToken');
-
-          if (!options.headers) {
-            options.headers = {};
-          }
-
-          if (token && typeof url === 'string' && !url.includes('/api/auth/')) {
-            options.headers = {
-              ...options.headers,
-              'Authorization': `Bearer ${token}`,
-              'X-Access-Token': token
-            };
-            options.credentials = 'include';
-          }
-
-          return originalFetch(url, options);
-        };
-
-        // Redirect to dashboard
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 200);
-      } else {
-        setError(data.message || 'Invalid email or password');
-      }
-    } catch (err) {
-      console.error('Login error:', err);
-      setError('Failed to login. Please try again.');
-    } finally {
-      setLoading(false);
+    if (result.success) {
+      // Get redirect destination or default to dashboard
+      const redirectTo = sessionStorage.getItem('redirectAfterLogin') || '/dashboard';
+      sessionStorage.removeItem('redirectAfterLogin');
+      setLocation(redirectTo);
+    } else {
+      setError(result.error || 'Invalid email or password');
     }
   };
 
@@ -120,6 +74,7 @@ export default function LoginPage() {
                 required
                 autoComplete="email"
                 autoFocus
+                disabled={loading}
               />
             </div>
 
@@ -135,11 +90,13 @@ export default function LoginPage() {
                   className="h-11 text-base bg-white border-gray-200 focus:border-primary focus:ring-primary pr-10"
                   required
                   autoComplete="current-password"
+                  disabled={loading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  disabled={loading}
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>

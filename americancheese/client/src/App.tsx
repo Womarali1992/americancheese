@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, Redirect, useLocation } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 
 import { Toaster } from "@/components/ui/toaster";
 import { SimpleThemeProvider } from "@/components/SimpleThemeProvider";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import NotFound from "@/pages/not-found";
 
 // Import all pages
@@ -30,118 +30,175 @@ import PrivacyPolicy from "@/pages/PrivacyPolicy";
 
 import { queryClient } from "./lib/queryClient";
 
-function AuthCheck({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [location] = useLocation();
-  useEffect(() => {
-    const originalFetch = window.fetch;
-    window.fetch = function(input, init = {}) {
-      const authToken = localStorage.getItem('authToken');
-      if (authToken && init) {
-        init.headers = { ...init.headers, 'Authorization': `Bearer ${authToken}` };
-        init.credentials = 'include';
-      }
-      return originalFetch(input, init);
-    };
-    
-    const authToken = localStorage.getItem('authToken');
-    if (authToken) {
-      document.cookie = `cm-app-auth-token-123456=${authToken}; path=/; max-age=86400`;
-    }
-  }, []);
-  
-  useEffect(() => {
-    const cleanLocation = location.replace(/\/$/, '') || '/';
-    if (cleanLocation === '/login' || cleanLocation === '/signup' || cleanLocation === '/privacy' || cleanLocation === '/privacy-policy') {
-      setIsAuthenticated(true);
-      return;
-    }
-
-    const authToken = localStorage.getItem('authToken');
-    if (!authToken) {
-      setIsAuthenticated(false);
-      window.location.href = '/login';
-      return;
-    }
-    const checkAuth = async () => {
-      try {
-        console.log('Verifying auth token...');
-        
-        // Check a secure API endpoint with token in header AND query param (double safety)
-        const response = await fetch(`/api/projects?token=${authToken}`, {
-          headers: {
-            'Authorization': `Bearer ${authToken}`, // Use token in header
-            'X-Access-Token': authToken, // Also send as custom header
-            'Cache-Control': 'no-cache'
-          },
-          credentials: 'include' // Include cookies
-        });
-        
-        if (response.status === 401) {
-          // Token invalid or expired
-          console.log('Auth token invalid, redirecting to login');
-          localStorage.removeItem('authToken');
-          setIsAuthenticated(false);
-          window.location.href = '/login';
-        } else {
-          // Token verified
-          console.log('Auth token valid, user is authenticated');
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error('Auth check error:', error);
-        setIsAuthenticated(false);
-      }
-    };
-    
-    checkAuth();
-  }, [location]);
-  
-  // Show loading indicator while checking auth
-  if (isAuthenticated === null) {
-    return <div className="min-h-screen flex items-center justify-center">
-      <div className="text-lg">Checking authentication...</div>
-    </div>;
-  }
-  
-  return <>{children}</>;
-}
-
-function ProtectedRoute({ component: Component, ...rest }: any) {
+// Loading spinner component
+function LoadingSpinner() {
   return (
-    <AuthCheck>
-      <Component {...rest} />
-    </AuthCheck>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f8fafc] to-[#eef2ff]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-gray-500 text-sm">Loading...</p>
+      </div>
+    </div>
   );
 }
 
-function Router() {
+// Protected route wrapper - redirects to login if not authenticated
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, loading } = useAuth();
+  const [location] = useLocation();
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  if (!isAuthenticated) {
+    // Store intended destination for redirect after login
+    sessionStorage.setItem('redirectAfterLogin', location);
+    return <Redirect to="/login" />;
+  }
+
+  return <>{children}</>;
+}
+
+// Public route wrapper - redirects to dashboard if already authenticated
+function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  // Redirect authenticated users away from login/signup
+  if (isAuthenticated) {
+    const redirectTo = sessionStorage.getItem('redirectAfterLogin') || '/dashboard';
+    sessionStorage.removeItem('redirectAfterLogin');
+    return <Redirect to={redirectTo} />;
+  }
+
+  return <>{children}</>;
+}
+
+function AppRoutes() {
   return (
     <Switch>
-      <Route path="/login" component={LoginPage} />
-      <Route path="/signup" component={SignupPage} />
+      {/* Public routes */}
+      <Route path="/login">
+        <PublicOnlyRoute>
+          <LoginPage />
+        </PublicOnlyRoute>
+      </Route>
+      <Route path="/signup">
+        <PublicOnlyRoute>
+          <SignupPage />
+        </PublicOnlyRoute>
+      </Route>
       <Route path="/privacy" component={PrivacyPolicy} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
-      <Route path="/" component={(props) => <ProtectedRoute component={DashboardPage} {...props} />} />
-      <Route path="/dashboard" component={(props) => <ProtectedRoute component={DashboardPage} {...props} />} />
-      <Route path="/projects" component={(props) => <ProtectedRoute component={ProjectsPage} {...props} />} />
-      <Route path="/projects/:id" component={(props) => <ProtectedRoute component={ProjectDetailPage} {...props} />} />
-      <Route path="/projects/:id/tasks">{(params) => <ProtectedRoute component={ProjectTasksPage} params={params} />}</Route>
-      <Route path="/tasks" component={(props) => <ProtectedRoute component={TasksPage} {...props} />} />
-      <Route path="/tasks/:taskId" component={(props) => <ProtectedRoute component={TaskDetailPage} {...props} />} />
-      <Route path="/contacts" component={(props) => <ProtectedRoute component={ContactsPage} {...props} />} />
-      <Route path="/contacts/:contactId/labor/:laborId" component={(props) => <ProtectedRoute component={ContactLaborDetailPage} {...props} />} />
-      <Route path="/contacts/:contactId/labor" component={(props) => <ProtectedRoute component={ContactLaborPage} {...props} />} />
-      <Route path="/suppliers/:supplierId/quotes/:quoteId" component={(props) => <ProtectedRoute component={QuoteDetailPage} {...props} />} />
-      <Route path="/suppliers/:supplierId/quotes" component={(props) => <ProtectedRoute component={SupplierQuotePage} {...props} />} />
-      <Route path="/materials/:projectId" component={(props) => <ProtectedRoute component={MaterialsPage} {...props} />} />
-      <Route path="/materials" component={(props) => <ProtectedRoute component={MaterialsPage} {...props} />} />
-      <Route path="/calendar" component={(props) => <ProtectedRoute component={CalendarPage} {...props} />} />
-      <Route path="/admin" component={(props) => <ProtectedRoute component={AdminPage} {...props} />} />
-      <Route path="/admin/project-templates/:projectId" component={(props) => <ProtectedRoute component={ProjectTemplatesPage} {...props} />} />
-      <Route path="/settings" component={(props) => <ProtectedRoute component={SettingsPage} {...props} />} />
-      <Route path="/credentials" component={(props) => <ProtectedRoute component={CredentialsPage} {...props} />} />
-      <Route path="/labor" component={() => { window.location.href = '/contacts?tab=labor'; return null; }} />
+
+      {/* Protected routes */}
+      <Route path="/">
+        <ProtectedRoute>
+          <DashboardPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/dashboard">
+        <ProtectedRoute>
+          <DashboardPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/projects">
+        <ProtectedRoute>
+          <ProjectsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/projects/:id/tasks">
+        <ProtectedRoute>
+          <ProjectTasksPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/projects/:id">
+        <ProtectedRoute>
+          <ProjectDetailPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/tasks/:taskId">
+        <ProtectedRoute>
+          <TaskDetailPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/tasks">
+        <ProtectedRoute>
+          <TasksPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/contacts/:contactId/labor/:laborId">
+        <ProtectedRoute>
+          <ContactLaborDetailPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/contacts/:contactId/labor">
+        <ProtectedRoute>
+          <ContactLaborPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/contacts">
+        <ProtectedRoute>
+          <ContactsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/suppliers/:supplierId/quotes/:quoteId">
+        <ProtectedRoute>
+          <QuoteDetailPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/suppliers/:supplierId/quotes">
+        <ProtectedRoute>
+          <SupplierQuotePage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/materials/:projectId">
+        <ProtectedRoute>
+          <MaterialsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/materials">
+        <ProtectedRoute>
+          <MaterialsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/calendar">
+        <ProtectedRoute>
+          <CalendarPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin/project-templates/:projectId">
+        <ProtectedRoute>
+          <ProjectTemplatesPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin">
+        <ProtectedRoute>
+          <AdminPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/settings">
+        <ProtectedRoute>
+          <SettingsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/credentials">
+        <ProtectedRoute>
+          <CredentialsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/labor">
+        {() => {
+          window.location.href = '/contacts?tab=labor';
+          return null;
+        }}
+      </Route>
+
+      {/* 404 */}
       <Route component={NotFound} />
     </Switch>
   );
@@ -150,10 +207,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <SimpleThemeProvider>
-        <Router />
-        <Toaster />
-      </SimpleThemeProvider>
+      <AuthProvider>
+        <SimpleThemeProvider>
+          <AppRoutes />
+          <Toaster />
+        </SimpleThemeProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

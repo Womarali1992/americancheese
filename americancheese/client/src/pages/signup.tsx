@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -17,8 +18,9 @@ export default function SignupPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const [, setLocation] = useLocation();
+
+  const { register, loading } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -29,84 +31,32 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
-      setLoading(false);
       return;
     }
 
     // Validate password length
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters');
-      setLoading(false);
       return;
     }
 
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          company: formData.company || undefined
-        }),
-        credentials: 'include'
-      });
+    const result = await register({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      company: formData.company || undefined
+    });
 
-      const data = await response.json();
-
-      if (response.ok && data.token) {
-        // Store token in multiple places for redundancy
-        localStorage.setItem('authToken', data.token);
-        sessionStorage.setItem('authToken', data.token);
-        document.cookie = `token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
-
-        // Store user info
-        if (data.user) {
-          localStorage.setItem('user', JSON.stringify(data.user));
-        }
-
-        // Setup global fetch interceptor
-        const originalFetch = window.fetch;
-        window.fetch = function(url, options = {}) {
-          const token = localStorage.getItem('authToken');
-
-          if (!options.headers) {
-            options.headers = {};
-          }
-
-          if (token && typeof url === 'string' && !url.includes('/api/auth/')) {
-            options.headers = {
-              ...options.headers,
-              'Authorization': `Bearer ${token}`,
-              'X-Access-Token': token
-            };
-            options.credentials = 'include';
-          }
-
-          return originalFetch(url, options);
-        };
-
-        // Redirect to dashboard
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 200);
-      } else {
-        setError(data.message || 'Registration failed');
-      }
-    } catch (err) {
-      console.error('Signup error:', err);
-      setError('Failed to create account. Please try again.');
-    } finally {
-      setLoading(false);
+    if (result.success) {
+      // Redirect to dashboard
+      setLocation('/dashboard');
+    } else {
+      setError(result.error || 'Registration failed');
     }
   };
 
@@ -115,12 +65,13 @@ export default function SignupPage() {
       <div className="w-full max-w-sm sm:max-w-md mb-8 text-center">
         <div className="inline-flex items-center justify-center space-x-2 mb-4">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
-            <path d="M3 9L12 4.5L21 9L12 13.5L3 9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M3 14L12 18.5L21 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M7 7L3 12L7 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M17 7L21 12L17 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M14 8L10 12.5H14L10 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
         <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2 tracking-tight">SiteSetups</h1>
-        <p className="text-sm text-gray-500">Construction Management Platform</p>
+        <p className="text-sm text-gray-500">Automated Development Platform</p>
       </div>
 
       <Card className="w-full max-w-sm sm:max-w-md shadow-md border border-gray-100 bg-white/80 backdrop-blur-sm">
@@ -150,6 +101,7 @@ export default function SignupPage() {
                 required
                 autoComplete="name"
                 autoFocus
+                disabled={loading}
               />
             </div>
 
@@ -165,6 +117,7 @@ export default function SignupPage() {
                 className="h-11 text-base bg-white border-gray-200 focus:border-primary focus:ring-primary"
                 required
                 autoComplete="email"
+                disabled={loading}
               />
             </div>
 
@@ -179,6 +132,7 @@ export default function SignupPage() {
                 placeholder="Smith Construction LLC"
                 className="h-11 text-base bg-white border-gray-200 focus:border-primary focus:ring-primary"
                 autoComplete="organization"
+                disabled={loading}
               />
             </div>
 
@@ -196,11 +150,13 @@ export default function SignupPage() {
                   required
                   autoComplete="new-password"
                   minLength={6}
+                  disabled={loading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  disabled={loading}
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -219,6 +175,7 @@ export default function SignupPage() {
                 className="h-11 text-base bg-white border-gray-200 focus:border-primary focus:ring-primary"
                 required
                 autoComplete="new-password"
+                disabled={loading}
               />
             </div>
           </CardContent>

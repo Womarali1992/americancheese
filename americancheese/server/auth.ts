@@ -44,6 +44,24 @@ function hashApiToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
+/**
+ * Get cookie domain for cross-subdomain sharing.
+ *
+ * IMPORTANT: Set COOKIE_DOMAIN in production to enable cookies across subdomains.
+ * Examples:
+ *   - For sitesetups.com: COOKIE_DOMAIN=.sitesetups.com (note the leading dot)
+ *   - For app.sitesetups.com only: COOKIE_DOMAIN=app.sitesetups.com
+ *
+ * Without this, cookies won't persist when users navigate between subdomains,
+ * and the project sharing feature will break after domain changes.
+ */
+const getCookieDomain = () => {
+  if (process.env.NODE_ENV === 'production' && process.env.COOKIE_DOMAIN) {
+    return process.env.COOKIE_DOMAIN;
+  }
+  return undefined; // Don't set domain in development (defaults to current host)
+};
+
 // Configure session middleware
 export const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET || 'construction-management-app-secret',
@@ -58,7 +76,8 @@ export const sessionMiddleware = session({
     secure: process.env.NODE_ENV === 'production',
     httpOnly: false,
     path: '/',
-    sameSite: 'lax'
+    sameSite: 'lax',
+    domain: getCookieDomain()
   }
 });
 
@@ -84,6 +103,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       req.path === '/api/auth/login' ||
       req.path === '/api/auth/register' ||
       req.path === '/api/auth/logout' ||
+      req.path === '/api/auth/me' || // Let the handler manage its own auth check
       req.path === '/api/test' ||
       req.path === '/api/task-templates' ||
       isAssetOrModuleRequest ||
@@ -250,7 +270,8 @@ export const handleRegister = async (req: Request, res: Response) => {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
-      sameSite: 'lax'
+      sameSite: 'lax',
+      domain: getCookieDomain()
     });
 
     console.log('New user registered:', newUser.email);
@@ -353,7 +374,8 @@ export const handleLogin = async (req: Request, res: Response) => {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
-      sameSite: 'lax'
+      sameSite: 'lax',
+      domain: getCookieDomain()
     });
 
     console.log('User logged in:', user.email);
@@ -392,9 +414,27 @@ export const handleLogout = (req: Request, res: Response) => {
     }
   });
 
-  // Clear cookies
-  res.clearCookie('token');
-  res.clearCookie('construction.sid');
+  // Cookie options must match those used when setting cookies
+  const cookieDomain = getCookieDomain();
+  const clearCookieOptions: {
+    path: string;
+    domain?: string;
+    secure?: boolean;
+    httpOnly?: boolean;
+    sameSite?: 'lax' | 'strict' | 'none';
+  } = {
+    path: '/',
+    sameSite: 'lax'
+  };
+
+  // Only include domain if set (production with COOKIE_DOMAIN)
+  if (cookieDomain) {
+    clearCookieOptions.domain = cookieDomain;
+  }
+
+  // Clear cookies with matching options
+  res.clearCookie('token', clearCookieOptions);
+  res.clearCookie('construction.sid', clearCookieOptions);
 
   return res.json({
     success: true,
@@ -407,6 +447,7 @@ export const handleGetCurrentUser = async (req: Request, res: Response) => {
   if (!req.session || !req.session.userId) {
     return res.status(401).json({
       success: false,
+      authenticated: false,
       message: 'Not authenticated'
     });
   }
@@ -431,18 +472,21 @@ export const handleGetCurrentUser = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({
         success: false,
+        authenticated: false,
         message: 'User not found'
       });
     }
 
     return res.json({
       success: true,
+      authenticated: true,
       user
     });
   } catch (error) {
     console.error('Get current user error:', error);
     return res.status(500).json({
       success: false,
+      authenticated: false,
       message: 'Failed to get user data'
     });
   }

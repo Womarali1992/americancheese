@@ -4,10 +4,12 @@ import { useTabNavigation, useCurrentTab, type TabName } from "@/hooks/useTabNav
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Logo } from "./Logo";
 import { getDynamicModuleColor } from "@/lib/color-themes";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export function Sidebar() {
   const { navigateToTab } = useTabNavigation();
   const currentTab = useCurrentTab();
+  const { user, initials, logout } = useCurrentUser();
 
   const navItems: { id: TabName; icon: string; label: string; isAdmin?: boolean }[] = [
     { id: "dashboard", icon: "ri-dashboard-line", label: "Dashboard" },
@@ -106,27 +108,16 @@ export function Sidebar() {
             <div className="flex flex-col w-full">
               <div className="flex items-center p-2 rounded-lg hover:bg-gray-50 transition-colors duration-150">
                 <Avatar className="h-10 w-10 border-2 border-gray-100">
-                  <AvatarFallback className="bg-primary/10 text-primary font-medium">MR</AvatarFallback>
+                  <AvatarFallback className="bg-primary/10 text-primary font-medium">{initials}</AvatarFallback>
                 </Avatar>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-800">Michael Rodriguez</p>
-                  <p className="text-xs text-gray-500">Project Manager</p>
+                  <p className="text-sm font-medium text-gray-800">{user?.name || 'User'}</p>
+                  <p className="text-xs text-gray-500">{user?.email || ''}</p>
                 </div>
               </div>
               <button
                 className="mt-3 w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors duration-150"
-                onClick={() => {
-                  // Call logout API
-                  fetch('/api/auth/logout', {
-                    method: 'POST',
-                    headers: {
-                      'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
-                    }
-                  }).finally(() => {
-                    localStorage.removeItem('authToken');
-                    window.location.href = '/login';
-                  });
-                }}
+                onClick={logout}
               >
                 <i className="ri-logout-box-line mr-2"></i>
                 Logout
