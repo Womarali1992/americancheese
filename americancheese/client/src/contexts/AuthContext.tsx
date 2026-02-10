@@ -32,15 +32,23 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-// API helper that always includes credentials
+// API helper that always includes credentials and auth token
 async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const authToken = localStorage.getItem('authToken');
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  // Include Authorization header if token exists
+  if (authToken) {
+    (headers as Record<string, string>)['Authorization'] = `Bearer ${authToken}`;
+  }
+
   return fetch(url, {
     ...options,
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
   });
 }
 
