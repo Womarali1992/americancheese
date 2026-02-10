@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Code brackets with lightning bolt -->
+  <path d="M7 7L3 12L7 17"/>
+  <path d="M17 7L21 12L17 17"/>
+  <path d="M14 8L10 12.5H14L10 17"/>
+</svg>
