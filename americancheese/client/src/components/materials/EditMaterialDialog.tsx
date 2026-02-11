@@ -24,11 +24,18 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Switch } from "@/components/ui/switch";
 import { SimplifiedMaterial } from "@/components/materials/MaterialCard";
+import type { Contact } from "@shared/schema";
+import {
+  materialValidationSchema,
+  sanitizeText,
+  validatePositiveNumber,
+  validateDateString
+} from "@shared/validation";
 
 interface EditMaterialDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  material: SimplifiedMaterial | any; // Allow any for flexibility
+  material: SimplifiedMaterial;
 }
 
 export function EditMaterialDialog({ open, onOpenChange, material }: EditMaterialDialogProps) {
@@ -43,6 +50,7 @@ export function EditMaterialDialog({ open, onOpenChange, material }: EditMateria
     quantity: 0,
     unit: "",
     cost: 0,
+    estimatedCost: 0,
     status: "",
     details: "",
     quoteNumber: "",
@@ -60,12 +68,12 @@ export function EditMaterialDialog({ open, onOpenChange, material }: EditMateria
   });
   
   // Get all contacts for supplier selection
-  const { data: contacts = [] } = useQuery({
+  const { data: contacts = [] } = useQuery<Contact[]>({
     queryKey: ["/api/contacts"],
   });
-  
+
   // Create filtered list of suppliers (contacts with role containing "supplier")
-  const suppliers = contacts.filter((contact: any) => 
+  const suppliers = contacts.filter((contact) =>
     contact.role && contact.role.toLowerCase().includes("supplier")
   );
   
@@ -78,6 +86,7 @@ export function EditMaterialDialog({ open, onOpenChange, material }: EditMateria
         quantity: material.quantity || 0,
         unit: material.unit || "",
         cost: material.cost || 0,
+        estimatedCost: material.estimatedCost || 0,
         status: material.status || "pending",
         details: material.details || "",
         quoteNumber: material.quoteNumber || "",
@@ -98,7 +107,7 @@ export function EditMaterialDialog({ open, onOpenChange, material }: EditMateria
   
   // Create mutation for updating material
   const updateMaterialMutation = useMutation({
-    mutationFn: async (updatedData: any) => {
+    mutationFn: async (updatedData: Partial<SimplifiedMaterial> & { projectId: number }) => {
       return apiRequest(`/api/materials/${material.id}`, "PUT", updatedData);
     },
     onSuccess: () => {
@@ -141,7 +150,7 @@ export function EditMaterialDialog({ open, onOpenChange, material }: EditMateria
       return;
     }
     
-    const selectedSupplier = suppliers.find((s: any) => s.id.toString() === value);
+    const selectedSupplier = suppliers.find((s) => s.id.toString() === value);
     if (selectedSupplier) {
       setFormData({
         ...formData,
@@ -155,29 +164,131 @@ export function EditMaterialDialog({ open, onOpenChange, material }: EditMateria
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
-      // Prepare data for update
-      const updates = {
-        ...formData,
-        // Convert quantity and cost to numbers
-        quantity: Number(formData.quantity),
-        cost: Number(formData.cost),
-        // Ensure projectId is preserved
-        projectId: material.projectId,
-        // Convert empty strings to null for optional fields
+      // Validate required fields
+      if (!formData.name.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Material name is required",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Validate numeric fields
+      const quantity = validatePositiveNumber(formData.quantity);
+      if (quantity === null) {
+        toast({
+          title: "Validation Error",
+          description: "Quantity must be a positive number",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      const cost = validatePositiveNumber(formData.cost);
+      if (cost === null) {
+        toast({
+          title: "Validation Error",
+          description: "Cost must be a positive number",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      let estimatedCost: number | null = null;
+      if (formData.estimatedCost) {
+        estimatedCost = validatePositiveNumber(formData.estimatedCost);
+        if (estimatedCost === null) {
+          toast({
+            title: "Validation Error",
+            description: "Estimated cost must be a positive number",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Validate date fields
+      if (formData.quoteDate && !validateDateString(formData.quoteDate)) {
+        toast({
+          title: "Validation Error",
+          description: "Invalid quote date format",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (formData.orderDate && !validateDateString(formData.orderDate)) {
+        toast({
+          title: "Validation Error",
+          description: "Invalid order date format",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Sanitize text inputs
+      const sanitizedData = {
+        name: sanitizeText(formData.name, 200),
+        type: sanitizeText(formData.type, 100),
+        unit: sanitizeText(formData.unit, 50),
+        details: formData.details ? sanitizeText(formData.details, 2000) : null,
+        quoteNumber: sanitizeText(formData.quoteNumber, 100),
+        tier2Category: sanitizeText(formData.tier2Category, 100),
+        section: formData.section ? sanitizeText(formData.section, 100) : null,
+        subsection: formData.subsection ? sanitizeText(formData.subsection, 100) : null,
+        materialSize: formData.materialSize ? sanitizeText(formData.materialSize, 100) : null,
+      };
+
+      // Validate using Zod schema
+      const validationResult = materialValidationSchema.safeParse({
+        ...sanitizedData,
+        quantity,
+        cost,
+        estimatedCost,
         quoteDate: formData.quoteDate || null,
         orderDate: formData.orderDate || null,
+      });
+
+      if (!validationResult.success) {
+        const errors = validationResult.error.errors.map(err => err.message).join(", ");
+        toast({
+          title: "Validation Error",
+          description: errors,
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Prepare data for update
+      const updates = {
+        ...validationResult.data,
+        status: formData.status,
+        isQuote: formData.isQuote,
+        tier: formData.tier,
+        category: formData.category,
+        supplier: formData.supplier,
         supplierId: formData.supplierId || null,
-        details: formData.details || null,
-        section: formData.section || null,
-        subsection: formData.subsection || null,
-        materialSize: formData.materialSize || null
+        projectId: material.projectId,
       };
-      
+
       await updateMaterialMutation.mutateAsync(updates);
     } catch (error) {
       console.error("Error in form submission:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update material",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -274,7 +385,7 @@ export function EditMaterialDialog({ open, onOpenChange, material }: EditMateria
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cost">Cost per Unit ($)</Label>
+                <Label htmlFor="cost">Actual Cost per Unit ($)</Label>
                 <Input
                   id="cost"
                   name="cost"
@@ -283,6 +394,19 @@ export function EditMaterialDialog({ open, onOpenChange, material }: EditMateria
                   step="0.01"
                   value={formData.cost}
                   onChange={handleChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="estimatedCost">Estimated Cost per Unit ($)</Label>
+                <Input
+                  id="estimatedCost"
+                  name="estimatedCost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.estimatedCost}
+                  onChange={handleChange}
+                  placeholder="Optional - for budget variance tracking"
                 />
               </div>
             </div>
@@ -339,7 +463,7 @@ export function EditMaterialDialog({ open, onOpenChange, material }: EditMateria
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
-                      {suppliers.map((supplier: any) => (
+                      {suppliers.map((supplier) => (
                         <SelectItem key={supplier.id} value={supplier.id.toString()}>
                           {supplier.name}
                         </SelectItem>

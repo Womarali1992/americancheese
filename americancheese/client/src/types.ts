@@ -86,6 +86,9 @@ export interface Material {
   tier: string | null;
   tier1Category: string | null;  // Alias for tier
   tier2Category: string | null;
+  // Project-specific category fields (form-only, not in database)
+  customTier1?: string;
+  customTier2?: string;
   // Category colors from database
   tier1Color?: string | null;
   tier2Color?: string | null;

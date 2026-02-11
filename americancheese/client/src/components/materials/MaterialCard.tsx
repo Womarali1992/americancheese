@@ -31,6 +31,7 @@ export type SimplifiedMaterial = {
   status: string;
   unit?: string | null; // Changed to match database schema
   cost?: number | null;
+  estimatedCost?: number | null; // For budget variance tracking
   category?: string;
   taskIds?: number[] | string[] | null; // Can be null from DB
   contactIds?: number[] | string[] | null;

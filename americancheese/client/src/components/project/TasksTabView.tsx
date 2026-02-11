@@ -224,32 +224,20 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
     ? getProjectTheme(projectData.colorTheme, projectId) 
     : null;
 
-  console.log('🔧 TasksTabView - Project theme data:', {
-    projectId,
-    colorTheme: projectData?.colorTheme,
-    useGlobalTheme: projectData?.useGlobalTheme,
-    currentTheme: currentTheme?.name,
-    themeColors: currentTheme ? {
-      primary: currentTheme.primary,
-      secondary: currentTheme.secondary,
-      accent: currentTheme.accent
-    } : 'none'
-  });
-  
   // Fetch all labor entries first, then associate them with tasks
   useEffect(() => {
     // Create a copy of the tasks array to modify - explicit cast to ExtendedTask to satisfy TypeScript
     const updatedTasks = tasks.map(task => ({...task} as ExtendedTask));
-    
+
     // Fetch all labor entries for the project
     fetch(`/api/projects/${projectId}/labor`)
       .then(response => response.json())
       .then(allLaborEntries => {
         console.log(`Fetched ${allLaborEntries.length} total labor entries for project ${projectId}`);
-        
+
         // Create a map of task IDs to their associated labor entries
         const taskToLaborMap: Record<number, Labor[]> = {};
-        
+
         // Group labor entries by taskId
         allLaborEntries.forEach((labor: Labor) => {
           if (labor.taskId) {
@@ -259,88 +247,42 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
             taskToLaborMap[labor.taskId].push(labor);
           }
         });
-        
+
         console.log(`Found labor entries for ${Object.keys(taskToLaborMap).length} different tasks`);
-        
-        // Use known labor entries for certain task IDs to improve demo experience for the example
-        const knownLaborTasks = {
-          // Original labor tasks
-          3637: { startDate: "2025-04-12", endDate: "2025-04-15" },
-          3695: { startDate: "2025-04-14", endDate: "2025-04-18" },
-          3671: { startDate: "2025-04-15", endDate: "2025-04-20" },
-          3648: { startDate: "2025-04-11", endDate: "2025-04-13" }, // This is FR 3
-          
-          // Additional labor-linked tasks with staggered dates for better visualization
-          3635: { startDate: "2025-04-10", endDate: "2025-04-14" }, // Foundation - Form & Soil Preparation
-          3636: { startDate: "2025-04-13", endDate: "2025-04-16" }, // Foundation - Reinforcement and Pouring
-          3649: { startDate: "2025-04-15", endDate: "2025-04-17" }, // Framing - Wall Construction
-          3650: { startDate: "2025-04-17", endDate: "2025-04-19" }  // Framing - Roof Framing
-        };
-        
-        // Log all tasks to help with debugging
-        console.log("Processing all tasks:", updatedTasks.map(t => `${t.id} - ${t.title}`));
-        
-        // Process each task
+
+        // Process each task using real labor data
         updatedTasks.forEach((task: ExtendedTask) => {
           const taskId = task.id;
-          
-          // First check if this is one of our known demo tasks (for consistent demo experience)
-          if (knownLaborTasks[taskId as keyof typeof knownLaborTasks]) {
-            const laborDates = knownLaborTasks[taskId as keyof typeof knownLaborTasks];
-            
-            // Make sure we're correctly setting the labor dates and flag
-            task.laborStartDate = laborDates.startDate;
-            task.laborEndDate = laborDates.endDate;
-            task.hasLinkedLabor = true;
-            
-            // Update the actual task dates to match labor dates
-            task.startDate = task.laborStartDate;
-            task.endDate = task.laborEndDate;
-            
-            console.log(`✅ Set demo labor dates for task ${taskId}: ${laborDates.startDate} - ${laborDates.endDate}`);
-            console.log(`✅ Updated task dates to match labor: ${task.startDate} - ${task.endDate}`);
-            
-            // Special handling for FR 3 (Task ID 3648)
-            if (taskId === 3648) {
-              console.log("🔍 FR 3 was found and updated with labor dates");
-            }
-            return;
-          }
-          
-          // Otherwise use real labor entries if they exist
           const laborEntries = taskToLaborMap[taskId] || [];
-          
+
           if (laborEntries.length > 0) {
-            // Sort labor entries by date using startDate (workDate field removed)
+            // Sort labor entries by date using startDate
             const sortedLabor = [...laborEntries].sort((a, b) => {
               const dateA = new Date(a.startDate).getTime();
               const dateB = new Date(b.startDate).getTime();
               return dateA - dateB;
             });
-            
+
             // Find the earliest and latest dates from labor entries
             const firstLabor = sortedLabor[0];
             const lastLabor = sortedLabor[sortedLabor.length - 1];
-            
-            // Update task with labor dates using startDate/endDate
+
+            // Update task with labor dates
             task.laborStartDate = firstLabor.startDate;
-            
-            // Use endDate for the labor end date
             task.laborEndDate = lastLabor.endDate;
-            
             task.hasLinkedLabor = true;
-            
+
             // Also update the actual task dates to match labor dates
             task.startDate = task.laborStartDate;
             task.endDate = task.laborEndDate;
-            
+
             console.log(`Task ${taskId} has ${laborEntries.length} labor entries. Labor dates: ${task.laborStartDate} - ${task.laborEndDate}`);
           } else {
             // No labor entries found for this task
             task.hasLinkedLabor = false;
           }
         });
-        
+
         // After processing all tasks, update the state
         setFilteredTasksWithLabor(updatedTasks);
       })
@@ -361,23 +303,15 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
     if (task.hasLinkedLabor && task.laborStartDate && task.laborEndDate) {
       // Check if task dates need updating
       const taskNeedsUpdate = task.startDate !== task.laborStartDate || task.endDate !== task.laborEndDate;
-      
+
       // Apply labor dates to task dates - ensuring they're always in sync
       task.startDate = task.laborStartDate;
       task.endDate = task.laborEndDate;
-      
+
       // If dates were different, persist the change to the database
       if (taskNeedsUpdate) {
         console.log(`Updating task ${task.id} dates in database to match labor dates: ${task.startDate} - ${task.endDate}`);
-        
-        // Hard-coded check for FR3 task (ID 3648)
-        const isFR3Task = task.id === 3648 || task.title.includes('FR3');
-        if (isFR3Task) {
-          console.log(`⚠️ FR3 task detected (${task.id}), ensuring dates are exactly 4/11/25-4/13/25`);
-          task.startDate = "2025-04-11";
-          task.endDate = "2025-04-13";
-        }
-        
+
         try {
           // Use apiRequest which handles authentication automatically
           apiRequest(`/api/tasks/${task.id}`, 'PATCH', {
@@ -387,23 +321,12 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
           .then(response => {
             if (response.ok) {
               console.log(`✅ Successfully updated task ${task.id} dates in database`);
-              
-              // If this is the FR3 task, invalidate queries and potentially reload
-              if (isFR3Task) {
-                console.log("✅ Successfully updated FR3 task dates, invalidating all queries");
-                queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
-                queryClient.invalidateQueries({ 
-                  predicate: (query) => query.queryKey[0]?.toString().includes('/api/projects/')
-                });
-                
-                // For FR3 task, let's force a reload after a slight delay
-                setTimeout(() => {
-                  if (task.id === 3648) {
-                    console.log("🔄 Force reloading page to ensure FR3 task dates are displayed correctly");
-                    window.location.reload();
-                  }
-                }, 1000);
-              }
+
+              // Invalidate queries to refresh task data
+              queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+              queryClient.invalidateQueries({
+                predicate: (query) => query.queryKey[0]?.toString().includes('/api/projects/')
+              });
             } else {
               console.error(`❌ Failed to update task ${task.id} dates in database`);
             }
@@ -576,73 +499,16 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
   console.log("Tasks with laborEndDate:", displayTasks.filter(task => task.laborEndDate).length);
   console.log("Tasks with all three conditions:", displayTasks.filter(task => task.hasLinkedLabor && task.laborStartDate && task.laborEndDate).length);
   
-  // Find FR3 task specifically and ensure it has the correct dates
-  const setupFR3Task = displayTasks.find(task => task.title.includes("FR3") || task.id === 3648) as ExtendedTask | undefined;
-  if (setupFR3Task) {
-    console.log("🔍 Found FR3 task:", setupFR3Task.id, setupFR3Task.title);
-    console.log("🔍 Current FR3 task dates:", setupFR3Task.startDate, setupFR3Task.endDate);
-    
-    // Force task to sync with labor dates (4/11/25-4/13/25)
-    if (setupFR3Task.startDate !== "2025-04-11" || setupFR3Task.endDate !== "2025-04-13") {
-      console.log("⚠️ FR3 task dates don't match labor dates, fixing...");
-      
-      // Force update the dates regardless of what's in the database
-      setupFR3Task.startDate = "2025-04-11";
-      setupFR3Task.endDate = "2025-04-13";
-      setupFR3Task.laborStartDate = "2025-04-11";
-      setupFR3Task.laborEndDate = "2025-04-13";
-      setupFR3Task.hasLinkedLabor = true;
-      
-      console.log("✅ Manually updated FR3 task with correct dates:", setupFR3Task.startDate, setupFR3Task.endDate);
-      
-      // Also update the task in the database to persist these changes
-      try {
-        // Use apiRequest which handles authentication automatically
-        apiRequest(`/api/tasks/${setupFR3Task.id}`, 'PATCH', {
-          startDate: setupFR3Task.startDate,
-          endDate: setupFR3Task.endDate,
-        })
-        .then(response => {
-          if (response.ok) {
-            console.log("✅ Successfully persisted FR3 task date changes to database");
-            
-            // Force refresh all task data
-            queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
-            queryClient.invalidateQueries({ 
-              predicate: (query) => query.queryKey[0]?.toString().includes('/api/projects/')
-            });
-            
-            // Reload the entire page to ensure fresh data
-            setTimeout(() => {
-              window.location.reload();
-            }, 500);
-          } else {
-            console.error("❌ Failed to persist FR3 task date changes to database");
-          }
-        })
-        .catch(error => {
-          console.error("❌ Error updating FR3 task in database:", error);
-        });
-      } catch (error) {
-        console.error("❌ Failed to update FR3 task in database:", error);
-      }
-    } else {
-      console.log("✅ FR3 task dates already match labor dates (4/11/25-4/13/25)");
-    }
-  } else {
-    console.log("❌ Could not find FR3 task!");
-  }
-  
   // Function to get task IDs that have labor
   const getTaskIdsWithLabor = async () => {
     try {
       console.log(`Fetching labor entries specifically for project ${projectId}`);
       const response = await fetch(`/api/projects/${projectId}/labor`);
       if (!response.ok) throw new Error('Failed to fetch labor entries');
-      
+
       const data = await response.json();
       console.log(`Found ${data.length} labor entries for project ${projectId}`);
-      
+
       // Extract all unique task IDs that have labor entries
       const taskIds = new Set<number>();
       data.forEach((labor: Labor) => {
@@ -650,13 +516,13 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
           taskIds.add(labor.taskId);
         }
       });
-      
+
       console.log(`Tasks with actual labor entries: ${Array.from(taskIds).join(', ')}`);
       setTaskIdsWithLabor(taskIds);
       return taskIds;
     } catch (error) {
       console.error('Error fetching labor entries:', error);
-      return new Set<number>([3648]); // At minimum, include FR3
+      return new Set<number>();
     }
   };
 
@@ -666,111 +532,22 @@ export function TasksTabView({ tasks, projectId, onAddTask, project }: TasksTabV
   }, [projectId]);
 
   // STRICT FILTER: Create a list of tasks that have actual labor entries
-  // This is the correct approach for filtering - only include tasks that exist in taskIdsWithLabor
-  const strictlyFilteredTasks = displayTasks.filter(task => 
-    taskIdsWithLabor.has(task.id) || task.id === 3648 || task.title.includes('FR3')
+  // Only include tasks that exist in taskIdsWithLabor
+  const strictlyFilteredTasks = displayTasks.filter(task =>
+    taskIdsWithLabor.has(task.id)
   );
 
   console.log(`STRICT FILTERING - Total tasks: ${displayTasks.length}, Tasks with labor: ${strictlyFilteredTasks.length}`);
-  
-  // Special case for FR3 - ensure it's included and has the correct dates
-  const fr3Task = strictlyFilteredTasks.find(task => task.id === 3648 || task.title.includes('FR3'));
-  if (fr3Task) {
-    // Update FR3 task's dates to ensure they're correct
-    fr3Task.startDate = "2025-04-11";
-    fr3Task.endDate = "2025-04-13";
-    fr3Task.laborStartDate = "2025-04-11";
-    fr3Task.laborEndDate = "2025-04-13";
-    fr3Task.hasLinkedLabor = true;
-    console.log("FR3 task included with dates 4/11/25-4/13/25");
-  } else {
-    // If FR3 isn't in the filtered list (which should be rare), find and add it
-    const fr3FromAllTasks = displayTasks.find(task => task.id === 3648 || task.title.includes('FR3'));
-    if (fr3FromAllTasks) {
-      strictlyFilteredTasks.push({
-        ...fr3FromAllTasks,
-        hasLinkedLabor: true,
-        laborStartDate: "2025-04-11",
-        laborEndDate: "2025-04-13",
-        startDate: "2025-04-11",
-        endDate: "2025-04-13"
-      });
-      console.log("Added FR3 task to filtered list");
-    }
-  }
   
   // Create the Gantt chart tasks from our strictly filtered list
   const ganttTasks = strictlyFilteredTasks.map((task: ExtendedTask) => {
     // Log the actual dates for each task to help with debugging
     console.log(`Task ${task.id} has dates: startDate=${task.startDate}, endDate=${task.endDate}, laborStartDate=${task.laborStartDate}, laborEndDate=${task.laborEndDate}`);
-    
-    // Special handling for FR3 task to ensure consistent dates
-    if (task.id === 3648 || task.title.includes('FR3')) {
-      return {
-        id: task.id,
-        title: `${task.title} (Labor)`,
-        description: task.description || null,
-        startDate: new Date('2025-04-11'),
-        endDate: new Date('2025-04-13'),
-        status: task.status,
-        assignedTo: task.assignedTo || null,
-        category: task.category || "other",
-        contactIds: Array.isArray(task.contactIds) ? task.contactIds.map(id => String(id)) : [],
-        materialIds: Array.isArray(task.materialIds) ? task.materialIds.map(id => String(id)) : [],
-        projectId: task.projectId,
-        completed: task.completed ?? false,
-        materialsNeeded: task.materialsNeeded || null,
-        hasLinkedLabor: true,
-        durationDays: 3
-      };
-    }
-    
-    // Special handling for FR1 task (3646) to ensure dates match labor entries
-    if (task.id === 3646) {
-      return {
-        id: task.id,
-        title: `${task.title} (Labor)`,
-        description: task.description || null,
-        startDate: new Date('2025-04-11'),
-        endDate: new Date('2025-04-13'),
-        status: task.status,
-        assignedTo: task.assignedTo || null,
-        category: task.category || "other",
-        contactIds: Array.isArray(task.contactIds) ? task.contactIds.map(id => String(id)) : [],
-        materialIds: Array.isArray(task.materialIds) ? task.materialIds.map(id => String(id)) : [],
-        projectId: task.projectId,
-        completed: task.completed ?? false,
-        materialsNeeded: task.materialsNeeded || null,
-        hasLinkedLabor: true,
-        durationDays: 3
-      };
-    }
-    
-    // Special handling for FR4 task (3649) to ensure dates match labor entries
-    if (task.id === 3649) {
-      return {
-        id: task.id,
-        title: `${task.title} (Labor)`,
-        description: task.description || null,
-        startDate: new Date('2025-04-11'),
-        endDate: new Date('2025-04-13'),
-        status: task.status,
-        assignedTo: task.assignedTo || null,
-        category: task.category || "other",
-        contactIds: Array.isArray(task.contactIds) ? task.contactIds.map(id => String(id)) : [],
-        materialIds: Array.isArray(task.materialIds) ? task.materialIds.map(id => String(id)) : [],
-        projectId: task.projectId,
-        completed: task.completed ?? false,
-        materialsNeeded: task.materialsNeeded || null,
-        hasLinkedLabor: true,
-        durationDays: 3
-      };
-    }
-    
-    // For all other tasks with labor, use labor dates
+
+    // Use labor dates for the Gantt chart
     const startDate = new Date(task.laborStartDate || task.startDate);
     const endDate = new Date(task.laborEndDate || task.endDate);
-    
+
     return {
       id: task.id,
       title: `${task.title} (Labor)`,

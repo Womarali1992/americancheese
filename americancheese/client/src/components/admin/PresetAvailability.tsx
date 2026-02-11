@@ -13,7 +13,7 @@ import { AVAILABLE_PRESETS, type CategoryPreset } from "@shared/presets";
 import { taskTemplates, type TaskTemplate } from "@shared/taskTemplates";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { DragDropContext, Droppable, Draggable, type DropResult } from "react-beautiful-dnd";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { FALLBACK_COLORS } from "@/lib/unified-color-system";
 import {
@@ -32,6 +32,12 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { FileText, ListTodo } from "lucide-react";
+import {
+  categoryValidationSchema,
+  taskTemplateValidationSchema,
+  presetValidationSchema,
+  sanitizeText
+} from "@shared/validation";
 
 interface EnabledPresetsResponse {
   enabledPresets: string[];
@@ -48,20 +54,22 @@ type Tier2Category = {
   description: string;
 };
 
+type PresetConfig = {
+  name: string;
+  description: string;
+  recommendedTheme?: string;
+  tier1Categories: Tier1Category[];
+  tier2Categories: Record<string, Tier2Category[]>;
+  tasks: Record<string, Record<string, TaskTemplate[]>>;
+};
+
 export function PresetAvailability() {
   const { toast } = useToast();
   const [enabledPresets, setEnabledPresets] = useState<string[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
   const [presetsExpanded, setPresetsExpanded] = useState(false);
   const [editingPreset, setEditingPreset] = useState<string | null>(null);
-  const [presetForm, setPresetForm] = useState<{
-    name: string;
-    description: string;
-    recommendedTheme?: string;
-    tier1Categories: Tier1Category[];
-    tier2Categories: Record<string, Tier2Category[]>;
-    tasks: Record<string, Record<string, TaskTemplate[]>>;
-  }>({
+  const [presetForm, setPresetForm] = useState<PresetConfig>({
     name: '',
     description: '',
     recommendedTheme: '',
@@ -185,8 +193,8 @@ export function PresetAvailability() {
       setEditingPreset(presetKey);
 
       // Get tier1 names and existing tier2 keys
-      const tier1Names = new Set(preset.categories.tier1.map((c: Tier1Category) => c.name));
-      const existingTier2 = preset.categories.tier2 || {};
+      const tier1Names = new Set<string>(preset.categories.tier1.map((c: Tier1Category) => c.name));
+      const existingTier2: Record<string, Tier2Category[]> = preset.categories.tier2 || {};
       
       // Fix any mismatched tier2 keys: ensure tier2 keys match tier1 names
       // This handles cases where tier1 was renamed but tier2 key wasn't updated
@@ -202,7 +210,7 @@ export function PresetAvailability() {
       // Then, check for orphaned tier2 keys (keys that don't match any tier1 name)
       // Try to match them to tier1 categories that don't have tier2 data yet
       const orphanedKeys = Object.keys(existingTier2).filter(key => !tier1Names.has(key));
-      const tier1WithoutTier2 = [...tier1Names].filter(name => !fixedTier2[name]);
+      const tier1WithoutTier2: string[] = Array.from(tier1Names).filter(name => !fixedTier2[name]);
       
       // If we have orphaned keys and tier1 categories missing tier2 data,
       // try to match them by order (this handles the case where one category was renamed)
@@ -260,7 +268,7 @@ export function PresetAvailability() {
 
   // Save preset mutation
   const savePresetMutation = useMutation({
-    mutationFn: async (data: { presetId: string; config: any }) => {
+    mutationFn: async (data: { presetId: string; config: PresetConfig }) => {
       return apiRequest(`/api/admin/presets/${data.presetId}`, 'PUT', data.config);
     },
     onSuccess: () => {
@@ -285,22 +293,67 @@ export function PresetAvailability() {
   const handleSavePreset = () => {
     if (!editingPreset) return;
 
-    const config = {
+    // Validate preset fields
+    const presetValidation = presetValidationSchema.safeParse({
       name: presetForm.name,
       description: presetForm.description,
       recommendedTheme: presetForm.recommendedTheme,
-      categories: {
-        tier1: presetForm.tier1Categories,
-        tier2: presetForm.tier2Categories
-      },
+    });
+
+    if (!presetValidation.success) {
+      const errors = presetValidation.error.errors.map(err => err.message).join(", ");
+      toast({
+        title: "Validation Error",
+        description: errors,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate all tier1 categories
+    for (const tier1 of presetForm.tier1Categories) {
+      const categoryValidation = categoryValidationSchema.safeParse({
+        name: tier1.name,
+        description: tier1.description,
+      });
+
+      if (!categoryValidation.success) {
+        toast({
+          title: "Validation Error",
+          description: `Category "${tier1.name}": ${categoryValidation.error.errors[0].message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Validate all tier2 categories
+    for (const [tier1Name, tier2List] of Object.entries(presetForm.tier2Categories)) {
+      for (const tier2 of tier2List) {
+        const categoryValidation = categoryValidationSchema.safeParse({
+          name: tier2.name,
+          description: tier2.description,
+        });
+
+        if (!categoryValidation.success) {
+          toast({
+            title: "Validation Error",
+            description: `Subcategory "${tier2.name}" in ${tier1Name}: ${categoryValidation.error.errors[0].message}`,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+    }
+
+    const config: PresetConfig = {
+      name: presetValidation.data.name,
+      description: presetValidation.data.description,
+      recommendedTheme: presetValidation.data.recommendedTheme,
+      tier1Categories: presetForm.tier1Categories,
+      tier2Categories: presetForm.tier2Categories,
       tasks: presetForm.tasks
     };
-
-    // DEBUG: Log what we're saving
-    console.log('📝 SAVE PRESET DEBUG (frontend): Saving preset', editingPreset);
-    console.log('📝 SAVE PRESET DEBUG (frontend): tier1 categories:', presetForm.tier1Categories.map(c => c.name));
-    console.log('📝 SAVE PRESET DEBUG (frontend): tier2 keys:', Object.keys(presetForm.tier2Categories));
-    console.log('📝 SAVE PRESET DEBUG (frontend): Full config:', JSON.stringify(config, null, 2));
 
     savePresetMutation.mutate({ presetId: editingPreset, config });
   };
@@ -348,30 +401,35 @@ export function PresetAvailability() {
   };
 
   const handleUpdateTier1 = (index: number, field: keyof Tier1Category, value: string | number) => {
+    // Sanitize string values
+    const sanitizedValue = typeof value === 'string'
+      ? sanitizeText(value, field === 'name' ? 100 : 500)
+      : value;
+
     // Use functional update to ensure we're working with the latest state
     setPresetForm((prev) => {
       const oldName = prev.tier1Categories[index].name;
       const newTier1 = [...prev.tier1Categories];
-      newTier1[index] = { ...newTier1[index], [field]: value };
+      newTier1[index] = { ...newTier1[index], [field]: sanitizedValue };
 
       // If name changed, update tier2 categories key AND tasks key
       let newTier2 = { ...prev.tier2Categories };
       let newTasks = { ...prev.tasks };
-      
-      if (field === 'name' && oldName !== value) {
+
+      if (field === 'name' && oldName !== sanitizedValue) {
         // Update tier2 key - copy subcategories to new key, delete old key
-        newTier2[value as string] = newTier2[oldName] || [];
+        newTier2[sanitizedValue as string] = newTier2[oldName] || [];
         delete newTier2[oldName];
-        
+
         // Update tasks key - copy tasks to new key, delete old key
-        newTasks[value as string] = newTasks[oldName] || {};
+        newTasks[sanitizedValue as string] = newTasks[oldName] || {};
         delete newTasks[oldName];
 
         // Update expanded state
         const newExpanded = new Set(expandedTier1);
         if (newExpanded.has(oldName)) {
           newExpanded.delete(oldName);
-          newExpanded.add(value as string);
+          newExpanded.add(sanitizedValue as string);
         }
         setExpandedTier1(newExpanded);
       }
@@ -413,8 +471,11 @@ export function PresetAvailability() {
   };
 
   const handleUpdateTier2 = (tier1Name: string, index: number, field: keyof Tier2Category, value: string) => {
+    // Sanitize value
+    const sanitizedValue = sanitizeText(value, field === 'name' ? 100 : 500);
+
     const newTier2List = [...presetForm.tier2Categories[tier1Name]];
-    newTier2List[index] = { ...newTier2List[index], [field]: value };
+    newTier2List[index] = { ...newTier2List[index], [field]: sanitizedValue };
 
     setPresetForm({
       ...presetForm,
@@ -549,10 +610,18 @@ export function PresetAvailability() {
 
   // Save task (add or edit)
   const handleSaveTask = () => {
-    if (!taskForm.title.trim()) {
+    // Validate task template
+    const taskValidation = taskTemplateValidationSchema.safeParse({
+      title: taskForm.title,
+      description: taskForm.description,
+      estimatedDuration: taskForm.estimatedDuration
+    });
+
+    if (!taskValidation.success) {
+      const errors = taskValidation.error.errors.map(err => err.message).join(", ");
       toast({
-        title: "Error",
-        description: "Task title is required",
+        title: "Validation Error",
+        description: errors,
         variant: "destructive",
       });
       return;
@@ -567,9 +636,9 @@ export function PresetAvailability() {
         t.id === taskForm.taskId
           ? {
               ...t,
-              title: taskForm.title,
-              description: taskForm.description,
-              estimatedDuration: taskForm.estimatedDuration
+              title: taskValidation.data.title,
+              description: taskValidation.data.description,
+              estimatedDuration: taskValidation.data.estimatedDuration
             }
           : t
       );
@@ -578,12 +647,12 @@ export function PresetAvailability() {
       const newTaskId = `CUSTOM_${Date.now()}`;
       const newTask: TaskTemplate = {
         id: newTaskId,
-        title: taskForm.title,
-        description: taskForm.description,
+        title: taskValidation.data.title,
+        description: taskValidation.data.description,
         tier1Category: taskForm.tier1,
         tier2Category: taskForm.tier2,
         category: taskForm.tier2.toLowerCase(),
-        estimatedDuration: taskForm.estimatedDuration
+        estimatedDuration: taskValidation.data.estimatedDuration
       };
       updatedTasks = [...currentTasks, newTask];
     }
@@ -608,18 +677,25 @@ export function PresetAvailability() {
 
   // Handle add subcategory
   const handleAddSubcategory = (tier1Name: string) => {
-    if (!newSubcategoryName.trim()) {
+    // Validate subcategory
+    const categoryValidation = categoryValidationSchema.safeParse({
+      name: newSubcategoryName,
+      description: newSubcategoryDescription,
+    });
+
+    if (!categoryValidation.success) {
+      const errors = categoryValidation.error.errors.map(err => err.message).join(", ");
       toast({
-        title: "Error",
-        description: "Subcategory name is required",
+        title: "Validation Error",
+        description: errors,
         variant: "destructive",
       });
       return;
     }
 
     const newTier2Category: Tier2Category = {
-      name: newSubcategoryName.trim(),
-      description: newSubcategoryDescription.trim()
+      name: categoryValidation.data.name,
+      description: categoryValidation.data.description
     };
 
     setPresetForm({
@@ -636,10 +712,26 @@ export function PresetAvailability() {
   };
 
   // Handle drag end
-  const handleDragEnd = (result: any) => {
+  const handleDragEnd = (result: DropResult) => {
     const { destination, source } = result;
 
+    // Validate drag operation
     if (!destination || destination.index === source.index) {
+      return;
+    }
+
+    // Validate indices are within bounds
+    if (
+      source.index < 0 ||
+      source.index >= presetForm.tier1Categories.length ||
+      destination.index < 0 ||
+      destination.index >= presetForm.tier1Categories.length
+    ) {
+      toast({
+        title: "Error",
+        description: "Invalid drag operation",
+        variant: "destructive",
+      });
       return;
     }
 

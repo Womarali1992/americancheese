@@ -64,7 +64,7 @@ export async function applyPresetToProject(projectId: number, presetId: string, 
       .limit(1);
 
     const customConfig = configResult.length > 0
-      ? safeJsonParseObject(configResult[0].value, null, true)
+      ? safeJsonParseObject(configResult[0].value, {}, true)
       : null;
 
     // Merge base preset with custom configuration

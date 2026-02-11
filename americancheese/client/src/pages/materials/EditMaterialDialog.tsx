@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Task, Project, Contact, Material } from "@/types";
+import type { ProjectCategory } from "@shared/schema";
 import { fetchTemplates } from "@/components/task/TaskTemplateService";
 
 // Material type categories mapping for dropdown options
@@ -382,15 +383,15 @@ export function EditMaterialDialog({
   const selectedCategory = form.watch("category");
 
   // Fetch project-specific tier categories
-  const { data: projectCategories = [] } = useQuery({
+  const { data: projectCategories = [] } = useQuery<ProjectCategory[]>({
     queryKey: ['/api/projects', currentProjectId, 'template-categories'],
     enabled: open && !!currentProjectId && currentProjectId > 0,
   });
 
   // Extract tier1 and tier2 categories from project categories
   const tier1Categories = projectCategories
-    .filter((cat: any) => cat.type === 'tier1')
-    .map((cat: any) => cat.name)
+    .filter((cat) => cat.type === 'tier1')
+    .map((cat) => cat.name)
     .sort();
 
   // Map project-specific categories to form fields when material uses them
@@ -434,15 +435,15 @@ export function EditMaterialDialog({
   const getTier2Categories = (tier1Name: string) => {
     // Find the tier1 category to get its ID
     const tier1Category = projectCategories.find(
-      (cat: any) => cat.type === 'tier1' && cat.name === tier1Name
+      (cat) => cat.type === 'tier1' && cat.name === tier1Name
     );
-    
+
     if (!tier1Category) return [];
-    
+
     // Return tier2 categories that belong to this tier1 category
     return projectCategories
-      .filter((cat: any) => cat.type === 'tier2' && cat.parentId === tier1Category.id)
-      .map((cat: any) => cat.name)
+      .filter((cat) => cat.type === 'tier2' && cat.parentId === tier1Category.id)
+      .map((cat) => cat.name)
       .sort();
   };
   
