@@ -22,17 +22,24 @@ describe('Transaction Safety - Member Management', () => {
   let testMemberId: number;
   let ownerUserId: number;
 
+  const ownerEmail = `txn-owner-${process.pid}@test.com`;
+  const memberEmail = `txn-member-${process.pid}@test.com`;
+
   beforeEach(async () => {
-    // Clean up test data
-    await db.delete(projectMemberAuditLog);
-    await db.delete(projectMembers);
-    await db.delete(projects);
-    await db.delete(users).where(eq(users.email, 'test-owner@example.com'));
-    await db.delete(users).where(eq(users.email, 'test-member@example.com'));
+    // Clean up stale test data first
+    for (const email of [ownerEmail, memberEmail]) {
+      const existing = await db.select().from(users).where(eq(users.email, email));
+      if (existing.length > 0) {
+        await db.delete(projectMemberAuditLog).where(eq(projectMemberAuditLog.performedBy, existing[0].id));
+        await db.delete(projectMembers).where(eq(projectMembers.userId, existing[0].id));
+        await db.delete(projects).where(eq(projects.createdBy, existing[0].id));
+        await db.delete(users).where(eq(users.id, existing[0].id));
+      }
+    }
 
     // Create test owner
     const ownerUsers = await db.insert(users).values({
-      email: 'test-owner@example.com',
+      email: ownerEmail,
       passwordHash: 'hashed',
       name: 'Test Owner',
     }).returning();
@@ -40,7 +47,7 @@ describe('Transaction Safety - Member Management', () => {
 
     // Create test member
     const memberUsers = await db.insert(users).values({
-      email: 'test-member@example.com',
+      email: memberEmail,
       passwordHash: 'hashed',
       name: 'Test Member',
     }).returning();
@@ -50,7 +57,7 @@ describe('Transaction Safety - Member Management', () => {
     const testProjects = await db.insert(projects).values({
       name: 'Test Project',
       location: 'Test Location',
-      ownerId: ownerUserId,
+      createdBy: ownerUserId,
     }).returning();
     testProjectId = testProjects[0].id;
 
@@ -59,18 +66,20 @@ describe('Transaction Safety - Member Management', () => {
       projectId: testProjectId,
       userId: testUserId,
       role: 'viewer',
-      invitedEmail: 'test-member@example.com',
+      invitedEmail: memberEmail,
     }).returning();
     testMemberId = members[0].id;
   });
 
   afterEach(async () => {
-    // Clean up
-    await db.delete(projectMemberAuditLog);
-    await db.delete(projectMembers);
-    await db.delete(projects);
-    await db.delete(users).where(eq(users.email, 'test-owner@example.com'));
-    await db.delete(users).where(eq(users.email, 'test-member@example.com'));
+    // Clean up by specific IDs to avoid affecting other tests
+    if (testProjectId) {
+      await db.delete(projectMemberAuditLog).where(eq(projectMemberAuditLog.projectId, testProjectId));
+      await db.delete(projectMembers).where(eq(projectMembers.projectId, testProjectId));
+      await db.delete(projects).where(eq(projects.id, testProjectId));
+    }
+    await db.delete(users).where(eq(users.email, ownerEmail));
+    await db.delete(users).where(eq(users.email, memberEmail));
   });
 
   describe('Atomicity - Role Update with Audit Log', () => {

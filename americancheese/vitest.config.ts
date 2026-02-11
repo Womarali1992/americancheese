@@ -10,6 +10,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['**/__tests__/**/*.test.ts'],
+    fileParallelism: false, // Run test files sequentially - migration tests drop/recreate tables
     env: {
       DB_HOST: process.env.DB_HOST || 'localhost',
       DB_PORT: process.env.DB_PORT || '5432',

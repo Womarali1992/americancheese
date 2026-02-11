@@ -72,9 +72,19 @@ describe('Rate Limiter Middleware (SEC-03)', () => {
 
   // Create test user and project before all tests
   beforeAll(async () => {
+    const testEmail = `ratelimit-${process.pid}@test.com`;
+
+    // Clean up stale test data
+    const existing = await db.select().from(users).where(eq(users.email, testEmail));
+    if (existing.length > 0) {
+      await db.delete(rateLimits).where(eq(rateLimits.userId, existing[0].id));
+      await db.delete(projects).where(eq(projects.createdBy, existing[0].id));
+      await db.delete(users).where(eq(users.id, existing[0].id));
+    }
+
     // Create test user
     const [user] = await db.insert(users).values({
-      email: 'ratelimit-test@example.com',
+      email: testEmail,
       passwordHash: await bcrypt.hash('password123', 10),
       name: 'Rate Limit Test User',
       role: 'user',
@@ -86,7 +96,7 @@ describe('Rate Limiter Middleware (SEC-03)', () => {
       name: 'Rate Limit Test Project',
       description: 'Test project for rate limiter',
       location: 'Test Location',
-      ownerId: testUserId,
+      createdBy: testUserId,
       status: 'planning',
     }).returning();
     testProjectId = project.id;
@@ -334,7 +344,7 @@ describe('Rate Limiter Middleware (SEC-03)', () => {
         name: 'Rate Limit Test Project 2',
         description: 'Second test project for rate limiter',
         location: 'Test Location 2',
-        ownerId: testUserId,
+        createdBy: testUserId,
         status: 'planning',
       }).returning();
 

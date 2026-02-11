@@ -51,9 +51,9 @@ describe('Security Tables Migration', () => {
   });
 
   afterAll(async () => {
-    // Clean up - drop the security tables
-    await testClient.query('DROP TABLE IF EXISTS rate_limits CASCADE');
-    await testClient.query('DROP TABLE IF EXISTS project_member_audit_log CASCADE');
+    // Recreate security tables (they may have been dropped by removeSecurityTables tests)
+    // Other test files depend on these tables existing
+    await addSecurityTables(testClient);
     await testClient.end();
   });
 

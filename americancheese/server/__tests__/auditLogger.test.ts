@@ -12,9 +12,17 @@ describe('AuditLogger', () => {
   beforeEach(async () => {
     auditLogger = new AuditLogger();
 
-    // Create test user
+    // Clean up any stale test data first
+    const existingUser = await db.select().from(users).where(eq(users.email, `audit-${process.pid}@test.com`));
+    if (existingUser.length > 0) {
+      await db.delete(projectMemberAuditLog).where(eq(projectMemberAuditLog.performedBy, existingUser[0].id));
+      await db.delete(projects).where(eq(projects.createdBy, existingUser[0].id));
+      await db.delete(users).where(eq(users.id, existingUser[0].id));
+    }
+
+    // Create test user with unique email per process
     const [user] = await db.insert(users).values({
-      email: 'audit@test.com',
+      email: `audit-${process.pid}@test.com`,
       passwordHash: 'hashed-password',
       name: 'Test Audit User',
       role: 'user',
@@ -32,9 +40,13 @@ describe('AuditLogger', () => {
 
   afterEach(async () => {
     // Clean up test data
-    await db.delete(projectMemberAuditLog).where(eq(projectMemberAuditLog.projectId, testProjectId));
-    await db.delete(projects).where(eq(projects.id, testProjectId));
-    await db.delete(users).where(eq(users.id, testUserId));
+    if (testProjectId) {
+      await db.delete(projectMemberAuditLog).where(eq(projectMemberAuditLog.projectId, testProjectId));
+      await db.delete(projects).where(eq(projects.id, testProjectId));
+    }
+    if (testUserId) {
+      await db.delete(users).where(eq(users.id, testUserId));
+    }
   });
 
   describe('logInvitation', () => {
