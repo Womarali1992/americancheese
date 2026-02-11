@@ -70,6 +70,25 @@ import { SAFE_ERROR_MESSAGES } from "../shared/constants/errors";
 import { sanitizeMemberError } from "./utils/errorSanitizer";
 import { addRandomDelay, sendSecureErrorResponse } from "./utils/timingAttackPrevention";
 
+// Middleware to require admin role for admin endpoints
+async function requireAdmin(req: Request, res: Response, next: () => void): Promise<void> {
+  const userId = req.session?.userId;
+  if (!userId) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+  try {
+    const [user] = await db.select({ role: users.role }).from(users).where(eq(users.id, userId)).limit(1);
+    if (!user || user.role !== 'admin') {
+      res.status(403).json({ error: 'Admin access required' });
+      return;
+    }
+    next();
+  } catch (error) {
+    res.status(500).json({ error: 'Authorization check failed' });
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up multer storage for file uploads
   const upload = multer({
@@ -94,8 +113,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Credentials Vault routes
   app.use('/api/credentials', credentialsRouter);
 
+  // Apply admin role check to all /api/admin/* routes
+  app.use('/api/admin', requireAdmin);
+
   // ==================== ADMIN TEMPLATE CATEGORIES ====================
-  
+
   // Get all template categories (admin endpoint)
   app.get("/api/admin/template-categories", async (req: Request, res: Response) => {
     try {
@@ -338,74 +360,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Test endpoint for debugging - no auth required
-  app.get("/api/test", (req: Request, res: Response) => {
-    // Set a test cookie for client debugging
-    res.cookie('test-cookie', 'test-value', {
-      maxAge: 60000, // 1 minute
-      secure: false,
-      httpOnly: false
+  // Debug endpoints - only available in development
+  if (process.env.NODE_ENV !== 'production') {
+    // Test endpoint for debugging - no auth required
+    app.get("/api/test", (req: Request, res: Response) => {
+      // Set a test cookie for client debugging
+      res.cookie('test-cookie', 'test-value', {
+        maxAge: 60000, // 1 minute
+        secure: false,
+        httpOnly: false
+      });
+
+      res.json({
+        message: "Test endpoint works!",
+        sessionExists: !!req.session,
+        sessionId: req.session.id || null,
+        isAuthenticated: !!req.session.authenticated,
+        loginTime: req.session.loginTime || null,
+        cookies: req.headers.cookie || null,
+        cookieHeader: req.headers.cookie,
+        headers: req.headers,
+        envInfo: {
+          nodeEnv: process.env.NODE_ENV || 'not set'
+        }
+      });
     });
-    
-    res.json({ 
-      message: "Test endpoint works!",
-      sessionExists: !!req.session,
-      sessionId: req.session.id || null,
-      isAuthenticated: !!req.session.authenticated,
-      loginTime: req.session.loginTime || null,
-      cookies: req.headers.cookie || null,
-      cookieHeader: req.headers.cookie,
-      headers: req.headers,
-      envInfo: {
-        nodeEnv: process.env.NODE_ENV || 'not set'
-      }
-    });
-  });
-  
-  // Create sample project for testing template features
-  app.post("/api/create-sample-project", async (_req: Request, res: Response) => {
-    try {
-      // Check if we already have projects
-      const existingProjects = await db.select().from(projects);
-      
-      if (existingProjects.length > 0) {
-        return res.json({ 
-          success: true, 
-          message: "Projects already exist, skipping creation",
-          projects: existingProjects
+
+    // Create sample project for testing template features
+    app.post("/api/create-sample-project", async (_req: Request, res: Response) => {
+      try {
+        // Check if we already have projects
+        const existingProjects = await db.select().from(projects);
+
+        if (existingProjects.length > 0) {
+          return res.json({
+            success: true,
+            message: "Projects already exist, skipping creation",
+            projects: existingProjects
+          });
+        }
+
+        // Create a sample project
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + 3);
+
+        const result = await db.insert(projects).values({
+          name: "Sample Residential Project",
+          location: "123 Main Street, Anytown, CA",
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0],
+          description: "A sample residential construction project for testing template features",
+          status: "active",
+          progress: 10,
+          selectedTemplates: []
+        }).returning();
+
+        return res.json({
+          success: true,
+          message: "Sample project created successfully",
+          project: result[0]
+        });
+      } catch (error) {
+        console.error("Error creating sample project:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to create sample project",
+          error: error instanceof Error ? error.message : String(error)
         });
       }
-      
-      // Create a sample project
-      const startDate = new Date();
-      const endDate = new Date();
-      endDate.setMonth(endDate.getMonth() + 3);
-      
-      const result = await db.insert(projects).values({
-        name: "Sample Residential Project",
-        location: "123 Main Street, Anytown, CA",
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0],
-        description: "A sample residential construction project for testing template features",
-        status: "active",
-        progress: 10,
-        selectedTemplates: []
-      }).returning();
-      
-      return res.json({ 
-        success: true, 
-        message: "Sample project created successfully",
-        project: result[0]
-      });
-    } catch (error) {
-      console.error("Error creating sample project:", error);
-      return res.status(500).json({ 
-        success: false, 
-        message: "Failed to create sample project",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
+    });
+  }
   
   // Auth middleware is now applied in index.ts for the entire app
   // Project routes
