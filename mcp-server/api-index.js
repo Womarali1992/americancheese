@@ -558,6 +558,81 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
 
+      // ==================== SUBTASK REFERENCE TOOLS ====================
+      {
+        name: "add_subtask_reference",
+        description: "Add a reference to a subtask from another task. The subtask appears in the referencing task's subtask list.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID to add the subtask reference to" },
+            subtaskId: { type: "number", description: "The subtask ID to reference" },
+          },
+          required: ["taskId", "subtaskId"],
+        },
+      },
+      {
+        name: "remove_subtask_reference",
+        description: "Remove a subtask reference from a task",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID to remove the subtask reference from" },
+            subtaskId: { type: "number", description: "The referenced subtask ID to remove" },
+          },
+          required: ["taskId", "subtaskId"],
+        },
+      },
+      {
+        name: "list_subtask_references",
+        description: "List all referenced subtasks for a given task, including their parent task info",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID to get subtask references for" },
+          },
+          required: ["taskId"],
+        },
+      },
+
+      // ==================== TASK CATEGORY TOOLS (Multi-Category) ====================
+      {
+        name: "add_task_category",
+        description: "Add an additional category to a task (multi-category support). Tasks have a primary category via tier1Category/tier2Category. Use this to add secondary categories.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID" },
+            tier1Category: { type: "string", description: "Tier1 category name" },
+            tier2Category: { type: "string", description: "Tier2 category name" },
+            isPrimary: { type: "boolean", description: "Make this the primary category (default: false)" },
+          },
+          required: ["taskId", "tier1Category", "tier2Category"],
+        },
+      },
+      {
+        name: "remove_task_category",
+        description: "Remove a category assignment from a task",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskCategoryId: { type: "number", description: "The task_categories junction row ID to remove" },
+          },
+          required: ["taskCategoryId"],
+        },
+      },
+      {
+        name: "list_task_categories",
+        description: "List all categories assigned to a task (primary + secondary)",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID" },
+          },
+          required: ["taskId"],
+        },
+      },
+
       // ==================== MATERIAL TOOLS ====================
       {
         name: "list_materials",
@@ -1675,6 +1750,55 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           }
         }
         return { content: [{ type: "text", text: JSON.stringify(refTasks, null, 2) }] };
+      }
+
+      // ==================== SUBTASK REFERENCE HANDLERS ====================
+      case "add_subtask_reference": {
+        const task = await apiRequest("GET", `/api/tasks/${args.taskId}`);
+        const subtask = await apiRequest("GET", `/api/subtasks/${args.subtaskId}`);
+        if (subtask.parentTaskId === args.taskId) {
+          return { content: [{ type: "text", text: "Cannot reference a subtask that already belongs to this task" }] };
+        }
+        const currentRefs = task.referencedSubtaskIds || [];
+        if (currentRefs.includes(String(args.subtaskId))) {
+          return { content: [{ type: "text", text: `Subtask ${args.subtaskId} is already referenced` }] };
+        }
+        const newRefs = [...currentRefs, String(args.subtaskId)];
+        await apiRequest("PUT", `/api/tasks/${args.taskId}`, { referencedSubtaskIds: newRefs });
+        return { content: [{ type: "text", text: `Added subtask reference ${args.subtaskId}. Current references: ${newRefs.join(', ')}` }] };
+      }
+
+      case "remove_subtask_reference": {
+        const task = await apiRequest("GET", `/api/tasks/${args.taskId}`);
+        const currentRefs = task.referencedSubtaskIds || [];
+        const newRefs = currentRefs.filter(r => r !== String(args.subtaskId));
+        await apiRequest("PUT", `/api/tasks/${args.taskId}`, { referencedSubtaskIds: newRefs });
+        return { content: [{ type: "text", text: `Removed subtask reference ${args.subtaskId}. Remaining: ${newRefs.join(', ') || 'none'}` }] };
+      }
+
+      case "list_subtask_references": {
+        const refSubtasks = await apiRequest("GET", `/api/tasks/${args.taskId}/referenced-subtasks`);
+        return { content: [{ type: "text", text: JSON.stringify(refSubtasks, null, 2) }] };
+      }
+
+      // ==================== TASK CATEGORY HANDLERS (Multi-Category) ====================
+      case "add_task_category": {
+        const result = await apiRequest("POST", `/api/tasks/${args.taskId}/categories`, {
+          tier1Category: args.tier1Category,
+          tier2Category: args.tier2Category,
+          isPrimary: args.isPrimary || false,
+        });
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "remove_task_category": {
+        await apiRequest("DELETE", `/api/task-categories/${args.taskCategoryId}`);
+        return { content: [{ type: "text", text: `Task category ${args.taskCategoryId} deleted successfully` }] };
+      }
+
+      case "list_task_categories": {
+        const categories = await apiRequest("GET", `/api/tasks/${args.taskId}/categories`);
+        return { content: [{ type: "text", text: JSON.stringify(categories, null, 2) }] };
       }
 
       // ==================== MATERIAL HANDLERS ====================

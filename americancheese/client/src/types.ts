@@ -41,6 +41,7 @@ export interface Task {
   contactIds: string[] | null;
   materialIds: string[] | null;
   referencedTaskIds: string[] | null; // Array of task IDs whose materials are referenced
+  referencedSubtaskIds: string[] | null; // Array of subtask IDs from other tasks linked here
   materialsNeeded: string | null;
   templateId: string | null; // Reference to template if created from template
   estimatedCost: number | null; // Estimated cost for the task
@@ -48,6 +49,12 @@ export interface Task {
   parentTaskId: number | null; // Reference to parent task for subtasks
   sortOrder: number | null; // Order within parent task
   calendarActive: boolean | null; // Show on calendar
+  // Recurring task fields
+  isRecurring: boolean | null;
+  recurrencePattern: string | null; // "daily", "weekly", "biweekly", "monthly", "custom"
+  recurrenceInterval: number | null; // Number of pattern units between occurrences
+  recurrenceEndDate: string | null; // When recurrence stops
+  parentRecurringTaskId: number | null; // Reference to original recurring task template
 }
 
 export interface Contact {
@@ -86,6 +93,7 @@ export interface Material {
   subsection: string | null;
   unit: string | null;
   cost: number | null;
+  estimatedCost: number | null;
   isQuote: boolean;
   quoteDate: string | null;
   quoteNumber: string | null;
@@ -116,6 +124,7 @@ export interface Labor {
   endTime: string | null;
   totalHours: number | null;
   laborCost: number | null;
+  estimatedLaborCost: number | null;
   unitsCompleted: string | null;
   isQuote: boolean | null;
   materialIds: string[] | null;
@@ -145,6 +154,20 @@ export interface TaskAttachment {
   uploadedAt: Date;
   notes: string | null;
   type: string;
+}
+
+/**
+ * Represents a task-category assignment (multi-category support)
+ */
+export interface TaskCategory {
+  id: number;
+  taskId: number;
+  projectCategoryId: number | null;
+  tier1Category: string | null;
+  tier2Category: string | null;
+  isPrimary: boolean | null;
+  sortOrder: number | null;
+  createdAt: Date | null;
 }
 
 /**

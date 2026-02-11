@@ -3,7 +3,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X, Calendar as CalendarIcon, FileCode2, ChevronDown } from "lucide-react";
+import { X, Calendar as CalendarIcon, FileCode2, ChevronDown, Repeat } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useEffect, useState } from "react";
 import React from "react";
@@ -109,6 +109,11 @@ const taskFormSchema = z.object({
   materialIds: z.array(z.number()).default([]),
   estimatedCost: z.coerce.number().optional().nullable(),
   actualCost: z.coerce.number().optional().nullable(),
+  // Recurring task fields
+  isRecurring: z.boolean().default(false),
+  recurrencePattern: z.string().optional().nullable(),
+  recurrenceInterval: z.coerce.number().optional().default(1),
+  recurrenceEndDate: z.date().optional().nullable(),
 });
 
 type TaskFormValues = z.infer<typeof taskFormSchema>;
@@ -550,7 +555,14 @@ export function CreateTaskDialog({
         startTime: data.startTime || null,
         endTime: data.endTime || null,
         contactIds: data.contactIds.map(id => id.toString()),
-        materialIds: data.materialIds.map(id => id.toString())
+        materialIds: data.materialIds.map(id => id.toString()),
+        // Recurrence fields
+        isRecurring: data.isRecurring || false,
+        recurrencePattern: data.isRecurring ? data.recurrencePattern : null,
+        recurrenceInterval: data.isRecurring ? data.recurrenceInterval : null,
+        recurrenceEndDate: data.isRecurring && data.recurrenceEndDate
+          ? data.recurrenceEndDate.toISOString()
+          : null
       };
       return apiRequest("/api/tasks", "POST", apiData);
     },
@@ -1053,6 +1065,122 @@ export function CreateTaskDialog({
                     </FormItem>
                   )}
                 />
+              </div>
+
+              {/* Recurrence Section */}
+              <div className="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50">
+                <div className="flex items-center gap-2 mb-3">
+                  <Repeat className="h-4 w-4 text-slate-600" />
+                  <span className="text-sm font-medium text-slate-700">Recurring Task</span>
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="isRecurring"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={field.onChange}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                      </FormControl>
+                      <FormLabel className="text-sm font-normal">
+                        Make this a recurring task
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch("isRecurring") && (
+                  <div className="mt-4 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="recurrencePattern"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Repeat</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || undefined}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select pattern" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="daily">Daily</SelectItem>
+                                <SelectItem value="weekly">Weekly</SelectItem>
+                                <SelectItem value="biweekly">Every 2 Weeks</SelectItem>
+                                <SelectItem value="monthly">Monthly</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="recurrenceInterval"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Every</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={1}
+                                {...field}
+                                value={field.value || 1}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="recurrenceEndDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>End Recurrence (optional)</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? (
+                                    formatDate(field.value)
+                                  ) : (
+                                    <span>No end date (indefinite)</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value || undefined}
+                                onSelect={field.onChange}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 

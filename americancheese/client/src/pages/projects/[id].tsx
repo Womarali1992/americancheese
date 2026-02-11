@@ -33,8 +33,10 @@ import {
   FileCode2,
   ChevronDown,
   Download,
-  Share2
+  Share2,
+  DollarSign
 } from "lucide-react";
+import { BudgetVarianceChart } from "@/components/charts/BudgetVarianceChart";
 import { CreateTaskDialog } from "@/pages/tasks/CreateTaskDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
 import { ShareProjectDialog } from "@/components/project/ShareProjectDialog";
@@ -180,7 +182,19 @@ export default function ProjectDetailPage() {
       return await response.json();
     },
   });
-  
+
+  // Get budget summary for this project
+  const { data: budgetSummary, isLoading: isLoadingBudget } = useQuery({
+    queryKey: ["/api/projects", projectId, "budget-summary"],
+    queryFn: async () => {
+      const response = await fetch(`/api/projects/${projectId}/budget-summary`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch budget summary");
+      }
+      return await response.json();
+    },
+  });
+
   const isLoading = isLoadingProject || isLoadingTasks || isLoadingSubtasks || isLoadingExpenses || isLoadingMaterials;
 
   // Create a map of taskId -> task for subtask parent lookup
@@ -489,7 +503,7 @@ export default function ProjectDetailPage() {
         
         {/* Main Content Tabs */}
         <Tabs defaultValue="tasks" className="space-y-6">
-          <TabsList className="grid grid-cols-3 w-full">
+          <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="tasks" className="flex items-center gap-2">
               <Clipboard className="h-4 w-4" />
               Tasks & Settings
@@ -501,6 +515,10 @@ export default function ProjectDetailPage() {
             <TabsTrigger value="resources" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               Resources
+            </TabsTrigger>
+            <TabsTrigger value="budget" className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              Budget
             </TabsTrigger>
           </TabsList>
 
@@ -547,6 +565,37 @@ export default function ProjectDetailPage() {
           
           <TabsContent value="resources" className="space-y-0">
             <ResourcesTabNew projectId={projectId} />
+          </TabsContent>
+
+          <TabsContent value="budget" className="space-y-0">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  Budget Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingBudget ? (
+                  <div className="flex items-center justify-center h-64">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
+                  </div>
+                ) : budgetSummary?.categories?.length > 0 ? (
+                  <BudgetVarianceChart
+                    data={budgetSummary.categories}
+                    title="Project Budget Variance"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+                    <DollarSign className="h-16 w-16 mb-4" />
+                    <p className="text-lg mb-2">No budget data yet</p>
+                    <p className="text-sm text-center max-w-md">
+                      Add estimated and actual costs to your tasks to see budget variance analysis.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
         

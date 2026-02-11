@@ -372,6 +372,81 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
 
+      // ==================== SUBTASK REFERENCE TOOLS ====================
+      {
+        name: "add_subtask_reference",
+        description: "Add a reference to a subtask from another task. The subtask appears in the referencing task's subtask list.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID to add the subtask reference to" },
+            subtaskId: { type: "number", description: "The subtask ID to reference" },
+          },
+          required: ["taskId", "subtaskId"],
+        },
+      },
+      {
+        name: "remove_subtask_reference",
+        description: "Remove a subtask reference from a task",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID to remove the subtask reference from" },
+            subtaskId: { type: "number", description: "The referenced subtask ID to remove" },
+          },
+          required: ["taskId", "subtaskId"],
+        },
+      },
+      {
+        name: "list_subtask_references",
+        description: "List all referenced subtasks for a given task, including their parent task info",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID to get subtask references for" },
+          },
+          required: ["taskId"],
+        },
+      },
+
+      // ==================== TASK CATEGORY TOOLS (Multi-Category) ====================
+      {
+        name: "add_task_category",
+        description: "Add an additional category to a task (multi-category support). Tasks have a primary category via tier1Category/tier2Category. Use this to add secondary categories.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID" },
+            tier1Category: { type: "string", description: "Tier1 category name" },
+            tier2Category: { type: "string", description: "Tier2 category name" },
+            isPrimary: { type: "boolean", description: "Make this the primary category (default: false)" },
+          },
+          required: ["taskId", "tier1Category", "tier2Category"],
+        },
+      },
+      {
+        name: "remove_task_category",
+        description: "Remove a category assignment from a task",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskCategoryId: { type: "number", description: "The task_categories junction row ID to remove" },
+          },
+          required: ["taskCategoryId"],
+        },
+      },
+      {
+        name: "list_task_categories",
+        description: "List all categories assigned to a task (primary + secondary)",
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: { type: "number", description: "The task ID" },
+          },
+          required: ["taskId"],
+        },
+      },
+
       // ==================== MATERIAL TOOLS ====================
       {
         name: "list_materials",
@@ -1795,6 +1870,172 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           referencedTasks: result,
           totalMaterials: totalMaterials
         }, null, 2) }] };
+      }
+
+      // ==================== SUBTASK REFERENCE HANDLERS ====================
+      case "add_subtask_reference": {
+        // Get current task
+        const tasks = await query("SELECT * FROM tasks WHERE id = $1", [args.taskId]);
+        if (tasks.length === 0) {
+          return { content: [{ type: "text", text: `Task with ID ${args.taskId} not found` }] };
+        }
+
+        // Check if subtask exists
+        const subtaskRows = await query("SELECT * FROM subtasks WHERE id = $1", [args.subtaskId]);
+        if (subtaskRows.length === 0) {
+          return { content: [{ type: "text", text: `Subtask with ID ${args.subtaskId} not found` }] };
+        }
+
+        // Cannot reference your own subtask
+        if (subtaskRows[0].parent_task_id === args.taskId) {
+          return { content: [{ type: "text", text: "Cannot reference a subtask that already belongs to this task" }] };
+        }
+
+        const task = tasks[0];
+        const currentRefs = task.referenced_subtask_ids || [];
+        const refIdStr = args.subtaskId.toString();
+
+        if (currentRefs.includes(refIdStr)) {
+          return { content: [{ type: "text", text: `Subtask ${args.subtaskId} is already referenced` }] };
+        }
+
+        const newRefs = [...currentRefs, refIdStr];
+        const result = await query(
+          "UPDATE tasks SET referenced_subtask_ids = $1 WHERE id = $2 RETURNING *",
+          [newRefs, args.taskId]
+        );
+
+        return { content: [{ type: "text", text: JSON.stringify(result[0], null, 2) }] };
+      }
+
+      case "remove_subtask_reference": {
+        const tasks = await query("SELECT * FROM tasks WHERE id = $1", [args.taskId]);
+        if (tasks.length === 0) {
+          return { content: [{ type: "text", text: `Task with ID ${args.taskId} not found` }] };
+        }
+
+        const task = tasks[0];
+        const currentRefs = task.referenced_subtask_ids || [];
+        const refIdStr = args.subtaskId.toString();
+
+        if (!currentRefs.includes(refIdStr)) {
+          return { content: [{ type: "text", text: `Subtask ${args.subtaskId} is not referenced` }] };
+        }
+
+        const newRefs = currentRefs.filter(id => id !== refIdStr);
+        const result = await query(
+          "UPDATE tasks SET referenced_subtask_ids = $1 WHERE id = $2 RETURNING *",
+          [newRefs.length > 0 ? newRefs : null, args.taskId]
+        );
+
+        return { content: [{ type: "text", text: JSON.stringify(result[0], null, 2) }] };
+      }
+
+      case "list_subtask_references": {
+        const tasks = await query("SELECT * FROM tasks WHERE id = $1", [args.taskId]);
+        if (tasks.length === 0) {
+          return { content: [{ type: "text", text: `Task with ID ${args.taskId} not found` }] };
+        }
+
+        const task = tasks[0];
+        const referencedSubtaskIds = task.referenced_subtask_ids || [];
+
+        if (referencedSubtaskIds.length === 0) {
+          return { content: [{ type: "text", text: JSON.stringify({ referencedSubtasks: [] }, null, 2) }] };
+        }
+
+        const referencedSubtasks = await query(
+          `SELECT * FROM subtasks WHERE id = ANY($1::int[])`,
+          [referencedSubtaskIds.map(id => parseInt(id))]
+        );
+
+        const result = await Promise.all(referencedSubtasks.map(async (subtask) => {
+          const parentTasks = await query("SELECT title FROM tasks WHERE id = $1", [subtask.parent_task_id]);
+          return {
+            subtask: subtask,
+            parentTaskTitle: parentTasks.length > 0 ? parentTasks[0].title : "Unknown Task",
+            parentTaskId: subtask.parent_task_id
+          };
+        }));
+
+        return { content: [{ type: "text", text: JSON.stringify({ referencedSubtasks: result }, null, 2) }] };
+      }
+
+      // ==================== TASK CATEGORY HANDLERS (Multi-Category) ====================
+      case "add_task_category": {
+        const tasks = await query("SELECT * FROM tasks WHERE id = $1", [args.taskId]);
+        if (tasks.length === 0) {
+          return { content: [{ type: "text", text: `Task with ID ${args.taskId} not found` }] };
+        }
+
+        // If setting as primary, unset existing primary
+        if (args.isPrimary) {
+          await query(
+            "UPDATE task_categories SET is_primary = false WHERE task_id = $1 AND is_primary = true",
+            [args.taskId]
+          );
+        }
+
+        const result = await query(
+          `INSERT INTO task_categories (task_id, tier1_category, tier2_category, is_primary)
+           VALUES ($1, $2, $3, $4) RETURNING *`,
+          [args.taskId, args.tier1Category, args.tier2Category, args.isPrimary || false]
+        );
+
+        // If primary, sync to task legacy fields
+        if (args.isPrimary) {
+          await query(
+            "UPDATE tasks SET tier1_category = $1, tier2_category = $2 WHERE id = $3",
+            [args.tier1Category, args.tier2Category, args.taskId]
+          );
+        }
+
+        return { content: [{ type: "text", text: JSON.stringify(result[0], null, 2) }] };
+      }
+
+      case "remove_task_category": {
+        const existing = await query("SELECT * FROM task_categories WHERE id = $1", [args.taskCategoryId]);
+        if (existing.length === 0) {
+          return { content: [{ type: "text", text: `Task category with ID ${args.taskCategoryId} not found` }] };
+        }
+
+        await query("DELETE FROM task_categories WHERE id = $1", [args.taskCategoryId]);
+
+        // If we deleted the primary, promote the next one
+        if (existing[0].is_primary) {
+          const next = await query(
+            "SELECT * FROM task_categories WHERE task_id = $1 ORDER BY sort_order LIMIT 1",
+            [existing[0].task_id]
+          );
+          if (next.length > 0) {
+            await query("UPDATE task_categories SET is_primary = true WHERE id = $1", [next[0].id]);
+            await query(
+              "UPDATE tasks SET tier1_category = $1, tier2_category = $2 WHERE id = $3",
+              [next[0].tier1_category, next[0].tier2_category, existing[0].task_id]
+            );
+          } else {
+            await query(
+              "UPDATE tasks SET tier1_category = NULL, tier2_category = NULL WHERE id = $1",
+              [existing[0].task_id]
+            );
+          }
+        }
+
+        return { content: [{ type: "text", text: `Task category ${args.taskCategoryId} deleted successfully` }] };
+      }
+
+      case "list_task_categories": {
+        const tasks = await query("SELECT * FROM tasks WHERE id = $1", [args.taskId]);
+        if (tasks.length === 0) {
+          return { content: [{ type: "text", text: `Task with ID ${args.taskId} not found` }] };
+        }
+
+        const categories = await query(
+          "SELECT * FROM task_categories WHERE task_id = $1 ORDER BY sort_order",
+          [args.taskId]
+        );
+
+        return { content: [{ type: "text", text: JSON.stringify(categories, null, 2) }] };
       }
 
       // ==================== MATERIAL HANDLERS ====================

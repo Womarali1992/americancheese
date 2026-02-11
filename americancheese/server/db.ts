@@ -20,7 +20,9 @@ import {
   sectionStates,
   sectionComments,
   users,
-  projectMembers
+  projectMembers,
+  sessionTokens,
+  apiTokens
 } from '../shared/schema';
 
 // Get database configuration from environment
@@ -68,7 +70,9 @@ if (dbConfig.password && dbConfig.password !== 'password') {
         sectionStates,
         sectionComments,
         users,
-        projectMembers
+        projectMembers,
+        sessionTokens,
+        apiTokens
       }
     });
     
@@ -97,6 +101,7 @@ import { addReferencedTaskIdsField } from './migrations/add-referenced-task-ids.
 import { addProjectMembersTable } from './migrations/add-project-members.js';
 import { addContactsCreatedBy } from './migrations/add-contacts-created-by.js';
 import { addCategoryContext } from './migrations/add-category-context.js';
+import { addAuthTokensTables } from './migrations/add-auth-tokens.js';
 
 // Export a function to initialize the database and create tables
 export async function initDatabase() {
@@ -286,6 +291,7 @@ export async function initDatabase() {
     }
     
     // Run migrations
+    await addAuthTokensTables(queryClient); // Critical: Must run first for authentication
     await addSelectedTemplatesField(queryClient);
     await addTaskTimeFields(queryClient);
     await addCalendarScheduleFields(queryClient);

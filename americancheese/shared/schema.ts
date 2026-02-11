@@ -313,6 +313,12 @@ export const tasks = pgTable("tasks", {
   calendarEndTime: text("calendar_end_time"), // Time in "HH:MM" format for calendar
   // AI Context for task-specific agent configuration
   structuredContext: text("structured_context"), // JSON stringified ContextData for AI context
+  // Recurring task fields
+  isRecurring: boolean("is_recurring").default(false),
+  recurrencePattern: text("recurrence_pattern"), // "daily", "weekly", "biweekly", "monthly", "custom"
+  recurrenceInterval: integer("recurrence_interval").default(1), // Number of pattern units between occurrences
+  recurrenceEndDate: date("recurrence_end_date"), // When recurrence stops (null = indefinite)
+  parentRecurringTaskId: integer("parent_recurring_task_id"), // Reference to original recurring task template
 });
 
 // Subtasks Schema - dedicated table for better organization
@@ -407,7 +413,8 @@ export const materials = pgTable("materials", {
   taskIds: text("task_ids").array(), // Array of task IDs this material is associated with
   contactIds: text("contact_ids").array(), // Array of contact (contractor) IDs associated with this material
   unit: text("unit"), // unit of measurement (e.g., pieces, sq ft, etc.)
-  cost: doublePrecision("cost"), // cost per unit
+  cost: doublePrecision("cost"), // cost per unit (actual)
+  estimatedCost: doublePrecision("estimated_cost"), // estimated cost per unit
   details: text("details"), // Additional details or notes about the material
   quoteDate: date("quote_date"), // Date when the quote was received
   quoteNumber: text("quote_number"), // Quote number for grouping materials from the same quote
@@ -463,7 +470,8 @@ export const labor = pgTable("labor", {
   startTime: text("start_time"), // Stored as string in format "HH:MM"
   endTime: text("end_time"),     // Stored as string in format "HH:MM"
   totalHours: doublePrecision("total_hours"), // Calculated field
-  laborCost: doublePrecision("labor_cost"), // Total cost for this labor entry
+  laborCost: doublePrecision("labor_cost"), // Total cost for this labor entry (actual)
+  estimatedLaborCost: doublePrecision("estimated_labor_cost"), // Estimated cost for this labor entry
   // Productivity Tracking
   unitsCompleted: text("units_completed"), // e.g. "150 linear ft"
   // Quote flag

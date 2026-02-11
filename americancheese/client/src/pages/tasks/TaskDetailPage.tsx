@@ -26,7 +26,8 @@ import {
   Download,
   FileSpreadsheet,
   FileCode,
-  ChevronDown
+  ChevronDown,
+  Copy
 } from 'lucide-react';
 import { Task, Labor, Contact, Material } from '@shared/schema';
 import { Layout } from '@/components/layout/Layout';
@@ -382,6 +383,36 @@ export default function TaskDetailPage() {
   const handleTaskContextChange = (newContext: ContextData) => {
     setTaskContext(newContext);
     saveTaskContextMutation.mutate(newContext);
+  };
+
+  // Mutation to clone task
+  const cloneTaskMutation = useMutation({
+    mutationFn: async () => {
+      if (!task?.id) throw new Error('No task ID');
+      const response = await apiRequest(`/api/tasks/${task.id}/clone`, "POST");
+      return response.json();
+    },
+    onSuccess: (clonedTask: Task) => {
+      toast({
+        title: "Task Cloned",
+        description: `Created "${clonedTask.title}" with subtasks and checklists.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${task?.projectId}/tasks`] });
+      navigate(`/tasks/${clonedTask.id}`);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to clone task.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle clone click
+  const handleCloneTask = () => {
+    cloneTaskMutation.mutate();
   };
 
   // Handle edit click
@@ -963,6 +994,14 @@ export default function TaskDetailPage() {
                     <DropdownMenuItem onClick={handleEditTask} className="cursor-pointer">
                       <Edit className="mr-2 h-4 w-4" />
                       Edit Task
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleCloneTask}
+                      className="cursor-pointer"
+                      disabled={cloneTaskMutation.isPending}
+                    >
+                      <Copy className="mr-2 h-4 w-4" />
+                      {cloneTaskMutation.isPending ? "Cloning..." : "Clone Task"}
                     </DropdownMenuItem>
                     <div className="px-2 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</div>
                     {statusOptions.map(option => (

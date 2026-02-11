@@ -40,7 +40,9 @@ import {
   sectionComments,
   taskAttachments,
   invoices,
-  invoiceLineItems
+  invoiceLineItems,
+  taskCategories,
+  insertTaskCategorySchema
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -439,6 +441,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(project);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch project" });
+    }
+  });
+
+  // Get project budget summary with variance by category
+  app.get("/api/projects/:id/budget-summary", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      // Get all tasks for project
+      const tasks = await storage.getTasksByProject(projectId);
+
+      // Get all materials for project
+      const allMaterials = await storage.getMaterials();
+      const projectMaterials = allMaterials.filter(m => m.projectId === projectId);
+
+      // Get all labor for project
+      const allLabor = await storage.getLabor();
+      const projectLabor = allLabor.filter(l => l.projectId === projectId);
+
+      // Calculate totals by tier1 category
+      const categoryBudgets: Record<string, { estimated: number; actual: number }> = {};
+
+      // Aggregate task costs by category
+      for (const task of tasks) {
+        const category = task.tier1Category || 'Uncategorized';
+        if (!categoryBudgets[category]) {
+          categoryBudgets[category] = { estimated: 0, actual: 0 };
+        }
+        categoryBudgets[category].estimated += task.estimatedCost || 0;
+        categoryBudgets[category].actual += task.actualCost || 0;
+      }
+
+      // Calculate material costs (estimated vs actual)
+      const materialEstimatedCost = projectMaterials.reduce((sum, m) => {
+        // Use estimatedCost if available, otherwise fall back to cost
+        const estimatedPerUnit = m.estimatedCost !== null && m.estimatedCost !== undefined
+          ? m.estimatedCost
+          : (m.cost || 0);
+        return sum + (estimatedPerUnit * (m.quantity || 1));
+      }, 0);
+
+      const materialActualCost = projectMaterials.reduce((sum, m) => {
+        const actualPerUnit = m.cost || 0;
+        return sum + (actualPerUnit * (m.quantity || 1));
+      }, 0);
+
+      // Calculate labor costs (estimated vs actual)
+      const laborEstimatedCost = projectLabor.reduce((sum, l) => {
+        // Use estimatedLaborCost if available, otherwise fall back to laborCost
+        return sum + (l.estimatedLaborCost !== null && l.estimatedLaborCost !== undefined
+          ? l.estimatedLaborCost
+          : (l.laborCost || 0));
+      }, 0);
+
+      const laborActualCost = projectLabor.reduce((sum, l) => sum + (l.laborCost || 0), 0);
+
+      // Create budget categories array
+      const categories = Object.entries(categoryBudgets).map(([name, data]) => ({
+        name,
+        estimated: data.estimated,
+        actual: data.actual
+      }));
+
+      // Add materials as a separate category if there are any materials
+      if (materialEstimatedCost > 0 || materialActualCost > 0) {
+        categories.push({
+          name: 'Materials',
+          estimated: materialEstimatedCost,
+          actual: materialActualCost
+        });
+      }
+
+      // Add labor as a separate category if there are any labor entries
+      if (laborEstimatedCost > 0 || laborActualCost > 0) {
+        categories.push({
+          name: 'Labor',
+          estimated: laborEstimatedCost,
+          actual: laborActualCost
+        });
+      }
+
+      // Calculate totals
+      const totalEstimated = categories.reduce((sum, c) => sum + c.estimated, 0);
+      const totalActual = categories.reduce((sum, c) => sum + c.actual, 0);
+
+      res.json({
+        projectId,
+        categories,
+        totals: {
+          estimated: totalEstimated,
+          actual: totalActual,
+          variance: totalEstimated - totalActual,
+          variancePercent: totalEstimated > 0
+            ? ((totalEstimated - totalActual) / totalEstimated * 100).toFixed(1)
+            : "0"
+        },
+        breakdown: {
+          taskEstimated: tasks.reduce((sum, t) => sum + (t.estimatedCost || 0), 0),
+          taskActual: tasks.reduce((sum, t) => sum + (t.actualCost || 0), 0),
+          materialCost,
+          laborCost
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching budget summary:", error);
+      res.status(500).json({ message: "Failed to fetch budget summary" });
     }
   });
 
@@ -1900,10 +2011,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tasks", async (req: Request, res: Response) => {
     try {
       const userId = req.session?.userId;
-      console.log("[Route] Attempting to fetch tasks for user:", userId);
-      const tasks = await storage.getTasks(userId);
-      console.log("[Route] Successfully fetched tasks:", tasks?.length || 0);
-      res.json(tasks);
+      const allTasks = await storage.getTasks(userId);
+
+      // Support pagination when page/limit params provided
+      if (req.query.page || req.query.limit) {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+        const offset = (page - 1) * limit;
+        const total = allTasks.length;
+        const totalPages = Math.ceil(total / limit);
+        const paginatedTasks = allTasks.slice(offset, offset + limit);
+
+        return res.json({
+          data: paginatedTasks,
+          pagination: { page, limit, total, totalPages }
+        });
+      }
+
+      // Default: return all tasks for backward compatibility
+      res.json(allTasks);
     } catch (error) {
       console.error("[Route] Error fetching tasks:", error);
       res.status(500).json({ message: "Failed to fetch tasks", error: error.message });
@@ -1964,8 +2090,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid project ID" });
       }
 
-      const tasks = await storage.getTasksByProject(projectId);
-      res.json(tasks);
+      const allTasks = await storage.getTasksByProject(projectId);
+
+      // Support pagination when page/limit params provided
+      if (req.query.page || req.query.limit) {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+        const offset = (page - 1) * limit;
+        const total = allTasks.length;
+        const totalPages = Math.ceil(total / limit);
+        const paginatedTasks = allTasks.slice(offset, offset + limit);
+
+        return res.json({
+          data: paginatedTasks,
+          pagination: { page, limit, total, totalPages }
+        });
+      }
+
+      // Default: return all tasks for backward compatibility
+      res.json(allTasks);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch tasks for project" });
     }
@@ -2603,6 +2746,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Check if this is a recurring task being marked as completed - create next occurrence
+      if (task.isRecurring && task.recurrencePattern &&
+          (result.data.status === 'completed' || result.data.completed === true)) {
+        // Check if recurrence has ended
+        const shouldCreateNext = !task.recurrenceEndDate ||
+          new Date(task.recurrenceEndDate) > new Date();
+
+        if (shouldCreateNext) {
+          // Calculate next occurrence dates
+          const interval = task.recurrenceInterval || 1;
+          const currentStart = new Date(task.startDate);
+          const currentEnd = new Date(task.endDate);
+          const duration = currentEnd.getTime() - currentStart.getTime();
+
+          let nextStart = new Date(currentStart);
+          switch (task.recurrencePattern) {
+            case 'daily':
+              nextStart.setDate(nextStart.getDate() + interval);
+              break;
+            case 'weekly':
+              nextStart.setDate(nextStart.getDate() + (7 * interval));
+              break;
+            case 'biweekly':
+              nextStart.setDate(nextStart.getDate() + (14 * interval));
+              break;
+            case 'monthly':
+              nextStart.setMonth(nextStart.getMonth() + interval);
+              break;
+          }
+
+          const nextEnd = new Date(nextStart.getTime() + duration);
+
+          // Create next occurrence (but only if within recurrence end date)
+          if (!task.recurrenceEndDate || nextStart <= new Date(task.recurrenceEndDate)) {
+            const nextTask = await storage.createTask({
+              title: task.title,
+              description: task.description,
+              projectId: task.projectId,
+              tier1Category: task.tier1Category,
+              tier2Category: task.tier2Category,
+              startDate: nextStart.toISOString().split('T')[0],
+              endDate: nextEnd.toISOString().split('T')[0],
+              status: 'not_started',
+              completed: false,
+              assignedTo: task.assignedTo,
+              contactIds: task.contactIds,
+              estimatedCost: task.estimatedCost,
+              isRecurring: true,
+              recurrencePattern: task.recurrencePattern,
+              recurrenceInterval: task.recurrenceInterval,
+              recurrenceEndDate: task.recurrenceEndDate,
+              parentRecurringTaskId: task.parentRecurringTaskId || task.id
+            });
+
+            // Return both the completed task and info about the next occurrence
+            return res.json({
+              ...task,
+              nextOccurrence: { id: nextTask.id, startDate: nextTask.startDate }
+            });
+          }
+        }
+      }
+
       res.json(task);
     } catch (error) {
       console.error("Failed to update task:", error);
@@ -2642,6 +2848,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error reordering tasks:", error);
       res.status(500).json({ message: "Failed to reorder tasks" });
+    }
+  });
+
+  // Clone a task with subtasks and checklists
+  app.post("/api/tasks/:id/clone", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid task ID" });
+      }
+
+      const originalTask = await storage.getTask(id);
+      if (!originalTask) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+
+      // Create the cloned task
+      const clonedTaskData = {
+        title: `${originalTask.title} (Copy)`,
+        description: originalTask.description,
+        projectId: originalTask.projectId,
+        status: "not_started",
+        tier1Category: originalTask.tier1Category,
+        tier2Category: originalTask.tier2Category,
+        startDate: originalTask.startDate,
+        endDate: originalTask.endDate,
+        estimatedCost: originalTask.estimatedCost,
+        assignedTo: originalTask.assignedTo,
+        contactIds: originalTask.contactIds,
+        completed: false
+      };
+
+      const clonedTask = await storage.createTask(clonedTaskData);
+
+      // Clone subtasks
+      const subtasks = await storage.getSubtasks(id);
+      for (const subtask of subtasks) {
+        await storage.createSubtask({
+          parentTaskId: clonedTask.id,
+          title: subtask.title,
+          description: subtask.description,
+          status: "not_started",
+          completed: false,
+          sortOrder: subtask.sortOrder,
+          assignedTo: subtask.assignedTo,
+          estimatedCost: subtask.estimatedCost
+        });
+      }
+
+      // Clone checklist items
+      const checklistItems = await storage.getChecklistItems(id);
+      for (const item of checklistItems) {
+        await storage.createChecklistItem({
+          taskId: clonedTask.id,
+          title: item.title,
+          description: item.description,
+          section: item.section,
+          sortOrder: item.sortOrder,
+          completed: false,
+          assignedTo: item.assignedTo,
+          dueDate: item.dueDate
+        });
+      }
+
+      res.status(201).json(clonedTask);
+    } catch (error) {
+      console.error("Error cloning task:", error);
+      res.status(500).json({ message: "Failed to clone task" });
     }
   });
 
@@ -2891,7 +3165,235 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete subtask" });
     }
   });
-  
+
+  // ==================== REFERENCED SUBTASKS ====================
+
+  // Get referenced subtasks for a task (subtasks from other tasks linked here)
+  app.get("/api/tasks/:taskId/referenced-subtasks", async (req: Request, res: Response) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: "Invalid task ID" });
+      }
+
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+
+      const refIds = (task as any).referencedSubtaskIds || [];
+      if (refIds.length === 0) {
+        return res.json([]);
+      }
+
+      const numericIds = refIds.map((id: string) => parseInt(id)).filter((id: number) => !isNaN(id));
+      if (numericIds.length === 0) {
+        return res.json([]);
+      }
+
+      const referencedSubtaskRows = await db
+        .select()
+        .from(subtasks)
+        .where(inArray(subtasks.id, numericIds));
+
+      // Get parent task titles for each referenced subtask
+      const results = await Promise.all(
+        referencedSubtaskRows.map(async (subtask) => {
+          const parentTask = await storage.getTask(subtask.parentTaskId);
+          return {
+            ...subtask,
+            parentTaskTitle: parentTask?.title || "Unknown Task",
+            parentTaskId: subtask.parentTaskId,
+            isReferenced: true,
+          };
+        })
+      );
+
+      res.json(results);
+    } catch (error) {
+      console.error("Failed to fetch referenced subtasks:", error);
+      res.status(500).json({ message: "Failed to fetch referenced subtasks" });
+    }
+  });
+
+  // ==================== TASK CATEGORIES (Multi-Category) ====================
+
+  // List all categories for a task
+  app.get("/api/tasks/:taskId/categories", async (req: Request, res: Response) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: "Invalid task ID" });
+      }
+
+      const categories = await db
+        .select()
+        .from(taskCategories)
+        .where(eq(taskCategories.taskId, taskId))
+        .orderBy(taskCategories.sortOrder);
+
+      res.json(categories);
+    } catch (error) {
+      console.error("Failed to fetch task categories:", error);
+      res.status(500).json({ message: "Failed to fetch task categories" });
+    }
+  });
+
+  // Add a category to a task
+  app.post("/api/tasks/:taskId/categories", async (req: Request, res: Response) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: "Invalid task ID" });
+      }
+
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+
+      const body = { ...req.body, taskId };
+      const validation = insertTaskCategorySchema.safeParse(body);
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid data", errors: validation.error.errors });
+      }
+
+      // If this is being set as primary, unset any existing primary
+      if (body.isPrimary) {
+        await db
+          .update(taskCategories)
+          .set({ isPrimary: false })
+          .where(and(eq(taskCategories.taskId, taskId), eq(taskCategories.isPrimary, true)));
+      }
+
+      const [newCategory] = await db
+        .insert(taskCategories)
+        .values(validation.data)
+        .returning();
+
+      // If primary, sync to task's legacy fields
+      if (body.isPrimary) {
+        await storage.updateTask(taskId, {
+          tier1Category: body.tier1Category || null,
+          tier2Category: body.tier2Category || null,
+          categoryId: body.projectCategoryId || null,
+        });
+      }
+
+      res.status(201).json(newCategory);
+    } catch (error) {
+      console.error("Failed to add task category:", error);
+      res.status(500).json({ message: "Failed to add task category" });
+    }
+  });
+
+  // Update a task category assignment
+  app.put("/api/task-categories/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid task category ID" });
+      }
+
+      // Get the existing record to find the taskId
+      const [existing] = await db
+        .select()
+        .from(taskCategories)
+        .where(eq(taskCategories.id, id));
+
+      if (!existing) {
+        return res.status(404).json({ message: "Task category not found" });
+      }
+
+      // If setting as primary, unset any existing primary for this task
+      if (req.body.isPrimary) {
+        await db
+          .update(taskCategories)
+          .set({ isPrimary: false })
+          .where(and(eq(taskCategories.taskId, existing.taskId), eq(taskCategories.isPrimary, true)));
+      }
+
+      const [updated] = await db
+        .update(taskCategories)
+        .set(req.body)
+        .where(eq(taskCategories.id, id))
+        .returning();
+
+      // If primary changed, sync to task's legacy fields
+      if (req.body.isPrimary) {
+        const tier1 = req.body.tier1Category || updated.tier1Category;
+        const tier2 = req.body.tier2Category || updated.tier2Category;
+        const catId = req.body.projectCategoryId || updated.projectCategoryId;
+        await storage.updateTask(existing.taskId, {
+          tier1Category: tier1,
+          tier2Category: tier2,
+          categoryId: catId,
+        });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Failed to update task category:", error);
+      res.status(500).json({ message: "Failed to update task category" });
+    }
+  });
+
+  // Delete a task category assignment
+  app.delete("/api/task-categories/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid task category ID" });
+      }
+
+      const [existing] = await db
+        .select()
+        .from(taskCategories)
+        .where(eq(taskCategories.id, id));
+
+      if (!existing) {
+        return res.status(404).json({ message: "Task category not found" });
+      }
+
+      await db.delete(taskCategories).where(eq(taskCategories.id, id));
+
+      // If we deleted the primary, promote the next one
+      if (existing.isPrimary) {
+        const [nextCategory] = await db
+          .select()
+          .from(taskCategories)
+          .where(eq(taskCategories.taskId, existing.taskId))
+          .orderBy(taskCategories.sortOrder)
+          .limit(1);
+
+        if (nextCategory) {
+          await db
+            .update(taskCategories)
+            .set({ isPrimary: true })
+            .where(eq(taskCategories.id, nextCategory.id));
+
+          await storage.updateTask(existing.taskId, {
+            tier1Category: nextCategory.tier1Category,
+            tier2Category: nextCategory.tier2Category,
+            categoryId: nextCategory.projectCategoryId,
+          });
+        } else {
+          // No categories left, clear legacy fields
+          await storage.updateTask(existing.taskId, {
+            tier1Category: null,
+            tier2Category: null,
+            categoryId: null,
+          });
+        }
+      }
+
+      res.status(204).end();
+    } catch (error) {
+      console.error("Failed to delete task category:", error);
+      res.status(500).json({ message: "Failed to delete task category" });
+    }
+  });
+
   // Cleanup orphaned tasks
   // One-time cleanup of orphaned tasks - will execute once when the server starts
   (async () => {
@@ -3192,6 +3694,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         materials = materials.filter(m => m.isQuote === isQuote);
       }
 
+      // Support pagination when page/limit params provided
+      if (req.query.page || req.query.limit) {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+        const offset = (page - 1) * limit;
+        const total = materials.length;
+        const totalPages = Math.ceil(total / limit);
+        const paginatedMaterials = materials.slice(offset, offset + limit);
+
+        return res.json({
+          data: paginatedMaterials,
+          pagination: { page, limit, total, totalPages }
+        });
+      }
+
+      // Default: return all materials for backward compatibility
       res.json(materials);
     } catch (error) {
       console.error("Error fetching materials:", error);
@@ -4902,7 +5420,6 @@ IMPORTANT RULES:
   app.get("/api/labor", async (req: Request, res: Response) => {
     try {
       const userId = req.session?.userId;
-      console.log("[API] GET /api/labor - Fetching labor entries for user:", userId);
       let laborEntries = await storage.getLabor();
 
       // Filter labor by user's accessible projects
@@ -4912,7 +5429,22 @@ IMPORTANT RULES:
         laborEntries = laborEntries.filter(l => l.projectId && accessibleProjectIds.has(l.projectId));
       }
 
-      console.log(`[API] GET /api/labor - Successfully retrieved ${laborEntries.length} labor entries`);
+      // Support pagination when page/limit params provided
+      if (req.query.page || req.query.limit) {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+        const offset = (page - 1) * limit;
+        const total = laborEntries.length;
+        const totalPages = Math.ceil(total / limit);
+        const paginatedLabor = laborEntries.slice(offset, offset + limit);
+
+        return res.json({
+          data: paginatedLabor,
+          pagination: { page, limit, total, totalPages }
+        });
+      }
+
+      // Default: return all labor entries for backward compatibility
       res.json(laborEntries);
     } catch (error) {
       console.error("[API] GET /api/labor - Error fetching labor entries:", error);
@@ -5474,9 +6006,6 @@ IMPORTANT RULES:
         
         const customConfig = configResult.length > 0 ? JSON.parse(configResult[0].value) : null;
         
-        console.log(`📝 Using preset '${presetId}' with custom config: ${customConfig ? 'yes' : 'no'}`);
-        console.log(`📝 BASE preset tier1 categories:`, basePreset.categories.tier1.map(c => c.name));
-
         // Filter templates using BASE preset (original category names)
         templates = allTemplates.filter(template => {
           const templateTier1 = template.tier1Category.toLowerCase();
@@ -5546,7 +6075,6 @@ IMPORTANT RULES:
             }
           }
           
-          console.log(`📝 Created name mappings:`, Array.from(tier1NameMap.entries()));
         }
       }
       
@@ -5654,10 +6182,6 @@ IMPORTANT RULES:
         return res.status(400).json({ message: "Invalid preset ID" });
       }
       
-      console.log(`📝 Loaded preset '${presetId}' with custom config: ${customConfig ? 'yes' : 'no'}`);
-      console.log(`📝 BASE preset tier1:`, basePreset.categories.tier1.map(c => c.name));
-      console.log(`📝 CUSTOMIZED preset tier1:`, customizedPreset.categories.tier1.map(c => c.name));
-      
       // Create mapping from ORIGINAL category names to CUSTOMIZED names (by sortOrder)
       const tier1NameMapping = new Map<string, string>();
       const tier2NameMapping = new Map<string, string>();
@@ -5675,8 +6199,6 @@ IMPORTANT RULES:
           tier2NameMapping.set(originalTier2[j].name.toLowerCase(), customizedTier2[j].name);
         }
       }
-      
-      console.log(`📝 Category name mappings created:`, Array.from(tier1NameMapping.entries()));
       
       // Limit to first 4 categories (using BASE preset for matching)
       const limitedBasePreset = {
@@ -5768,8 +6290,6 @@ IMPORTANT RULES:
           // This handles renamed categories correctly
           const tier1CategoryName = tier1NameMapping.get(originalTier1Name) || originalTier1Name;
           const tier2CategoryName = tier2NameMapping.get(originalTier2Name) || originalTier2Name;
-          
-          console.log(`📝 Creating task: "${template.title}" with tier1='${tier1CategoryName}' (orig='${originalTier1Name}')`);
           
           const taskData = {
             title: template.title,
@@ -8721,14 +9241,6 @@ IMPORTANT RULES:
       const { presetId } = req.params;
       const { name, description, recommendedTheme, categories } = req.body;
 
-      // DEBUG: Log what we're receiving
-      console.log(`📝 SAVE PRESET DEBUG: Receiving save request for preset '${presetId}'`);
-      console.log(`📝 SAVE PRESET DEBUG: Request body keys:`, Object.keys(req.body));
-      if (categories) {
-        console.log(`📝 SAVE PRESET DEBUG: tier1 categories:`, categories.tier1?.map((c: any) => c.name) || 'none');
-        console.log(`📝 SAVE PRESET DEBUG: tier2 keys:`, categories.tier2 ? Object.keys(categories.tier2) : 'none');
-      }
-
       // Verify that the base preset exists
       const { AVAILABLE_PRESETS, getPresetWithConfig } = await import("@shared/presets");
       if (!AVAILABLE_PRESETS[presetId]) {
@@ -8784,10 +9296,6 @@ IMPORTANT RULES:
 
       const configValue = JSON.stringify(config);
 
-      // DEBUG: Log what we're saving
-      console.log(`📝 SAVE PRESET DEBUG: Saving config with key '${configKey}'`);
-      console.log(`📝 SAVE PRESET DEBUG: Config tier1:`, config.categories?.tier1?.map((c: any) => c.name) || 'not set');
-
       // Save the configuration
       if (existingConfig.length === 0) {
         // Create new configuration
@@ -8821,11 +9329,7 @@ IMPORTANT RULES:
           .from(projects)
           .where(eq(projects.presetId, presetId));
         
-        console.log(`📝 Found ${affectedProjects.length} projects using preset '${presetId}'`);
-
         if (renames.length > 0) {
-          console.log(`📝 Detected ${renames.length} tier1 category renames:`, renames);
-          
           // Update each affected project's categories and tasks for renames
           for (const project of affectedProjects) {
             for (const { oldName, newName } of renames) {
@@ -8846,7 +9350,6 @@ IMPORTANT RULES:
                   eq(tasks.tier1Category, oldName)
                 ));
               
-              console.log(`📝 Updated project ${project.id}: "${oldName}" -> "${newName}"`);
             }
           }
         }
@@ -8886,8 +9389,6 @@ IMPORTANT RULES:
               
               // If there are orphaned categories, try to match them to preset categories
               if (orphanedTaskCategories.size > 0) {
-                console.log(`📝 Found orphaned tier1Categories in project ${project.id}:`, Array.from(orphanedTaskCategories));
-                
                 // Match orphaned category to the correct preset category by checking which tier2s they have
                 for (const orphanedCat of orphanedTaskCategories) {
                   // Find which preset category this orphaned category should map to
@@ -8903,8 +9404,6 @@ IMPORTANT RULES:
                     );
                     
                     if (matchingTasks.length > 0) {
-                      console.log(`📝 Mapping orphaned "${orphanedCat}" -> "${newTier1Names[j]}" for project ${project.id}`);
-                      
                       // Update tasks
                       await db.update(tasks)
                         .set({ tier1Category: newTier1Names[j] })

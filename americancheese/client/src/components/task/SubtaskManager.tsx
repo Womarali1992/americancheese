@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Check, Square, Trash2, Edit3, GripVertical, AtSign, ChevronDown, ChevronUp, MoreHorizontal, MessageCircle, Copy, Users } from 'lucide-react';
+import { Plus, Check, Square, Trash2, Edit3, GripVertical, AtSign, ChevronDown, ChevronUp, MoreHorizontal, MessageCircle, Copy, Users, Link2, Unlink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { SubtaskComments } from './SubtaskComments';
 import { CommentableDescription } from '../CommentableDescription';
 import { ItemDetailPopup } from './ItemDetailPopup';
+import { AddSubtaskReferenceDialog } from './AddSubtaskReferenceDialog';
 import {
   Dialog,
   DialogContent,
@@ -63,6 +64,9 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
   const [subtaskSuggestions, setSubtaskSuggestions] = useState<Record<number, Array<{type: 'labor' | 'contact' | 'material', item: any}>>>({});
   const [subtaskTags, setSubtaskTags] = useState<Record<number, {laborIds: number[], contactIds: number[], materialIds: number[]}>>({});
   
+  // Link subtask dialog state
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+
   // Comment section state
   const [commentSectionId, setCommentSectionId] = useState<Record<number, number | undefined>>({});
   
@@ -108,6 +112,12 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
   // Fetch subtasks for this task
   const { data: subtasks = [], isLoading } = useQuery<Subtask[]>({
     queryKey: [`/api/tasks/${taskId}/subtasks`],
+    enabled: taskId > 0,
+  });
+
+  // Fetch referenced subtasks from other tasks
+  const { data: referencedSubtasks = [] } = useQuery<(Subtask & { parentTaskTitle: string; isReferenced: boolean })[]>({
+    queryKey: [`/api/tasks/${taskId}/referenced-subtasks`],
     enabled: taskId > 0,
   });
 
@@ -198,10 +208,70 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
     return category?.description || null;
   };
 
+  // Combine owned and referenced subtasks for display
+  const allDisplaySubtasks = useMemo(() => {
+    const owned = subtasks.map(s => ({ ...s, isReferenced: false as const, parentTaskTitle: '' }));
+    const referenced = referencedSubtasks.map(s => ({ ...s, isReferenced: true as const }));
+    return [...owned, ...referenced];
+  }, [subtasks, referencedSubtasks]);
+
   // Calculate progress
-  const completedSubtasks = subtasks.filter(subtask => subtask.completed).length;
-  const totalSubtasks = subtasks.length;
+  const completedSubtasks = allDisplaySubtasks.filter(subtask => subtask.completed).length;
+  const totalSubtasks = allDisplaySubtasks.length;
   const progressPercentage = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
+
+  // Handle linking subtasks from other tasks
+  const handleLinkSubtasks = async (subtaskIds: number[]) => {
+    try {
+      const currentRefs = (task?.referencedSubtaskIds || []) as string[];
+      const newRefs = [...new Set([...currentRefs, ...subtaskIds.map(id => id.toString())])];
+
+      await apiRequest(`/api/tasks/${taskId}`, 'PUT', {
+        referencedSubtaskIds: newRefs,
+      });
+
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}/referenced-subtasks`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}`] });
+      setLinkDialogOpen(false);
+
+      toast({
+        title: "Subtasks Linked",
+        description: `${subtaskIds.length} subtask${subtaskIds.length > 1 ? 's' : ''} linked successfully.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to link subtasks",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle unlinking a referenced subtask
+  const handleUnlinkSubtask = async (subtaskId: number) => {
+    try {
+      const currentRefs = (task?.referencedSubtaskIds || []) as string[];
+      const newRefs = currentRefs.filter(id => id !== subtaskId.toString());
+
+      await apiRequest(`/api/tasks/${taskId}`, 'PUT', {
+        referencedSubtaskIds: newRefs.length > 0 ? newRefs : null,
+      });
+
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}/referenced-subtasks`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}`] });
+
+      toast({
+        title: "Subtask Unlinked",
+        description: "Subtask reference removed.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to unlink subtask",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleAddSubtask = async () => {
     if (!newSubtask.title.trim()) {
@@ -855,14 +925,25 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                 </Badge>
               </div>
             </div>
-            <Button 
-              size="sm" 
-              onClick={() => setIsAddingSubtask(true)}
-              className="flex items-center gap-1"
-            >
-              <Plus className="h-4 w-4" />
-              Add Subtask
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setLinkDialogOpen(true)}
+                className="flex items-center gap-1"
+              >
+                <Link2 className="h-4 w-4" />
+                Link Subtask
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setIsAddingSubtask(true)}
+                className="flex items-center gap-1"
+              >
+                <Plus className="h-4 w-4" />
+                Add Subtask
+              </Button>
+            </div>
           </div>
           
           {totalSubtasks > 0 && (
@@ -876,27 +957,29 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
         </CardHeader>
 
         <CardContent className="space-y-3">
-          {subtasks.length === 0 ? (
+          {allDisplaySubtasks.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Square className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>No subtasks yet. Add your first subtask to get started.</p>
             </div>
           ) : (
-            subtasks.map((subtask) => {
+            allDisplaySubtasks.map((subtask) => {
               const taggedItems = getSubtaskTaggedItems(subtask.id);
               const hasAnyTags = taggedItems.labor.length > 0 || taggedItems.contacts.length > 0 || taggedItems.materials.length > 0;
               const subtaskLaborEntries = getSubtaskLabor(subtask.id);
               const hasLabor = subtaskLaborEntries.length > 0;
 
               return (
-                <div key={subtask.id} className="space-y-2">
-                  <div 
+                <div key={`${subtask.isReferenced ? 'ref-' : ''}${subtask.id}`} className="space-y-2">
+                  <div
                     className={`flex items-start gap-3 p-3 rounded-lg border transition-all duration-200 hover:shadow-lg hover:border-blue-400 ${
-                      subtask.completed ? 'bg-green-50 border-green-200 hover:bg-green-100' : 'bg-gray-50 border-gray-200 hover:bg-blue-50'
+                      subtask.isReferenced
+                        ? 'bg-blue-50/30 border-l-2 border-l-blue-400 border-blue-200 hover:bg-blue-50'
+                        : subtask.completed ? 'bg-green-50 border-green-200 hover:bg-green-100' : 'bg-gray-50 border-gray-200 hover:bg-blue-50'
                     }`}
-                    title="Double-click to copy content | Right-click for options"
+                    title={subtask.isReferenced ? `Linked from: ${subtask.parentTaskTitle}` : "Double-click to copy content | Right-click for options"}
                     data-subtask-title={subtask.title}
-                    onContextMenu={(e) => handleRightClickDrag(e, subtask)}
+                    onContextMenu={(e) => !subtask.isReferenced && handleRightClickDrag(e, subtask)}
                     onClick={(e) => handleSubtaskClick(e, subtask)}
                   >
                     <Checkbox 
@@ -941,6 +1024,12 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                             <h4 className={`font-medium ${subtask.completed ? 'line-through text-muted-foreground' : ''}`}>
                               {subtask.title}
                             </h4>
+                            {subtask.isReferenced && (
+                              <span className="text-xs text-blue-600 flex items-center gap-1 shrink-0">
+                                <Link2 className="h-3 w-3" />
+                                from {subtask.parentTaskTitle}
+                              </span>
+                            )}
                             {hasLabor && (
                               <Badge
                                 variant="outline"
@@ -1251,13 +1340,23 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
                                 <Edit3 className="h-4 w-4" />
                                 Edit
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleDeleteSubtask(subtask)}
-                                className="flex items-center gap-2 text-red-600"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
+                              {subtask.isReferenced ? (
+                                <DropdownMenuItem
+                                  onClick={() => handleUnlinkSubtask(subtask.id)}
+                                  className="flex items-center gap-2 text-orange-600"
+                                >
+                                  <Unlink className="h-4 w-4" />
+                                  Unlink
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteSubtask(subtask)}
+                                  className="flex items-center gap-2 text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                           
@@ -1623,6 +1722,21 @@ export function SubtaskManager({ taskId }: SubtaskManagerProps) {
       >
         {dragMode === 'left' ? 'Copying subtask prompt...' : 'Copying full context...'}
       </div>
+
+      {/* Link Subtask Dialog */}
+      {task?.projectId && (
+        <AddSubtaskReferenceDialog
+          open={linkDialogOpen}
+          onOpenChange={setLinkDialogOpen}
+          projectId={task.projectId}
+          currentTaskId={taskId}
+          existingSubtaskIds={subtasks.map(s => s.id)}
+          existingReferencedSubtaskIds={
+            ((task?.referencedSubtaskIds || []) as string[]).map(id => parseInt(id))
+          }
+          onAddSubtasks={handleLinkSubtasks}
+        />
+      )}
     </>
   );
 }
