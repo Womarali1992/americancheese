@@ -57,6 +57,57 @@ export async function addRecurringCalendarFields(queryClient) {
       console.log('recurrence_end_date column already exists in tasks table');
     }
 
+    // Check and add recurrence_pattern to tasks
+    const recurrencePatternCheck = await queryClient.query(`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = 'tasks' AND column_name = 'recurrence_pattern'
+    `);
+
+    if (recurrencePatternCheck.rows.length === 0) {
+      console.log('Adding recurrence_pattern column to tasks table...');
+      await queryClient.query(`
+        ALTER TABLE tasks ADD COLUMN recurrence_pattern TEXT
+      `);
+      console.log('recurrence_pattern column added to tasks table');
+    } else {
+      console.log('recurrence_pattern column already exists in tasks table');
+    }
+
+    // Check and add recurrence_interval to tasks
+    const recurrenceIntervalCheck = await queryClient.query(`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = 'tasks' AND column_name = 'recurrence_interval'
+    `);
+
+    if (recurrenceIntervalCheck.rows.length === 0) {
+      console.log('Adding recurrence_interval column to tasks table...');
+      await queryClient.query(`
+        ALTER TABLE tasks ADD COLUMN recurrence_interval INTEGER DEFAULT 1
+      `);
+      console.log('recurrence_interval column added to tasks table');
+    } else {
+      console.log('recurrence_interval column already exists in tasks table');
+    }
+
+    // Check and add parent_recurring_task_id to tasks
+    const parentRecurringTaskIdCheck = await queryClient.query(`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = 'tasks' AND column_name = 'parent_recurring_task_id'
+    `);
+
+    if (parentRecurringTaskIdCheck.rows.length === 0) {
+      console.log('Adding parent_recurring_task_id column to tasks table...');
+      await queryClient.query(`
+        ALTER TABLE tasks ADD COLUMN parent_recurring_task_id INTEGER
+      `);
+      console.log('parent_recurring_task_id column added to tasks table');
+    } else {
+      console.log('parent_recurring_task_id column already exists in tasks table');
+    }
+
     // Check and add estimated_labor_cost to labor
     const estimatedCostCheck = await queryClient.query(`
       SELECT column_name
@@ -89,6 +140,23 @@ export async function addRecurringCalendarFields(queryClient) {
       console.log('calendar_active column added to materials table');
     } else {
       console.log('calendar_active column already exists in materials table');
+    }
+
+    // Check and add estimated_cost to materials
+    const estimatedCostMaterialsCheck = await queryClient.query(`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = 'materials' AND column_name = 'estimated_cost'
+    `);
+
+    if (estimatedCostMaterialsCheck.rows.length === 0) {
+      console.log('Adding estimated_cost column to materials table...');
+      await queryClient.query(`
+        ALTER TABLE materials ADD COLUMN estimated_cost DOUBLE PRECISION
+      `);
+      console.log('estimated_cost column added to materials table');
+    } else {
+      console.log('estimated_cost column already exists in materials table');
     }
 
     console.log('Recurring and calendar fields migration completed successfully');
