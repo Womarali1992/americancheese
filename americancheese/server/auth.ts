@@ -151,20 +151,27 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     req.path.startsWith('/src/') ||
     req.path === '/_debug_apis';
 
-  // Skip auth for public pages and endpoints
+  // Skip auth for public pages and endpoints (but NOT for API endpoints in development)
   const cleanPath = req.path.replace(/\/$/, '') || '/'; // Remove trailing slash
-  if (cleanPath === '/login' ||
+  const isPublicPage = cleanPath === '/login' ||
       cleanPath === '/signup' ||
       cleanPath === '/privacy' ||
-      cleanPath === '/privacy-policy' ||
-      req.path === '/api/auth/login' ||
+      cleanPath === '/privacy-policy';
+
+  const isPublicApiEndpoint = req.path === '/api/auth/login' ||
       req.path === '/api/auth/register' ||
       req.path === '/api/auth/logout' ||
       req.path === '/api/auth/me' || // Let the handler manage its own auth check
       req.path === '/api/test' ||
-      req.path === '/api/task-templates' ||
-      isAssetOrModuleRequest ||
-      process.env.NODE_ENV !== 'production') {
+      req.path === '/api/task-templates';
+
+  if (isPublicPage || isPublicApiEndpoint || isAssetOrModuleRequest) {
+    return next();
+  }
+
+  // In development, allow access to non-API routes without auth (for UI development)
+  // but still require auth for API endpoints to ensure proper user context
+  if (process.env.NODE_ENV !== 'production' && !req.path.startsWith('/api/')) {
     return next();
   }
 

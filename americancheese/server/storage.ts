@@ -664,7 +664,9 @@ export class MemStorage implements IStorage {
   }
 
   // Task CRUD operations
-  async getTasks(): Promise<Task[]> {
+  async getTasks(userId?: number): Promise<Task[]> {
+    // For now, return all tasks regardless of userId
+    // In the future, we could filter tasks by user if needed
     return Array.from(this.tasks.values());
   }
 
