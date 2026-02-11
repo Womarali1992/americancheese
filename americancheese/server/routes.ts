@@ -1966,7 +1966,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return result;
   }
 
-  // Category management endpoint
+  // Category management endpoints
+  // Get categories for a project
+  app.get("/api/projects/:id/categories", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      // Get project-specific categories from project_categories table
+      const categories = await db
+        .select()
+        .from(projectCategories)
+        .where(eq(projectCategories.projectId, projectId))
+        .orderBy(
+          sql`case when ${projectCategories.type} = 'tier1' then 0 else 1 end`,
+          projectCategories.sortOrder,
+          projectCategories.name
+        );
+
+      console.log(`Returning ${categories.length} categories for project ${projectId}`);
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching project categories:", error);
+      res.status(500).json({
+        message: "Failed to fetch project categories",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Get categories in flat format (for dropdowns)
+  app.get("/api/projects/:id/categories/flat", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+
+      // Get project-specific categories from project_categories table
+      const categories = await db
+        .select()
+        .from(projectCategories)
+        .where(eq(projectCategories.projectId, projectId))
+        .orderBy(
+          sql`case when ${projectCategories.type} = 'tier1' then 0 else 1 end`,
+          projectCategories.sortOrder,
+          projectCategories.name
+        );
+
+      // Transform into flat structure for easier consumption
+      const tier1Categories = categories.filter(c => c.type === 'tier1');
+      const tier2Categories = categories.filter(c => c.type === 'tier2');
+
+      const flatCategories = tier1Categories.map(tier1 => ({
+        ...tier1,
+        subcategories: tier2Categories.filter(tier2 => tier2.parentId === tier1.id)
+      }));
+
+      console.log(`Returning ${categories.length} categories (${tier1Categories.length} tier1, ${tier2Categories.length} tier2) for project ${projectId}`);
+      res.json(flatCategories);
+    } catch (error) {
+      console.error("Error fetching project categories (flat):", error);
+      res.status(500).json({
+        message: "Failed to fetch project categories",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   app.put("/api/projects/:id/categories", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
