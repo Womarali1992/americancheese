@@ -13,9 +13,11 @@ import cookieParser from 'cookie-parser';
 
 const app = express();
 
-// Enable CORS for mobile app
+// Enable CORS with environment-aware origin policy
 app.use(cors({
-  origin: true, // Allow all origins in development
+  origin: process.env.NODE_ENV === 'production'
+    ? (process.env.CORS_ORIGIN || 'https://app.sitesetups.com')
+    : true,
   credentials: true,
 }));
 

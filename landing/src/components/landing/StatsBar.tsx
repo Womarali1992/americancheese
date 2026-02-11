@@ -43,9 +43,6 @@ const AnimatedNumber = ({ value, suffix }: { value: number; suffix: string }) =>
 const StatsBar = () => {
   return (
     <section className="relative py-20 md:py-28 overflow-hidden">
-      {/* Gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-slate-500/5 to-primary/5" />
-      
       {/* Decorative lines */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />

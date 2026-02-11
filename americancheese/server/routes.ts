@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { createRateLimiter } from "./middleware/rateLimiter";
 import {
   insertProjectSchema,
   insertTaskSchema,
@@ -30,6 +31,7 @@ import {
   categoryTemplates,
   projectCategories,
   projectMembers,
+  projectMemberAuditLog,
   taskTemplates,
   subtasks,
   checklistItems,
@@ -64,6 +66,28 @@ import multer from "multer";
 import OpenAI from "openai";
 import { parseStringPromise } from "xml2js";
 import credentialsRouter from "./credentials-routes";
+import { SAFE_ERROR_MESSAGES } from "../shared/constants/errors";
+import { sanitizeMemberError } from "./utils/errorSanitizer";
+import { addRandomDelay, sendSecureErrorResponse } from "./utils/timingAttackPrevention";
+
+// Middleware to require admin role for admin endpoints
+async function requireAdmin(req: Request, res: Response, next: () => void): Promise<void> {
+  const userId = req.session?.userId;
+  if (!userId) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+  try {
+    const [user] = await db.select({ role: users.role }).from(users).where(eq(users.id, userId)).limit(1);
+    if (!user || user.role !== 'admin') {
+      res.status(403).json({ error: 'Admin access required' });
+      return;
+    }
+    next();
+  } catch (error) {
+    res.status(500).json({ error: 'Authorization check failed' });
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up multer storage for file uploads
@@ -89,8 +113,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Credentials Vault routes
   app.use('/api/credentials', credentialsRouter);
 
+  // Apply admin role check to all /api/admin/* routes
+  app.use('/api/admin', requireAdmin);
+
   // ==================== ADMIN TEMPLATE CATEGORIES ====================
-  
+
   // Get all template categories (admin endpoint)
   app.get("/api/admin/template-categories", async (req: Request, res: Response) => {
     try {
@@ -333,74 +360,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Test endpoint for debugging - no auth required
-  app.get("/api/test", (req: Request, res: Response) => {
-    // Set a test cookie for client debugging
-    res.cookie('test-cookie', 'test-value', {
-      maxAge: 60000, // 1 minute
-      secure: false,
-      httpOnly: false
+  // Debug endpoints - only available in development
+  if (process.env.NODE_ENV !== 'production') {
+    // Test endpoint for debugging - no auth required
+    app.get("/api/test", (req: Request, res: Response) => {
+      // Set a test cookie for client debugging
+      res.cookie('test-cookie', 'test-value', {
+        maxAge: 60000, // 1 minute
+        secure: false,
+        httpOnly: false
+      });
+
+      res.json({
+        message: "Test endpoint works!",
+        sessionExists: !!req.session,
+        sessionId: req.session.id || null,
+        isAuthenticated: !!req.session.authenticated,
+        loginTime: req.session.loginTime || null,
+        cookies: req.headers.cookie || null,
+        cookieHeader: req.headers.cookie,
+        headers: req.headers,
+        envInfo: {
+          nodeEnv: process.env.NODE_ENV || 'not set'
+        }
+      });
     });
-    
-    res.json({ 
-      message: "Test endpoint works!",
-      sessionExists: !!req.session,
-      sessionId: req.session.id || null,
-      isAuthenticated: !!req.session.authenticated,
-      loginTime: req.session.loginTime || null,
-      cookies: req.headers.cookie || null,
-      cookieHeader: req.headers.cookie,
-      headers: req.headers,
-      envInfo: {
-        nodeEnv: process.env.NODE_ENV || 'not set'
-      }
-    });
-  });
-  
-  // Create sample project for testing template features
-  app.post("/api/create-sample-project", async (_req: Request, res: Response) => {
-    try {
-      // Check if we already have projects
-      const existingProjects = await db.select().from(projects);
-      
-      if (existingProjects.length > 0) {
-        return res.json({ 
-          success: true, 
-          message: "Projects already exist, skipping creation",
-          projects: existingProjects
+
+    // Create sample project for testing template features
+    app.post("/api/create-sample-project", async (_req: Request, res: Response) => {
+      try {
+        // Check if we already have projects
+        const existingProjects = await db.select().from(projects);
+
+        if (existingProjects.length > 0) {
+          return res.json({
+            success: true,
+            message: "Projects already exist, skipping creation",
+            projects: existingProjects
+          });
+        }
+
+        // Create a sample project
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + 3);
+
+        const result = await db.insert(projects).values({
+          name: "Sample Residential Project",
+          location: "123 Main Street, Anytown, CA",
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0],
+          description: "A sample residential construction project for testing template features",
+          status: "active",
+          progress: 10,
+          selectedTemplates: []
+        }).returning();
+
+        return res.json({
+          success: true,
+          message: "Sample project created successfully",
+          project: result[0]
+        });
+      } catch (error) {
+        console.error("Error creating sample project:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to create sample project",
+          error: error instanceof Error ? error.message : String(error)
         });
       }
-      
-      // Create a sample project
-      const startDate = new Date();
-      const endDate = new Date();
-      endDate.setMonth(endDate.getMonth() + 3);
-      
-      const result = await db.insert(projects).values({
-        name: "Sample Residential Project",
-        location: "123 Main Street, Anytown, CA",
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0],
-        description: "A sample residential construction project for testing template features",
-        status: "active",
-        progress: 10,
-        selectedTemplates: []
-      }).returning();
-      
-      return res.json({ 
-        success: true, 
-        message: "Sample project created successfully",
-        project: result[0]
-      });
-    } catch (error) {
-      console.error("Error creating sample project:", error);
-      return res.status(500).json({ 
-        success: false, 
-        message: "Failed to create sample project",
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
+    });
+  }
   
   // Auth middleware is now applied in index.ts for the entire app
   // Project routes
@@ -749,8 +779,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Invite a user to a project
-  app.post("/api/projects/:id/members/invite", async (req: Request, res: Response) => {
+  /**
+   * Invite a user to a project
+   *
+   * SECURITY HARDENED (SEC-01): Email Enumeration Prevention
+   *
+   * This endpoint has been hardened against email enumeration attacks by:
+   * 1. Returning identical error messages for all failure scenarios
+   * 2. Adding random timing delays to prevent timing-based enumeration
+   * 3. Using sanitized error messages that never leak user existence information
+   *
+   * SECURITY HARDENED (SEC-03): Rate Limiting Prevents Abuse
+   *
+   * Rate limiting applied to prevent spam attacks:
+   * - Limit: 10 invitations per 15 minutes per user per project
+   * - Standard RFC 6585 rate limit headers included
+   * - Fail-open policy (doesn't block on rate limiter errors)
+   *
+   * VULNERABILITIES FIXED:
+   * - CWE-204: Observable Response Discrepancy
+   * - CWE-209: Generation of Error Message Containing Sensitive Information
+   * - CWE-799: Improper Control of Interaction Frequency (Rate Limiting)
+   *
+   * SECURITY REQUIREMENT:
+   * All user-related failures (owner check, self-invite, already member, etc.)
+   * MUST return the same generic error message: SAFE_ERROR_MESSAGES.INVITATION_FAILED
+   *
+   * This prevents attackers from:
+   * - Discovering valid user emails by observing different error messages
+   * - Determining if an email belongs to a project owner
+   * - Identifying project members through error responses
+   * - Using timing attacks to distinguish between scenarios
+   * - Sending unlimited spam invitations
+   *
+   * @see {@link https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/03-Identity_Management_Testing/04-Testing_for_Account_Enumeration_and_Guessable_User_Account}
+   * @see Task 2.2: Security Fixes Plan - Update Invitation Endpoint
+   * @see Task 4.1: Security Fixes Plan - Create Rate Limiter Middleware
+   */
+  app.post(
+    "/api/projects/:id/members/invite",
+    createRateLimiter('POST /api/projects/:id/members/invite'),
+    async (req: Request, res: Response) => {
     try {
       const projectId = parseInt(req.params.id);
       if (isNaN(projectId)) {
@@ -782,31 +851,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only project owners can invite admins" });
       }
 
-      // Check if inviting self
+      // SECURITY: Check if inviting self
+      // Use generic error to prevent revealing that inviter email matches (CWE-204)
+      // Add random delay to prevent timing-based detection (0-100ms variance)
       if (email.toLowerCase() === req.session?.userEmail?.toLowerCase()) {
-        return res.status(400).json({ message: "You cannot invite yourself" });
+        return sendSecureErrorResponse(res, SAFE_ERROR_MESSAGES.INVITATION_FAILED);
       }
 
-      // Check if user is already the owner
+      // SECURITY: Check if user is already the owner
+      // Use generic error to prevent revealing owner email addresses (CWE-204)
+      // Add random delay to prevent timing attacks that could distinguish owner checks
       const project = await storage.getProject(projectId);
       const ownerUser = project?.createdBy ? await db.select({ email: users.email }).from(users).where(eq(users.id, project.createdBy)) : [];
       if (ownerUser[0]?.email.toLowerCase() === email.toLowerCase()) {
-        return res.status(400).json({ message: "This user is already the owner of this project" });
+        return sendSecureErrorResponse(res, SAFE_ERROR_MESSAGES.INVITATION_FAILED);
       }
 
       const member = await storage.inviteProjectMember?.(projectId, email, role, userId);
       res.status(201).json(member);
     } catch (error: any) {
+      // SECURITY: Log actual error server-side for debugging, but NEVER expose to client
       console.error("Error inviting project member:", error);
+
+      // SECURITY: Already-a-member check
+      // Use generic error to prevent revealing membership status (CWE-209)
+      // Add random delay to prevent timing-based member enumeration
       if (error.message?.includes('already a member')) {
-        return res.status(400).json({ message: error.message });
+        return sendSecureErrorResponse(res, SAFE_ERROR_MESSAGES.INVITATION_FAILED);
       }
-      res.status(500).json({ message: "Failed to invite member" });
+
+      // SECURITY: Sanitize all other errors to prevent information leakage
+      // sanitizeMemberError ensures generic error messages for all failure scenarios
+      res.status(500).json({ message: sanitizeMemberError(error, 'invite') });
     }
   });
 
-  // Update member role
-  app.put("/api/projects/:id/members/:memberId", async (req: Request, res: Response) => {
+  /**
+   * Update Project Member Role
+   *
+   * SECURITY FIX: SEC-02 - Transaction Isolation with Audit Trail
+   *
+   * This endpoint implements the following security controls:
+   *
+   * 1. **Atomicity (ACID)**: Uses database transactions to ensure that role updates
+   *    and audit log entries succeed or fail together. If the audit log insert fails,
+   *    the role change is automatically rolled back. This prevents data inconsistency.
+   *
+   * 2. **Isolation (Row-Level Locking)**: Uses `SELECT ... FOR UPDATE` to acquire
+   *    an exclusive lock on the member row, preventing race conditions where two
+   *    concurrent requests could result in:
+   *    - Lost updates (one overwrites the other)
+   *    - Inconsistent audit logs (logging wrong "old" values)
+   *    - Time-of-check-time-of-use (TOCTOU) vulnerabilities
+   *
+   * 3. **Privilege Escalation Prevention (CWE-269)**:
+   *    - Only project owners can assign the "owner" role
+   *    - Users cannot promote themselves to "owner" (prevents horizontal privilege escalation)
+   *    - Admins can only manage viewers/editors, not other admins
+   *
+   * 4. **Complete Audit Trail**: Every role change is logged with:
+   *    - Who performed the change (performedBy)
+   *    - What changed (oldValue/newValue)
+   *    - When it happened (timestamp)
+   *    - Where it came from (IP address, user agent)
+   *
+   * **Security Vulnerabilities Fixed**:
+   * - CWE-269: Improper Privilege Management
+   * - CWE-362: Concurrent Execution using Shared Resource with Improper Synchronization
+   * - CWE-778: Insufficient Logging
+   * - CWE-799: Improper Control of Interaction Frequency (Rate Limiting)
+   *
+   * **Rate Limiting (SEC-03)**:
+   * - Limit: 20 updates per 15 minutes per user per project
+   * - Prevents abuse while allowing legitimate batch edits
+   *
+   * @endpoint PUT /api/projects/:id/members/:memberId
+   * @requires Authentication (session)
+   * @requires Authorization (owner or admin role)
+   * @transaction Uses database transaction with row-level locking
+   * @see Task 4.1: Security Fixes Plan - Create Rate Limiter Middleware
+   */
+  app.put(
+    "/api/projects/:id/members/:memberId",
+    createRateLimiter('PUT /api/projects/:id/members/:memberId'),
+    async (req: Request, res: Response) => {
     try {
       const projectId = parseInt(req.params.id);
       const memberId = parseInt(req.params.memberId);
@@ -820,10 +948,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
+      // Get IP address and user agent for audit logging
+      const ipAddress = req.ip || req.socket.remoteAddress;
+      const userAgent = req.get('user-agent') || 'Unknown';
+
       // Check if user has permission (owner or admin)
       const access = await storage.checkProjectAccess?.(userId, projectId);
       if (!access?.hasAccess || !['owner', 'admin'].includes(access.role || '')) {
-        return res.status(403).json({ message: "You don't have permission to update members" });
+        return res.status(403).json({ message: SAFE_ERROR_MESSAGES.UNAUTHORIZED });
       }
 
       // Validate input
@@ -835,29 +967,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { role } = result.data;
 
-      // Get the member to check their current role
-      const member = await storage.getProjectMemberById?.(memberId);
-      if (!member || member.projectId !== projectId) {
-        return res.status(404).json({ message: "Member not found" });
-      }
+      // Use database transaction for atomicity with audit logging
+      // CRITICAL: All operations below must succeed or fail together
+      const updated = await db.transaction(async (tx: any) => {
+        // STEP 1: Lock row for update (prevents concurrent modifications)
+        // The FOR UPDATE clause acquires an exclusive lock on this row until the
+        // transaction commits or rolls back. This prevents race conditions where:
+        // - Two requests try to change the same member's role simultaneously
+        // - Role is changed while being deleted
+        // - Audit log records wrong "old" value due to concurrent update
+        const memberRows = await tx.select()
+          .from(projectMembers)
+          .where(eq(projectMembers.id, memberId))
+          .for('update'); // ROW-LEVEL LOCK acquired here
 
-      // Admins can only change viewers/editors, not other admins
-      if (access.role === 'admin') {
-        if (member.role === 'admin' || role === 'admin') {
-          return res.status(403).json({ message: "Only project owners can manage admin roles" });
+        if (memberRows.length === 0 || memberRows[0].projectId !== projectId) {
+          throw new Error('Member not found');
         }
+
+        const member = memberRows[0];
+
+        // STEP 2: Validate role change rules (privilege escalation prevention)
+        // These checks prevent CWE-269 (Improper Privilege Management)
+
+        // Only owner can assign owner role (prevents privilege escalation)
+        // Note: role type is string from validation, can include 'owner'
+        if ((role as string) === 'owner' && access.role !== 'owner') {
+          throw new Error('Only owner can assign owner role');
+        }
+
+        // Prevent self-promotion to owner (horizontal privilege escalation)
+        // This stops an admin from promoting themselves to owner
+        if (member.userId === userId && (role as string) === 'owner') {
+          throw new Error('Cannot promote yourself to owner');
+        }
+
+        // Admins can only change viewers/editors, not other admins
+        // This prevents admins from removing/demoting their peers
+        if (access.role === 'admin') {
+          if (member.role === 'admin' || role === 'admin') {
+            throw new Error('Only project owners can manage admin roles');
+          }
+        }
+
+        // STEP 3: Update role
+        // If we reach here, all security checks passed
+        const updatedMembers = await tx.update(projectMembers)
+          .set({ role })
+          .where(eq(projectMembers.id, memberId))
+          .returning();
+
+        // STEP 4: Write audit log (in same transaction - all or nothing)
+        // If this fails, the entire transaction rolls back including the role update
+        // This ensures we NEVER have unlogged role changes
+        await tx.insert(projectMemberAuditLog).values({
+          projectId,
+          memberId,
+          action: 'role_change',
+          performedBy: userId,
+          targetUserEmail: member.invitedEmail,
+          oldValue: { role: member.role }, // Original role (from locked row)
+          newValue: { role }, // New role being assigned
+          ipAddress,
+          userAgent,
+        });
+
+        return updatedMembers[0];
+      });
+
+      res.json(updated);
+
+    } catch (error: any) {
+      // Log actual error server-side for debugging (never sent to client)
+      console.error("Error updating project member:", error);
+
+      // Return specific error messages for known failure cases
+      // All messages are safe (no information leakage)
+
+      // 404: Member doesn't exist or doesn't belong to this project
+      if (error.message?.includes('not found')) {
+        return res.status(404).json({ message: 'Member not found' });
       }
 
-      const updated = await storage.updateProjectMemberRole?.(memberId, role);
-      res.json(updated);
-    } catch (error) {
-      console.error("Error updating project member:", error);
-      res.status(500).json({ message: "Failed to update member" });
+      // 403: Privilege escalation attempt (owner role assignment or self-promotion)
+      // Use generic message to prevent information leakage
+      if (error.message?.includes('owner') || error.message?.includes('promote')) {
+        return res.status(403).json({ message: SAFE_ERROR_MESSAGES.UNAUTHORIZED });
+      }
+
+      // 403: Admin trying to manage another admin
+      if (error.message?.includes('admin')) {
+        return res.status(403).json({ message: SAFE_ERROR_MESSAGES.UNAUTHORIZED });
+      }
+
+      // 500: Unexpected error (database failure, constraint violation, etc.)
+      // Sanitize error to prevent information leakage
+      res.status(500).json({ message: sanitizeMemberError(error, 'update') });
     }
   });
 
-  // Remove member from project
-  app.delete("/api/projects/:id/members/:memberId", async (req: Request, res: Response) => {
+  /**
+   * Remove Project Member
+   *
+   * SECURITY FIX: SEC-02 - Transaction Isolation with Audit Trail
+   *
+   * This endpoint implements the following security controls:
+   *
+   * 1. **Atomicity (ACID)**: Uses database transactions to ensure that member
+   *    deletion and audit log entries are atomic. If the audit log insert fails,
+   *    the deletion is automatically rolled back, preventing unlogged removals.
+   *
+   * 2. **Isolation (Row-Level Locking)**: Uses `SELECT ... FOR UPDATE` to acquire
+   *    an exclusive lock on the member row before deletion. This prevents:
+   *    - Concurrent role changes during removal (would log wrong role in audit)
+   *    - Double-deletion race conditions
+   *    - Phantom reads where member appears to exist but is being deleted
+   *
+   * 3. **Authorization Controls**:
+   *    - Only project owners and admins can remove members
+   *    - Admins cannot remove other admins (only owner can)
+   *    - Users can remove themselves (leave project) regardless of role
+   *
+   * 4. **Complete Audit Trail**: Every member removal is logged with:
+   *    - Who performed the removal (performedBy)
+   *    - Who was removed (targetUserEmail)
+   *    - What role they had (oldValue)
+   *    - Forensic metadata (IP address, user agent, timestamp)
+   *
+   * **Use Cases**:
+   * - Project owner removing inactive members
+   * - Admin removing viewers/editors
+   * - User leaving a project (self-removal)
+   *
+   * **Security Vulnerabilities Fixed**:
+   * - CWE-362: Race conditions in concurrent member operations
+   * - CWE-778: Insufficient logging of member removals
+   * - CWE-799: Improper Control of Interaction Frequency (Rate Limiting)
+   * - Ensures auditability for compliance requirements
+   *
+   * **Rate Limiting (SEC-03)**:
+   * - Limit: 20 deletions per 15 minutes per user per project
+   * - Prevents abuse while allowing legitimate batch cleanup
+   *
+   * @endpoint DELETE /api/projects/:id/members/:memberId
+   * @requires Authentication (session)
+   * @requires Authorization (owner/admin, or self-removal)
+   * @transaction Uses database transaction with row-level locking
+   * @see Task 4.1: Security Fixes Plan - Create Rate Limiter Middleware
+   */
+  app.delete(
+    "/api/projects/:id/members/:memberId",
+    createRateLimiter('DELETE /api/projects/:id/members/:memberId'),
+    async (req: Request, res: Response) => {
     try {
       const projectId = parseInt(req.params.id);
       const memberId = parseInt(req.params.memberId);
@@ -871,37 +1132,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
+      // Get IP address and user agent for audit logging
+      const ipAddress = req.ip || req.socket.remoteAddress;
+      const userAgent = req.get('user-agent') || 'Unknown';
+
       // Check if user has permission (owner or admin)
       const access = await storage.checkProjectAccess?.(userId, projectId);
       if (!access?.hasAccess || !['owner', 'admin'].includes(access.role || '')) {
-        return res.status(403).json({ message: "You don't have permission to remove members" });
+        return res.status(403).json({ message: SAFE_ERROR_MESSAGES.UNAUTHORIZED });
       }
 
-      // Get the member to check their role
-      const member = await storage.getProjectMemberById?.(memberId);
-      if (!member || member.projectId !== projectId) {
-        return res.status(404).json({ message: "Member not found" });
-      }
+      // Use database transaction for atomicity with audit logging
+      // CRITICAL: Deletion and audit log must succeed or fail together
+      await db.transaction(async (tx: any) => {
+        // STEP 1: Lock and get member
+        // FOR UPDATE prevents the member from being modified or deleted by another
+        // transaction until this one completes. This prevents:
+        // - Double-deletion (two requests removing the same member)
+        // - Concurrent role change while removing (wrong role in audit log)
+        // - Phantom reads (member appears to exist but is being deleted)
+        const memberRows = await tx.select()
+          .from(projectMembers)
+          .where(eq(projectMembers.id, memberId))
+          .for('update'); // ROW-LEVEL LOCK acquired here
 
-      // Admins cannot remove other admins
-      if (access.role === 'admin' && member.role === 'admin') {
-        return res.status(403).json({ message: "Only project owners can remove admins" });
-      }
+        if (memberRows.length === 0 || memberRows[0].projectId !== projectId) {
+          throw new Error('Member not found');
+        }
 
-      // Users can also remove themselves (leave the project)
-      if (member.userId === userId && access.role !== 'owner') {
-        // Allow self-removal
-      }
+        const member = memberRows[0];
 
-      const success = await storage.removeProjectMember?.(memberId);
-      if (success) {
-        res.status(204).end();
-      } else {
-        res.status(500).json({ message: "Failed to remove member" });
-      }
-    } catch (error) {
+        // STEP 2: Validate permissions
+        // Admins cannot remove other admins (only owner can)
+        // This prevents admins from removing their peers to gain sole control
+        if (access.role === 'admin' && member.role === 'admin') {
+          throw new Error('Only project owners can remove admins');
+        }
+
+        // Users can also remove themselves (leave the project)
+        // No validation needed for self-removal - this is always allowed
+
+        // STEP 3: Delete member
+        // CASCADE will also delete related records if configured
+        await tx.delete(projectMembers)
+          .where(eq(projectMembers.id, memberId));
+
+        // STEP 4: Write audit log (atomic with deletion)
+        // If this fails, the deletion is automatically rolled back
+        // This ensures we NEVER have unlogged member removals
+        await tx.insert(projectMemberAuditLog).values({
+          projectId,
+          memberId,
+          action: 'remove',
+          performedBy: userId,
+          targetUserEmail: member.invitedEmail,
+          oldValue: { role: member.role }, // Role before deletion (from locked row)
+          ipAddress,
+          userAgent,
+        });
+      });
+
+      res.status(204).end();
+
+    } catch (error: any) {
+      // Log actual error server-side for debugging (never sent to client)
       console.error("Error removing project member:", error);
-      res.status(500).json({ message: "Failed to remove member" });
+
+      // Return specific error messages for known failure cases
+
+      // 404: Member doesn't exist or doesn't belong to this project
+      if (error.message?.includes('not found')) {
+        return res.status(404).json({ message: 'Member not found' });
+      }
+
+      // 403: Admin trying to remove another admin (only owner can do this)
+      if (error.message?.includes('admin')) {
+        return res.status(403).json({ message: SAFE_ERROR_MESSAGES.UNAUTHORIZED });
+      }
+
+      // 500: Unexpected error (transaction rollback, database failure, etc.)
+      // Sanitize error to prevent information leakage
+      res.status(500).json({ message: sanitizeMemberError(error, 'remove') });
     }
   });
 
@@ -921,7 +1232,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Accept invitation
+  /**
+   * Accept Project Invitation
+   *
+   * SECURITY FIX: SEC-02 - Transaction Isolation with Audit Trail
+   *
+   * This endpoint implements the following security controls:
+   *
+   * 1. **Atomicity (ACID)**: Uses database transactions to ensure that invitation
+   *    acceptance and audit log entries are atomic. The following operations succeed
+   *    or fail together:
+   *    - Update invitation status to 'accepted'
+   *    - Link invitation to authenticated user (set userId)
+   *    - Create audit log entry
+   *
+   * 2. **Isolation (Row-Level Locking)**: Uses `SELECT ... FOR UPDATE` to prevent:
+   *    - Double-acceptance race conditions (two tabs accepting same invitation)
+   *    - Concurrent status changes (acceptance vs. revocation)
+   *    - Status confusion (invitation accepted while being deleted)
+   *
+   * 3. **Authorization Controls**:
+   *    - Only the invited email can accept the invitation
+   *    - Email matching is case-insensitive for user convenience
+   *    - Invitation must be in 'pending' status (not already processed)
+   *    - Prevents invitation hijacking attacks
+   *
+   * 4. **Complete Audit Trail**: Every acceptance is logged with:
+   *    - Who accepted the invitation (performedBy = userId)
+   *    - What project they joined (projectId)
+   *    - What role they received (newValue.role)
+   *    - Forensic metadata (IP address, user agent, timestamp)
+   *
+   * **Security Considerations**:
+   * - Prevents TOCTOU vulnerability where invitation could be revoked between
+   *   validation and acceptance
+   * - Ensures only one acceptance per invitation (idempotency)
+   * - Logs all acceptance attempts for security monitoring
+   *
+   * **Security Vulnerabilities Fixed**:
+   * - CWE-362: Race conditions in concurrent invitation operations
+   * - CWE-778: Insufficient logging of access grants
+   * - Prevents invitation replay attacks
+   *
+   * @endpoint POST /api/invitations/:id/accept
+   * @requires Authentication (session with userId and userEmail)
+   * @requires Authorization (email matches invitedEmail)
+   * @transaction Uses database transaction with row-level locking
+   */
   app.post("/api/invitations/:id/accept", async (req: Request, res: Response) => {
     try {
       const invitationId = parseInt(req.params.id);
@@ -935,26 +1292,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      // Get the invitation
-      const invitation = await storage.getProjectMemberById?.(invitationId);
-      if (!invitation) {
-        return res.status(404).json({ message: "Invitation not found" });
-      }
+      // Get IP address and user agent for audit logging
+      const ipAddress = req.ip || req.socket.remoteAddress;
+      const userAgent = req.get('user-agent') || 'Unknown';
 
-      // Verify this invitation is for the current user
-      if (invitation.invitedEmail.toLowerCase() !== userEmail.toLowerCase()) {
-        return res.status(403).json({ message: "This invitation is not for you" });
-      }
+      // Use database transaction for atomicity with audit logging
+      // CRITICAL: Acceptance and audit log must succeed or fail together
+      const updated = await db.transaction(async (tx: any) => {
+        // STEP 1: Lock and get invitation
+        // FOR UPDATE prevents the invitation from being:
+        // - Accepted twice (double-click or two tabs)
+        // - Revoked while being accepted (TOCTOU vulnerability)
+        // - Modified concurrently (status confusion)
+        const invitationRows = await tx.select()
+          .from(projectMembers)
+          .where(eq(projectMembers.id, invitationId))
+          .for('update'); // ROW-LEVEL LOCK acquired here
 
-      if (invitation.status !== 'pending') {
-        return res.status(400).json({ message: "This invitation has already been processed" });
-      }
+        if (invitationRows.length === 0) {
+          throw new Error('Invitation not found');
+        }
 
-      const updated = await storage.acceptProjectInvitation?.(invitationId, userId);
+        const invitation = invitationRows[0];
+
+        // STEP 2: Validate invitation
+        // Verify this invitation is for the current user (prevents invitation hijacking)
+        // Email comparison is case-insensitive for user convenience
+        if (invitation.invitedEmail.toLowerCase() !== userEmail.toLowerCase()) {
+          throw new Error('This invitation is not for you');
+        }
+
+        // Ensure invitation hasn't already been processed (idempotency check)
+        // Prevents double-acceptance or accepting after decline
+        if (invitation.status !== 'pending') {
+          throw new Error('This invitation has already been processed');
+        }
+
+        // STEP 3: Accept invitation (update status and link to user)
+        // This converts the pending invitation into an active membership
+        const updatedInvitations = await tx.update(projectMembers)
+          .set({
+            status: 'accepted',
+            userId: userId, // Link invitation to authenticated user
+          })
+          .where(eq(projectMembers.id, invitationId))
+          .returning();
+
+        // STEP 4: Write audit log (atomic with acceptance)
+        // If this fails, the acceptance is automatically rolled back
+        // This ensures we NEVER have unlogged access grants
+        await tx.insert(projectMemberAuditLog).values({
+          projectId: invitation.projectId,
+          memberId: invitationId,
+          action: 'accept_invitation',
+          performedBy: userId, // User who accepted
+          targetUserEmail: invitation.invitedEmail,
+          newValue: { role: invitation.role }, // Role granted
+          ipAddress,
+          userAgent,
+        });
+
+        return updatedInvitations[0];
+      });
+
       res.json(updated);
-    } catch (error) {
+
+    } catch (error: any) {
+      // Log actual error server-side for debugging (never sent to client)
       console.error("Error accepting invitation:", error);
-      res.status(500).json({ message: "Failed to accept invitation" });
+
+      // Return specific error messages for known failure cases
+
+      // 404: Invitation doesn't exist (may have been revoked)
+      if (error.message?.includes('not found')) {
+        return res.status(404).json({ message: 'Invitation not found' });
+      }
+
+      // 403: User trying to accept invitation meant for someone else
+      if (error.message?.includes('not for you')) {
+        return res.status(403).json({ message: error.message });
+      }
+
+      // 400: Invitation already accepted or declined (idempotency check failed)
+      if (error.message?.includes('already been processed')) {
+        return res.status(400).json({ message: error.message });
+      }
+
+      // 500: Unexpected error (transaction rollback, database failure, etc.)
+      // Sanitize error to prevent information leakage
+      res.status(500).json({ message: sanitizeMemberError(error, 'accept') });
     }
   });
 

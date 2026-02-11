@@ -171,13 +171,13 @@ const Hero = () => {
                 <span className="absolute inset-0 rounded-full bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </a>
               <a
-                href="#demo"
+                href="https://app.sitesetups.com/login"
                 className="group inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/60 backdrop-blur-xl border border-border hover:border-primary/30 text-foreground font-body text-base font-semibold shadow-card hover:shadow-elevated transition-all duration-300"
               >
                 <span className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-primary/10 to-slate-500/10 group-hover:from-primary/20 group-hover:to-slate-500/20 transition-colors">
                   <Play size={14} className="text-primary ml-0.5" />
                 </span>
-                Watch Demo
+                Sign In
               </a>
             </motion.div>
           </div>

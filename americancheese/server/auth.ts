@@ -119,19 +119,31 @@ const getCookieDomain = () => {
   return undefined; // Don't set domain in development (defaults to current host)
 };
 
+// Determine session secret based on environment
+function getSessionSecret(): string {
+  if (process.env.SESSION_SECRET) {
+    return process.env.SESSION_SECRET;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('SESSION_SECRET environment variable is required in production');
+  }
+  // Development: generate a random ephemeral secret
+  return crypto.randomBytes(32).toString('hex');
+}
+
 // Configure session middleware
 export const sessionMiddleware = session({
-  secret: process.env.SESSION_SECRET || 'construction-management-app-secret',
+  secret: getSessionSecret(),
   name: 'construction.sid',
-  resave: true,
-  saveUninitialized: true,
+  resave: false,
+  saveUninitialized: false,
   store: new MemoryStoreSession({
     checkPeriod: 86400000 // prune expired entries every 24h
   }),
   cookie: {
     maxAge: TOKEN_EXPIRY_MS,
     secure: process.env.NODE_ENV === 'production',
-    httpOnly: false,
+    httpOnly: true,
     path: '/',
     sameSite: 'lax',
     domain: getCookieDomain()
@@ -161,9 +173,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
   const isPublicApiEndpoint = req.path === '/api/auth/login' ||
       req.path === '/api/auth/register' ||
       req.path === '/api/auth/logout' ||
-      req.path === '/api/auth/me' || // Let the handler manage its own auth check
-      req.path === '/api/test' ||
-      req.path === '/api/task-templates';
+      req.path === '/api/auth/me'; // Let the handler manage its own auth check
 
   if (isPublicPage || isPublicApiEndpoint || isAssetOrModuleRequest) {
     return next();
@@ -181,11 +191,6 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
   // Check cookies for token
   if (!token && req.cookies) {
     token = req.cookies.token || req.cookies['auth-token'];
-  }
-
-  // Check query string
-  if (!token && req.query && req.query.token) {
-    token = req.query.token as string;
   }
 
   // Check custom header
@@ -330,7 +335,7 @@ export const handleRegister = async (req: Request, res: Response) => {
     // Set cookies
     res.cookie('token', token, {
       maxAge: TOKEN_EXPIRY_MS,
-      httpOnly: false,
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
       sameSite: 'lax',
@@ -431,7 +436,7 @@ export const handleLogin = async (req: Request, res: Response) => {
     // Set cookies
     res.cookie('token', token, {
       maxAge: TOKEN_EXPIRY_MS,
-      httpOnly: false,
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
       sameSite: 'lax',

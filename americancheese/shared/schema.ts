@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, date, timestamp, doublePrecision, time } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, date, timestamp, doublePrecision, time, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -879,3 +879,53 @@ export const insertCalendarEventSchema = createInsertSchema(calendarEvents).omit
 
 export type CalendarEvent = typeof calendarEvents.$inferSelect;
 export type InsertCalendarEvent = z.infer<typeof insertCalendarEventSchema>;
+
+// Project Member Audit Log Schema - tracks all member management operations
+export const projectMemberAuditLog = pgTable("project_member_audit_log", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => projects.id),
+  memberId: integer("member_id"), // nullable - may not exist yet (e.g., invite to new user)
+  action: text("action").notNull(), // 'invite', 'role_change', 'remove', 'accept', 'decline'
+  performedBy: integer("performed_by").notNull().references(() => users.id),
+  targetUserEmail: text("target_user_email").notNull(),
+  oldValue: jsonb("old_value"), // nullable - previous state (e.g., old role)
+  newValue: jsonb("new_value"), // nullable - new state (e.g., new role)
+  ipAddress: text("ip_address"), // nullable - IP address of the user performing the action
+  userAgent: text("user_agent"), // nullable - User agent of the browser
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  // Indexes:
+  // - project_id (for filtering by project)
+  // - performed_by (for filtering by user)
+  // - created_at DESC (for time-based queries)
+  // - action (for filtering by action type)
+});
+
+export const insertProjectMemberAuditLogSchema = createInsertSchema(projectMemberAuditLog).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type ProjectMemberAuditLog = typeof projectMemberAuditLog.$inferSelect;
+export type InsertProjectMemberAuditLog = z.infer<typeof insertProjectMemberAuditLogSchema>;
+
+// Rate Limits Schema - tracks API request counts per user/endpoint/project for rate limiting
+export const rateLimits = pgTable("rate_limits", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  endpoint: text("endpoint").notNull(), // e.g., 'POST /api/projects/:id/members/invite'
+  projectId: integer("project_id").references(() => projects.id), // nullable - some endpoints aren't project-specific
+  requestCount: integer("request_count").notNull().default(0),
+  windowStart: timestamp("window_start").notNull(), // start of the rate limit window
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  // Indexes:
+  // - UNIQUE (user_id, endpoint, project_id) - prevents duplicate rate limit entries
+  // - window_start - for cleanup of old records
+});
+
+export const insertRateLimitSchema = createInsertSchema(rateLimits).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type RateLimit = typeof rateLimits.$inferSelect;
+export type InsertRateLimit = z.infer<typeof insertRateLimitSchema>;
