@@ -102,6 +102,7 @@ import { addProjectMembersTable } from './migrations/add-project-members.js';
 import { addContactsCreatedBy } from './migrations/add-contacts-created-by.js';
 import { addCategoryContext } from './migrations/add-category-context.js';
 import { addAuthTokensTables } from './migrations/add-auth-tokens.js';
+import { addRecurringCalendarFields } from './migrations/add-recurring-calendar-fields.js';
 
 // Export a function to initialize the database and create tables
 export async function initDatabase() {
@@ -299,6 +300,7 @@ export async function initDatabase() {
     await addProjectMembersTable(queryClient);
     await addContactsCreatedBy(queryClient);
     await addCategoryContext(queryClient);
+    await addRecurringCalendarFields(queryClient);
 
     console.log('Database initialization complete.');
   } catch (error) {
