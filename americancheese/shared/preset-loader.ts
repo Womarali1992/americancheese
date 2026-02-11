@@ -19,6 +19,7 @@ import {
   mergePresetWithConfig
 } from './presets.ts';
 import { eq } from 'drizzle-orm';
+import { safeJsonParseObject } from './safe-json.ts';
 // Note: Theme functions removed to avoid server/client dependencies
 // Colors will be handled by the frontend
 
@@ -62,15 +63,9 @@ export async function applyPresetToProject(projectId: number, presetId: string, 
       .where(eq(globalSettings.key, configKey))
       .limit(1);
 
-    const customConfig = configResult.length > 0 ? JSON.parse(configResult[0].value) : null;
-
-    // DEBUG: Log what we're merging
-    console.log(`🔧 DEBUG: Base preset tier1 categories:`, basePreset.categories.tier1.map(c => c.name));
-    console.log(`🔧 DEBUG: Custom config exists:`, !!customConfig);
-    if (customConfig) {
-      console.log(`🔧 DEBUG: Custom config tier1 categories:`, customConfig.categories?.tier1?.map((c: any) => c.name) || 'none');
-      console.log(`🔧 DEBUG: Custom config tier2 keys:`, customConfig.categories?.tier2 ? Object.keys(customConfig.categories.tier2) : 'none');
-    }
+    const customConfig = configResult.length > 0
+      ? safeJsonParseObject(configResult[0].value, null, true)
+      : null;
 
     // Merge base preset with custom configuration
     const preset = mergePresetWithConfig(basePreset, customConfig);
@@ -78,12 +73,6 @@ export async function applyPresetToProject(projectId: number, presetId: string, 
       return { success: false, categoriesCreated: 0, error: `Failed to merge preset configuration for '${presetId}'` };
     }
 
-    // DEBUG: Log merged result
-    console.log(`🔧 DEBUG: Merged preset tier1 categories:`, preset.categories.tier1.map(c => c.name));
-    console.log(`🔧 DEBUG: Merged preset tier2 keys:`, Object.keys(preset.categories.tier2));
-
-    console.log(`🔧 Applying preset '${preset.name}' to project ${projectId}${replaceExisting ? ' (replacing existing categories)' : ''}`);
-    console.log(`🔧 DEBUG: replaceExisting parameter = ${replaceExisting}`);
 
     // Check if project already has categories
     const existingCategories = await db.select()
@@ -112,7 +101,6 @@ export async function applyPresetToProject(projectId: number, presetId: string, 
     // Create tier1 categories first
     for (let i = 0; i < preset.categories.tier1.length; i++) {
       const tier1 = preset.categories.tier1[i];
-      console.log(`📝 Creating tier1 category: ${tier1.name} (theme will provide colors)`);
 
       const [tier1Category] = await db.insert(projectCategories).values({
         projectId,
@@ -186,7 +174,6 @@ export async function applyPresetToProject(projectId: number, presetId: string, 
 
       for (let j = 0; j < tier2List.length; j++) {
         const tier2 = tier2List[j];
-        console.log(`📝 Creating tier2 category: ${tier2.name} under ${tier1Name} (theme will provide colors)`);
 
         const [tier2Category] = await db.insert(projectCategories).values({
           projectId,
@@ -214,19 +201,12 @@ export async function applyPresetToProject(projectId: number, presetId: string, 
       if (!project?.colorTheme) {
         updateData.colorTheme = preset.recommendedTheme;
         updateData.useGlobalTheme = false;
-        console.log(`🎨 Setting project theme to recommended theme: ${preset.recommendedTheme}`);
-      } else {
-        console.log(`🎨 Keeping user's selected theme: ${project.colorTheme}`);
       }
-    } else if (preserveTheme) {
-      console.log(`🎨 Preserving user's theme selection (preserveTheme=true)`);
     }
 
     await db.update(projects)
       .set(updateData)
       .where(eq(projects.id, projectId));
-
-    console.log(`Successfully applied preset '${preset.name}' to project ${projectId}: ${categoriesCreated} categories created`);
 
     return { success: true, categoriesCreated };
 

@@ -14,6 +14,7 @@ import {
   generateContextXml,
   generateFullContextXml,
 } from '../../../../shared/context-xml-generator';
+import { safeJsonParseObject } from '@/lib/safe-json';
 
 export interface ContextPreviewProps {
   /** Context data to preview */
@@ -47,11 +48,7 @@ export function ContextPreview({
   const parsedContext: ContextData | null = useMemo(() => {
     if (!context) return null;
     if (typeof context === 'string') {
-      try {
-        return JSON.parse(context);
-      } catch {
-        return null;
-      }
+      return safeJsonParseObject(context, null, false);
     }
     return context;
   }, [context]);

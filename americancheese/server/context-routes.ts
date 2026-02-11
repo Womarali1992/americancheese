@@ -10,6 +10,7 @@ import { aiContextTemplates, projects, tasks, insertAiContextTemplateSchema } fr
 import { eq, and, or, isNull } from 'drizzle-orm';
 import { generateContextXml, generateFullContextXml } from '../shared/context-xml-generator';
 import { ContextData } from '../shared/context-types';
+import { safeJsonParseObject } from '../shared/safe-json';
 
 const router = Router();
 
@@ -204,11 +205,7 @@ router.get('/projects/:id/context', async (req: Request, res: Response) => {
     // Parse the context if it exists
     let context = null;
     if (project.structuredContext) {
-      try {
-        context = JSON.parse(project.structuredContext);
-      } catch {
-        context = null;
-      }
+      context = safeJsonParseObject(project.structuredContext, null, false);
     }
 
     res.json({
@@ -257,7 +254,7 @@ router.put('/projects/:id/context', async (req: Request, res: Response) => {
     res.json({
       success: true,
       projectId: project.id,
-      context: JSON.parse(contextString),
+      context: safeJsonParseObject(contextString, {}, true),
     });
   } catch (error) {
     console.error('Error updating project context:', error);
@@ -295,7 +292,7 @@ router.get('/projects/:id/context/export', async (req: Request, res: Response) =
       return res.status(404).json({ error: 'Project has no context data' });
     }
 
-    const context: ContextData = JSON.parse(project.structuredContext);
+    const context: ContextData = safeJsonParseObject(project.structuredContext, {} as ContextData, true);
     const entityId = `project-${project.id}`;
 
     const xml = full
@@ -352,7 +349,7 @@ router.post('/projects/:id/context/apply-template', async (req: Request, res: Re
     // Parse template context
     let templateContext: ContextData;
     try {
-      templateContext = JSON.parse(template.contextData);
+      templateContext = safeJsonParseObject(template.contextData, {} as ContextData, true);
     } catch {
       return res.status(500).json({ error: 'Invalid template data' });
     }
@@ -367,7 +364,7 @@ router.post('/projects/:id/context/apply-template', async (req: Request, res: Re
 
       if (project?.structuredContext) {
         try {
-          const currentContext: ContextData = JSON.parse(project.structuredContext);
+          const currentContext: ContextData = safeJsonParseObject(project.structuredContext, {} as ContextData, true);
           // Merge: keep current content where it exists, fill in from template otherwise
           finalContext = {
             ...templateContext,
@@ -459,11 +456,7 @@ router.get('/tasks/:id/context', async (req: Request, res: Response) => {
     // Parse the context if it exists
     let context = null;
     if (task.structuredContext) {
-      try {
-        context = JSON.parse(task.structuredContext);
-      } catch {
-        context = null;
-      }
+      context = safeJsonParseObject(task.structuredContext, null, false);
     }
 
     res.json({
@@ -512,7 +505,7 @@ router.put('/tasks/:id/context', async (req: Request, res: Response) => {
     res.json({
       success: true,
       taskId: task.id,
-      context: JSON.parse(contextString),
+      context: safeJsonParseObject(contextString, {}, true),
     });
   } catch (error) {
     console.error('Error updating task context:', error);
@@ -550,7 +543,7 @@ router.get('/tasks/:id/context/export', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Task has no context data' });
     }
 
-    const context: ContextData = JSON.parse(task.structuredContext);
+    const context: ContextData = safeJsonParseObject(task.structuredContext, {} as ContextData, true);
     const entityId = `task-${task.id}`;
 
     const xml = full
@@ -595,7 +588,7 @@ router.post('/context/export-xml', async (req: Request, res: Response) => {
     }
 
     const contextData: ContextData = typeof context === 'string'
-      ? JSON.parse(context)
+      ? safeJsonParseObject(context, {} as ContextData, true)
       : context;
 
     const xml = full

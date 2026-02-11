@@ -46,6 +46,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
+import { safeJsonParse, safeJsonParseArray, safeJsonParseObject } from "@shared/safe-json";
 import {
   handleLogin,
   handleLogout,
@@ -1059,7 +1060,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const contactIds = new Set<number>();
       for (const task of projectTasks) {
         if (task.contactIds) {
-          const ids = Array.isArray(task.contactIds) ? task.contactIds : JSON.parse(task.contactIds as string || '[]');
+          const ids = Array.isArray(task.contactIds) ? task.contactIds : safeJsonParseArray(task.contactIds as string, [], true);
           ids.forEach((cid: number) => contactIds.add(cid));
         }
       }
@@ -1348,7 +1349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Remove BOM if present
         const cleanContent = fileContent.replace(/^\uFEFF/, '');
-        const data = JSON.parse(cleanContent);
+        const data = safeJsonParseObject<{ project?: Record<string, unknown>; version?: string }>(cleanContent, {}, true);
 
         if (!data.project) {
           return res.status(400).json({ message: "Invalid JSON format: missing project data" });
@@ -1774,10 +1775,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Map old contact IDs to new ones
         let newContactIds: number[] = [];
         if (taskData.ContactIds) {
-          try {
-            const oldIds = JSON.parse(taskData.ContactIds);
-            newContactIds = oldIds.map((oldId: number) => contactIdMap.get(oldId) || oldId).filter(Boolean);
-          } catch (e) {}
+          const oldIds = safeJsonParseArray(taskData.ContactIds, [], false);
+          newContactIds = oldIds.map((oldId: number) => contactIdMap.get(oldId) || oldId).filter(Boolean);
         }
 
         // Default dates if missing
@@ -5133,12 +5132,10 @@ IMPORTANT RULES:
       }
       cleanedResponse = cleanedResponse.trim();
 
-      let parsedInvoice;
-      try {
-        parsedInvoice = JSON.parse(cleanedResponse);
-      } catch (parseError) {
-        console.error("Failed to parse AI response:", parseError);
-        return res.status(500).json({ 
+      const parsedInvoice = safeJsonParseObject(cleanedResponse, null, true);
+      if (!parsedInvoice) {
+        console.error("Failed to parse AI response");
+        return res.status(500).json({
           message: "Failed to parse invoice data from AI response",
           rawResponse: aiResponse
         });
@@ -6072,8 +6069,10 @@ IMPORTANT RULES:
           .from(globalSettings)
           .where(eq(globalSettings.key, `preset_config_${presetId}`))
           .limit(1);
-        
-        const customConfig = configResult.length > 0 ? JSON.parse(configResult[0].value) : null;
+
+        const customConfig = configResult.length > 0
+          ? safeJsonParseObject(configResult[0].value, null, true)
+          : null;
         
         // Filter templates using BASE preset (original category names)
         templates = allTemplates.filter(template => {
@@ -6125,7 +6124,9 @@ IMPORTANT RULES:
           .from(globalSettings)
           .where(eq(globalSettings.key, `preset_config_${presetId}`))
           .limit(1);
-        const customConfig = configResult.length > 0 ? JSON.parse(configResult[0].value) : null;
+        const customConfig = configResult.length > 0
+          ? safeJsonParseObject(configResult[0].value, null, true)
+          : null;
         const customizedPreset = getPresetWithConfig(presetId, customConfig);
         
         if (basePreset && customizedPreset) {
@@ -6241,8 +6242,10 @@ IMPORTANT RULES:
         .from(globalSettings)
         .where(eq(globalSettings.key, `preset_config_${presetId}`))
         .limit(1);
-      
-      const customConfig = configResult.length > 0 ? JSON.parse(configResult[0].value) : null;
+
+      const customConfig = configResult.length > 0
+        ? safeJsonParseObject(configResult[0].value, null, true)
+        : null;
       
       // Get the CUSTOMIZED preset (for creating tasks with renamed categories)
       const customizedPreset = getPresetWithConfig(presetId, customConfig);
@@ -9124,13 +9127,8 @@ IMPORTANT RULES:
         // Return all themes enabled by default (empty array means all enabled)
         res.json({ enabledThemes: [] });
       } else {
-        try {
-          const enabledThemes = JSON.parse(setting[0].value);
-          res.json({ enabledThemes });
-        } catch {
-          // If parsing fails, return all enabled
-          res.json({ enabledThemes: [] });
-        }
+        const enabledThemes = safeJsonParseArray(setting[0].value, [], false);
+        res.json({ enabledThemes });
       }
     } catch (error) {
       console.error("Error fetching enabled themes:", error);
@@ -9188,13 +9186,8 @@ IMPORTANT RULES:
         // Return all presets enabled by default (empty array means all enabled)
         res.json({ enabledPresets: [] });
       } else {
-        try {
-          const enabledPresets = JSON.parse(setting[0].value);
-          res.json({ enabledPresets });
-        } catch {
-          // If parsing fails, return all enabled
-          res.json({ enabledPresets: [] });
-        }
+        const enabledPresets = safeJsonParseArray(setting[0].value, [], false);
+        res.json({ enabledPresets });
       }
     } catch (error) {
       console.error("Error fetching enabled presets:", error);
@@ -9251,13 +9244,12 @@ IMPORTANT RULES:
         .where(sql`${globalSettings.key} LIKE 'preset_config_%'`);
 
       // Build a map of preset configs
-      const configMap: Record<string, any> = {};
+      const configMap: Record<string, unknown> = {};
       for (const config of configs) {
         const presetId = config.key.replace('preset_config_', '');
-        try {
-          configMap[presetId] = JSON.parse(config.value);
-        } catch (err) {
-          console.error(`Failed to parse config for preset ${presetId}:`, err);
+        const parsed = safeJsonParseObject(config.value, null, false);
+        if (parsed !== null) {
+          configMap[presetId] = parsed;
         }
       }
 
@@ -9286,7 +9278,9 @@ IMPORTANT RULES:
         .where(eq(globalSettings.key, `preset_config_${presetId}`))
         .limit(1);
 
-      const config = configResult.length > 0 ? JSON.parse(configResult[0].value) : null;
+      const config = configResult.length > 0
+        ? safeJsonParseObject(configResult[0].value, null, true)
+        : null;
 
       // Import presets module and merge with config
       const { getPresetWithConfig } = await import("@shared/presets");
@@ -9323,7 +9317,9 @@ IMPORTANT RULES:
         .where(eq(globalSettings.key, configKey))
         .limit(1);
 
-      const oldConfig = existingConfig.length > 0 ? JSON.parse(existingConfig[0].value) : null;
+      const oldConfig = existingConfig.length > 0
+        ? safeJsonParseObject(existingConfig[0].value, null, true)
+        : null;
       const oldPreset = getPresetWithConfig(presetId, oldConfig);
 
       // Build new configuration object (only include provided fields)

@@ -48,6 +48,7 @@ import {
   calculateBmadScore,
 } from '../../../../shared/context-types';
 import { generateContextXml } from '../../../../shared/context-xml-generator';
+import { safeJsonParseObject } from '@/lib/safe-json';
 
 export interface ContextEditorProps {
   /** Entity ID for context */
@@ -316,11 +317,7 @@ export function ContextEditor({
       return createEmptyContext(entityId, entityType);
     }
     if (typeof initialContext === 'string') {
-      try {
-        return JSON.parse(initialContext);
-      } catch {
-        return createEmptyContext(entityId, entityType);
-      }
+      return safeJsonParseObject(initialContext, createEmptyContext(entityId, entityType), false);
     }
     return initialContext;
   };

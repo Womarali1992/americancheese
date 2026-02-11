@@ -3,6 +3,7 @@ import { db } from "./db";
 import { tasks, projects, materials, taskAttachments, checklistItems } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
 import OpenAI from "openai";
+import { safeJsonParseObject } from "@shared/safe-json";
 
 // In-memory webhook registry (in production, store in database)
 interface WebhookRegistration {
@@ -488,11 +489,7 @@ export function registerAutomationRoutes(app: Express): void {
       // Parse the structured context
       let projectContext: any = {};
       if (project.structuredContext) {
-        try {
-          projectContext = JSON.parse(project.structuredContext);
-        } catch (e) {
-          console.error("Failed to parse project context:", e);
-        }
+        projectContext = safeJsonParseObject(project.structuredContext, {}, true);
       }
 
       // Build context sections
@@ -615,11 +612,7 @@ Make sure the content:
       // Parse the structured context
       let projectContext: any = {};
       if (project.structuredContext) {
-        try {
-          projectContext = JSON.parse(project.structuredContext);
-        } catch (e) {
-          console.error("Failed to parse project context:", e);
-        }
+        projectContext = safeJsonParseObject(project.structuredContext, {}, true);
       }
 
       // Get tasks
@@ -763,7 +756,7 @@ Create ${outputType === "brief" ? "a concise summary with key points" : outputTy
       let projectContext: any = {};
       if (project.structuredContext) {
         try {
-          projectContext = JSON.parse(project.structuredContext);
+          projectContext = safeJsonParseObject(project.structuredContext, {}, true);
         } catch (e) {}
       }
 
