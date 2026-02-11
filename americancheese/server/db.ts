@@ -22,7 +22,9 @@ import {
   users,
   projectMembers,
   sessionTokens,
-  apiTokens
+  apiTokens,
+  projectMemberAuditLog,
+  rateLimits
 } from '../shared/schema';
 
 // Get database configuration from environment
@@ -72,7 +74,9 @@ if (dbConfig.password && dbConfig.password !== 'password') {
         users,
         projectMembers,
         sessionTokens,
-        apiTokens
+        apiTokens,
+        projectMemberAuditLog,
+        rateLimits
       }
     });
     
@@ -103,6 +107,7 @@ import { addContactsCreatedBy } from './migrations/add-contacts-created-by.js';
 import { addCategoryContext } from './migrations/add-category-context.js';
 import { addAuthTokensTables } from './migrations/add-auth-tokens.js';
 import { addRecurringCalendarFields } from './migrations/add-recurring-calendar-fields.js';
+import { addSecurityTables } from './migrations/add-security-tables.js';
 
 // Export a function to initialize the database and create tables
 export async function initDatabase() {
@@ -301,6 +306,7 @@ export async function initDatabase() {
     await addContactsCreatedBy(queryClient);
     await addCategoryContext(queryClient);
     await addRecurringCalendarFields(queryClient);
+    await addSecurityTables(queryClient); // Security: audit logging and rate limiting
 
     console.log('Database initialization complete.');
   } catch (error) {
