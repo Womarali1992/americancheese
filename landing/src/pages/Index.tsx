@@ -4,7 +4,6 @@ import FeaturesGrid from "@/components/landing/FeaturesGrid";
 import AppShowcase from "@/components/landing/AppShowcase";
 import MaterialShowcase from "@/components/landing/MaterialShowcase";
 import ModulesGrid from "@/components/landing/ModulesGrid";
-import StatsBar from "@/components/landing/StatsBar";
 import CTASection from "@/components/landing/CTASection";
 import Footer from "@/components/landing/Footer";
 
@@ -13,7 +12,6 @@ const Index = () => {
     <div className="min-h-screen bg-background scroll-smooth">
       <Navbar />
       <Hero />
-      <StatsBar />
       <AppShowcase />
       <FeaturesGrid />
       <MaterialShowcase />
