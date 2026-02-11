@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { db } from '../db';
 import { rateLimits } from '../../shared/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { SAFE_ERROR_MESSAGES } from '../../shared/constants/errors';
 
 /**
@@ -157,60 +157,72 @@ export function createRateLimiter(endpoint: string) {
       const now = new Date();
       const windowStart = new Date(now.getTime() - config.windowMs);
 
-      // Build WHERE clause for finding existing rate limit record
-      const whereConditions = [
-        eq(rateLimits.userId, userId),
-        eq(rateLimits.endpoint, endpoint),
-      ];
+      // Use a transaction with SELECT ... FOR UPDATE to prevent TOCTOU race conditions.
+      // Without this, concurrent requests could all read the same count and bypass the limit.
+      const result = await db.transaction(async (tx) => {
+        // Build WHERE clause for finding existing rate limit record
+        const whereConditions = [
+          eq(rateLimits.userId, userId),
+          eq(rateLimits.endpoint, endpoint),
+        ];
 
-      if (projectId !== null) {
-        whereConditions.push(eq(rateLimits.projectId, projectId));
-      }
-
-      // Get existing rate limit record
-      const existing = await db.select()
-        .from(rateLimits)
-        .where(and(...whereConditions));
-
-      let record = existing[0];
-
-      // No record OR window expired - create new window
-      if (!record || new Date(record.windowStart) < windowStart) {
-        // Delete old record if exists
-        if (record) {
-          await db.delete(rateLimits).where(eq(rateLimits.id, record.id));
+        if (projectId !== null) {
+          whereConditions.push(eq(rateLimits.projectId, projectId));
         }
 
-        // Create new window with count=1
-        [record] = await db.insert(rateLimits).values({
-          userId,
-          endpoint,
-          projectId,
-          requestCount: 1,
-          windowStart: now,
-        }).returning();
-      } else {
+        // SELECT ... FOR UPDATE locks the row for the duration of this transaction,
+        // preventing concurrent requests from reading stale counts
+        const existing = await tx.select()
+          .from(rateLimits)
+          .where(and(...whereConditions))
+          .for('update');
+
+        let record = existing[0];
+
+        // No record OR window expired - create new window
+        if (!record || new Date(record.windowStart) < windowStart) {
+          if (record) {
+            await tx.delete(rateLimits).where(eq(rateLimits.id, record.id));
+          }
+
+          [record] = await tx.insert(rateLimits).values({
+            userId,
+            endpoint,
+            projectId,
+            requestCount: 1,
+            windowStart: now,
+          }).returning();
+
+          return { record, limited: false };
+        }
+
         // Within window - check if limit exceeded
         if (record.requestCount >= config.maxRequests) {
-          // Rate limit exceeded - return 429
-          const resetTime = new Date(record.windowStart.getTime() + config.windowMs);
-          const retryAfterSeconds = Math.ceil((resetTime.getTime() - now.getTime()) / 1000);
-
-          // Set standard rate limit headers (RFC 6585)
-          setRateLimitHeaders(res, config.maxRequests, 0, resetTime);
-          res.setHeader('Retry-After', retryAfterSeconds.toString());
-
-          return res.status(429).json({
-            message: SAFE_ERROR_MESSAGES.RATE_LIMITED,
-            retryAfter: retryAfterSeconds,
-          });
+          return { record, limited: true };
         }
 
-        // Within window and under limit - increment counter
-        [record] = await db.update(rateLimits)
-          .set({ requestCount: record.requestCount + 1 })
+        // Atomic increment using SQL expression (not stale JS value)
+        [record] = await tx.update(rateLimits)
+          .set({ requestCount: sql`${rateLimits.requestCount} + 1` })
           .where(eq(rateLimits.id, record.id))
           .returning();
+
+        return { record, limited: false };
+      });
+
+      const { record, limited } = result;
+
+      if (limited) {
+        const resetTime = new Date(record.windowStart.getTime() + config.windowMs);
+        const retryAfterSeconds = Math.ceil((resetTime.getTime() - now.getTime()) / 1000);
+
+        setRateLimitHeaders(res, config.maxRequests, 0, resetTime);
+        res.setHeader('Retry-After', retryAfterSeconds.toString());
+
+        return res.status(429).json({
+          message: SAFE_ERROR_MESSAGES.RATE_LIMITED,
+          retryAfter: retryAfterSeconds,
+        });
       }
 
       // Set rate limit headers for successful request

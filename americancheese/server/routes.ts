@@ -1032,7 +1032,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // 403: Admin trying to manage another admin
       if (error.message?.includes('admin')) {
-        return res.status(403).json({ message: error.message });
+        return res.status(403).json({ message: SAFE_ERROR_MESSAGES.UNAUTHORIZED });
       }
 
       // 500: Unexpected error (database failure, constraint violation, etc.)
@@ -1182,7 +1182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // 403: Admin trying to remove another admin (only owner can do this)
       if (error.message?.includes('admin')) {
-        return res.status(403).json({ message: error.message });
+        return res.status(403).json({ message: SAFE_ERROR_MESSAGES.UNAUTHORIZED });
       }
 
       // 500: Unexpected error (transaction rollback, database failure, etc.)
