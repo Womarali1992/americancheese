@@ -136,6 +136,23 @@ export type CreateCredential = z.infer<typeof createCredentialSchema>;
 export type UpdateCredential = z.infer<typeof updateCredentialSchema>;
 export type RevealCredential = z.infer<typeof revealCredentialSchema>;
 
+// Project Folders Schema - for organizing projects into folders
+export const projectFolders = pgTable("project_folders", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  color: text("color"), // Optional color for badge tinting
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertProjectFolderSchema = createInsertSchema(projectFolders).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type ProjectFolder = typeof projectFolders.$inferSelect;
+export type InsertProjectFolder = z.infer<typeof insertProjectFolderSchema>;
+
 // Project Schema
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
@@ -159,6 +176,8 @@ export const projects = pgTable("projects", {
   presetId: text("preset_id").default("home-builder"), // Default to Home Builder preset
   // Structured context for AI/LLM consumption
   structuredContext: text("structured_context"), // JSON stringified ContextData for AI context
+  // Folder organization
+  folderId: integer("folder_id").references(() => projectFolders.id, { onDelete: 'set null' }),
 });
 
 export const insertProjectSchema = createInsertSchema(projects).omit({
