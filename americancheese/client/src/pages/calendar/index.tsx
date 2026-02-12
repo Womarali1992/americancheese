@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, parseISO, isWithinInterval, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfDay, endOfDay } from "date-fns";
 import { Layout } from "@/components/layout/Layout";
@@ -12,6 +12,8 @@ import { ScheduleSubtaskDialog } from "@/components/calendar/ScheduleSubtaskDial
 import { ProjectSelector } from "@/components/project/ProjectSelector";
 import { Button } from "@/components/ui/button";
 import { Plus, ListTree } from "lucide-react";
+import { useNavPills } from "@/hooks/useNavPills";
+import { useNav } from "@/contexts/NavContext";
 import type { Task, Project, Subtask } from "@shared/schema";
 
 export default function CalendarPage() {
@@ -21,6 +23,36 @@ export default function CalendarPage() {
   const [addTaskDialogOpen, setAddTaskDialogOpen] = useState(false);
   const [addSubtaskDialogOpen, setAddSubtaskDialogOpen] = useState(false);
   const [addTaskDate, setAddTaskDate] = useState<Date>(new Date());
+
+  // Inject nav pills and actions for TopNav
+  useNavPills("events");
+  const { setActions } = useNav();
+
+  useEffect(() => {
+    setActions(
+      <>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 text-sm"
+          onClick={() => { setAddTaskDate(new Date()); setAddTaskDialogOpen(true); }}
+        >
+          <Plus className="mr-1.5 h-4 w-4" />
+          Task
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 text-sm"
+          onClick={() => { setAddTaskDate(new Date()); setAddSubtaskDialogOpen(true); }}
+        >
+          <ListTree className="mr-1.5 h-4 w-4" />
+          Subtask
+        </Button>
+      </>
+    );
+    return () => { setActions(null); };
+  }, [setActions]);
 
   const handleAddTask = (date: Date) => {
     setAddTaskDate(date);

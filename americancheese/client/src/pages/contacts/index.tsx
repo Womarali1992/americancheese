@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
@@ -57,6 +57,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useNavPills } from "@/hooks/useNavPills";
+import { useNav } from "@/contexts/NavContext";
 import { CreateContactDialog } from "./CreateContactDialog";
 import { Labor } from "@shared/schema";
 import { useMutation } from "@tanstack/react-query";
@@ -1086,6 +1088,45 @@ export default function ContactsPage() {
   const [expandedContactId, setExpandedContactId] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Inject nav pills and actions for TopNav
+  useNavPills("contacts");
+  const { setActions } = useNav();
+
+  useEffect(() => {
+    setActions(
+      <>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Input
+            placeholder="Search contacts..."
+            className="pl-9 h-9 w-48 bg-white border-slate-200 shadow-sm rounded-lg text-sm"
+            value={searchQuery}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-[130px] h-9 border-slate-200 shadow-sm rounded-lg bg-white text-sm">
+            <SelectValue placeholder="Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="contractor">Contractor</SelectItem>
+            <SelectItem value="supplier">Supplier</SelectItem>
+            <SelectItem value="consultant">Consultant</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button
+          onClick={() => setIsCreateContactOpen(true)}
+          className="h-9 bg-slate-600 hover:bg-slate-700 text-white shadow-sm rounded-lg px-3 text-sm"
+        >
+          <Plus className="mr-1.5 h-4 w-4" />
+          Add Contact
+        </Button>
+      </>
+    );
+    return () => { setActions(null); };
+  }, [searchQuery, typeFilter, setActions]);
 
   const { data: contacts = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/contacts"],

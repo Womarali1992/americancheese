@@ -10,6 +10,8 @@ import { ArrowLeft, Building, Plus, Search, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getTier1CategoryColor } from "@/lib/unified-color-system";
 import { useTheme } from "@/hooks/useTheme";
+import { useNavPills } from "@/hooks/useNavPills";
+import { useNav } from "@/contexts/NavContext";
 
 export default function MaterialsPage() {
   const [, setLocation] = useLocation();
@@ -21,6 +23,34 @@ export default function MaterialsPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
   const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
+
+  // Inject nav pills and actions for TopNav
+  useNavPills("materials");
+  const { setActions } = useNav();
+
+  useEffect(() => {
+    setActions(
+      <>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Input
+            placeholder="Search materials..."
+            className="pl-9 h-9 w-48 bg-white border-slate-200 shadow-sm rounded-lg text-sm"
+            value={searchQuery}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <Button
+          onClick={() => setCreateDialogOpen(true)}
+          className="h-9 bg-orange-600 hover:bg-orange-700 text-white shadow-sm rounded-lg px-3 text-sm"
+        >
+          <Plus className="mr-1.5 h-4 w-4" />
+          Add Material
+        </Button>
+      </>
+    );
+    return () => { setActions(null); };
+  }, [searchQuery, setActions]);
 
   // Callback to track category selection from ResourcesTabNew
   const handleCategoryChange = (tier1: string | null, tier2: string | null) => {
