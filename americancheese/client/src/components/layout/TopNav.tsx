@@ -16,11 +16,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useNav } from "@/contexts/NavContext";
+import { NavPill } from "./NavPill";
 
 export function TopNav() {
   const { navigateToTab } = useTabNavigation();
   const currentTab = useCurrentTab();
   const { user, initials, logout } = useCurrentUser();
+  const { pills, actions } = useNav();
+
+  const hasPills = pills.length > 0;
 
   const navItems: { id: TabName; icon: string; label: string; isAdmin?: boolean }[] = [
     { id: "dashboard", icon: "ri-dashboard-line", label: "Dashboard" },
@@ -35,7 +40,7 @@ export function TopNav() {
     <nav className="bg-white shadow-sm border-b border-gray-100 px-4 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo and brand */}
-        <div 
+        <div
           className="flex items-center flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => navigateToTab("dashboard")}
         >
@@ -46,89 +51,122 @@ export function TopNav() {
           </div>
         </div>
 
-        {/* Global Search */}
-        <div className="hidden md:block">
-          <GlobalSearch />
-        </div>
-
-        {/* Navigation items */}
-        <div className="flex items-center space-x-1">
-          {navItems.filter(item => !item.isAdmin).map((item) => {
-            const isActive = currentTab === item.id;
-            const moduleColors = getDynamicModuleColor(item.id);
-            
-            return (
-              <button
-                key={item.id}
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigateToTab(item.id);
-                }}
-                className={cn(
-                  "group flex items-center px-3 py-2 text-sm rounded-md transition-colors duration-150",
-                  "hover:bg-gray-50 hover:text-gray-900",
-                  isActive ? "bg-white border-2 font-medium shadow-sm" : "text-gray-600",
-                  "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                )}
-                style={{
-                  ...(isActive ? {
-                    borderColor: moduleColors.borderColor,
-                    color: moduleColors.textColor
-                  } : {})
-                }}
-              >
-                <i 
-                  className={cn(
-                    item.icon, 
-                    "text-lg mr-2",
-                    isActive ? "text-current" : "text-gray-400"
-                  )}
-                  style={isActive ? { color: moduleColors.primaryColor } : {}}
-                />
-                <span className="hidden sm:block">{item.label}</span>
-              </button>
-            );
-          })}
-
-          {/* Admin section */}
-          <div className="ml-4 pl-4 border-l border-gray-200">
-            {navItems.filter(item => item.isAdmin).map((item) => {
-              const isActive = currentTab === item.id;
-              const moduleColors = getDynamicModuleColor(item.id);
-              
-              return (
-                <button
-                  key={item.id}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigateToTab(item.id);
-                  }}
-                  className={cn(
-                    "group flex items-center px-3 py-2 text-sm rounded-md transition-colors duration-150",
-                    "hover:bg-gray-50 hover:text-gray-900",
-                    isActive ? "bg-white border-2 font-medium shadow-sm" : "text-gray-600",
-                    "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-                  )}
-                  style={{
-                    ...(isActive ? {
-                      borderColor: moduleColors.borderColor,
-                      color: moduleColors.textColor
-                    } : {})
-                  }}
-                >
-                  <i 
-                    className={cn(
-                      item.icon, 
-                      "text-lg mr-2",
-                      isActive ? "text-current" : "text-gray-400"
-                    )}
-                    style={isActive ? { color: moduleColors.primaryColor } : {}}
-                  />
-                  <span className="hidden sm:block">{item.label}</span>
-                </button>
-              );
-            })}
+        {/* Center zone: Pills OR Global Search (hidden when actions override) */}
+        {hasPills ? (
+          <div className="hidden md:flex items-center gap-1.5">
+            {pills.map((pill) => (
+              <NavPill
+                key={pill.id}
+                icon={pill.icon}
+                count={pill.count}
+                label={pill.label}
+                navigateTo={pill.navigateTo}
+                color={pill.color}
+                isActive={pill.isActive}
+                onClick={() => navigateToTab(pill.navigateTo === '/' ? 'dashboard' : pill.navigateTo.slice(1) as TabName)}
+              />
+            ))}
           </div>
+        ) : !actions ? (
+          <div className="hidden md:block">
+            <GlobalSearch />
+          </div>
+        ) : null}
+
+        {/* Right zone: Custom actions OR standard nav + always avatar */}
+        <div className="flex items-center space-x-1">
+          {(hasPills || actions) ? (
+            /* When pills or actions are set, render custom actions instead of nav tabs */
+            <>
+              {actions && (
+                <div className="hidden md:flex items-center gap-2">
+                  {actions}
+                </div>
+              )}
+            </>
+          ) : (
+            /* Standard navigation tabs */
+            <>
+              {navItems.filter(item => !item.isAdmin).map((item) => {
+                const isActive = currentTab === item.id;
+                const moduleColors = getDynamicModuleColor(item.id);
+
+                return (
+                  <button
+                    key={item.id}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigateToTab(item.id);
+                    }}
+                    className={cn(
+                      "group flex items-center px-3 py-2 text-sm rounded-md transition-colors duration-150",
+                      "hover:bg-gray-50 hover:text-gray-900",
+                      isActive ? "bg-white border-2 font-medium shadow-sm" : "text-gray-600",
+                      "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    )}
+                    style={{
+                      ...(isActive ? {
+                        borderColor: moduleColors.borderColor,
+                        color: moduleColors.textColor
+                      } : {})
+                    }}
+                  >
+                    <i
+                      className={cn(
+                        item.icon,
+                        "text-lg mr-2",
+                        isActive ? "text-current" : "text-gray-400"
+                      )}
+                      style={isActive ? { color: moduleColors.primaryColor } : {}}
+                    />
+                    <span className="hidden sm:block">{item.label}</span>
+                  </button>
+                );
+              })}
+            </>
+          )}
+
+          {/* Admin section - visible in standard nav mode */}
+          {!hasPills && !actions && (
+            <div className="ml-4 pl-4 border-l border-gray-200">
+              {navItems.filter(item => item.isAdmin).map((item) => {
+                const isActive = currentTab === item.id;
+                const moduleColors = getDynamicModuleColor(item.id);
+
+                return (
+                  <button
+                    key={item.id}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigateToTab(item.id);
+                    }}
+                    className={cn(
+                      "group flex items-center px-3 py-2 text-sm rounded-md transition-colors duration-150",
+                      "hover:bg-gray-50 hover:text-gray-900",
+                      isActive ? "bg-white border-2 font-medium shadow-sm" : "text-gray-600",
+                      "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                    )}
+                    style={{
+                      ...(isActive ? {
+                        borderColor: moduleColors.borderColor,
+                        color: moduleColors.textColor
+                      } : {})
+                    }}
+                  >
+                    <i
+                      className={cn(
+                        item.icon,
+                        "text-lg mr-2",
+                        isActive ? "text-current" : "text-gray-400"
+                      )}
+                      style={isActive ? { color: moduleColors.primaryColor } : {}}
+                    />
+                    <span className="hidden sm:block">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* Invitations badge */}
           <InvitationsBadge />
