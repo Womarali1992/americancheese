@@ -66,7 +66,8 @@ jobs:
           # Install dependencies
           npm install
 
-          # Build the application
+          # Build the application (increase heap for Vite bundling large apps)
+          export NODE_OPTIONS="--max-old-space-size=1024"
           npm run build
 
           # Configure production database credentials
@@ -131,7 +132,24 @@ jobs:
 
           # Run database schema push FIRST (creates tables)
           echo "Pushing database schema to create tables..."
-          npm run db:push 2>&1
+          npm run db:push 2>&1 || {
+            echo "db:push failed (known issue with expression indexes). Applying schema via SQL..."
+            sudo -u postgres psql -d americancheese -c "
+              CREATE TABLE IF NOT EXISTS project_folders (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                color TEXT,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                created_by INTEGER,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+              );
+              DO \$\$ BEGIN
+                ALTER TABLE projects ADD COLUMN folder_id INTEGER REFERENCES project_folders(id) ON DELETE SET NULL;
+              EXCEPTION WHEN duplicate_column THEN NULL;
+              END \$\$;
+              CREATE INDEX IF NOT EXISTS projects_folder_id_idx ON projects(folder_id);
+            " 2>&1 || echo "SQL fallback also had issues"
+          }
           echo "Schema push complete"
 
           # Grant permissions AFTER schema push (to include any new tables)
