@@ -437,9 +437,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware is now applied in index.ts for the entire app
 
   // Project Folder routes
+  const COLOR_HEX_REGEX = /^#[0-9a-fA-F]{3,8}$/;
+
   app.get("/api/project-folders", async (req: Request, res: Response) => {
     try {
-      const folders = await db.select().from(projectFolders).orderBy(projectFolders.sortOrder);
+      const userId = req.session?.userId;
+      const folders = await db.select().from(projectFolders)
+        .where(eq(projectFolders.createdBy, userId))
+        .orderBy(projectFolders.sortOrder);
       res.json(folders);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch project folders" });
@@ -448,6 +453,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/project-folders", async (req: Request, res: Response) => {
     try {
+      const userId = req.session?.userId;
       const parsed = insertProjectFolderSchema.parse(req.body);
       if (!parsed.name || !parsed.name.trim()) {
         return res.status(400).json({ message: "Folder name cannot be empty" });
@@ -455,8 +461,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (parsed.name.length > 100) {
         return res.status(400).json({ message: "Folder name cannot exceed 100 characters" });
       }
+      if (parsed.color !== undefined && parsed.color !== null) {
+        if (typeof parsed.color !== 'string' || !COLOR_HEX_REGEX.test(parsed.color)) {
+          return res.status(400).json({ message: "Invalid color format. Use hex (e.g. #ff0000)" });
+        }
+      }
       parsed.name = parsed.name.trim();
-      const [folder] = await db.insert(projectFolders).values(parsed).returning();
+      const [folder] = await db.insert(projectFolders).values({ ...parsed, createdBy: userId }).returning();
       res.status(201).json(folder);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -468,6 +479,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/project-folders/:id", async (req: Request, res: Response) => {
     try {
+      const userId = req.session?.userId;
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid folder ID" });
@@ -482,14 +494,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         updates.name = req.body.name.trim();
       }
-      if (req.body.color !== undefined) updates.color = req.body.color;
-      if (req.body.sortOrder !== undefined) updates.sortOrder = req.body.sortOrder;
+      if (req.body.color !== undefined) {
+        if (req.body.color !== null && (typeof req.body.color !== 'string' || !COLOR_HEX_REGEX.test(req.body.color))) {
+          return res.status(400).json({ message: "Invalid color format. Use hex (e.g. #ff0000)" });
+        }
+        updates.color = req.body.color;
+      }
+      if (req.body.sortOrder !== undefined) {
+        if (typeof req.body.sortOrder !== 'number' || !Number.isInteger(req.body.sortOrder)) {
+          return res.status(400).json({ message: "Sort order must be an integer" });
+        }
+        updates.sortOrder = req.body.sortOrder;
+      }
 
       if (Object.keys(updates).length === 0) {
         return res.status(400).json({ message: "No valid fields to update" });
       }
 
-      const [folder] = await db.update(projectFolders).set(updates).where(eq(projectFolders.id, id)).returning();
+      const [folder] = await db.update(projectFolders).set(updates)
+        .where(and(eq(projectFolders.id, id), eq(projectFolders.createdBy, userId)))
+        .returning();
       if (!folder) {
         return res.status(404).json({ message: "Folder not found" });
       }
@@ -501,13 +525,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/project-folders/:id", async (req: Request, res: Response) => {
     try {
+      const userId = req.session?.userId;
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid folder ID" });
       }
-      // Unfile projects in this folder first
-      await db.update(projects).set({ folderId: null }).where(eq(projects.folderId, id));
-      const [deleted] = await db.delete(projectFolders).where(eq(projectFolders.id, id)).returning();
+      // FK onDelete: 'set null' handles unfiling projects automatically
+      const [deleted] = await db.delete(projectFolders)
+        .where(and(eq(projectFolders.id, id), eq(projectFolders.createdBy, userId)))
+        .returning();
       if (!deleted) {
         return res.status(404).json({ message: "Folder not found" });
       }
@@ -519,18 +545,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/projects/:id/folder", async (req: Request, res: Response) => {
     try {
+      const userId = req.session?.userId;
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid project ID" });
+      }
+      // Verify user has access to this project
+      if (userId) {
+        const access = await storage.checkProjectAccess?.(userId, id);
+        if (access === false) {
+          return res.status(403).json({ message: "Access denied" });
+        }
       }
       const { folderId } = req.body;
       // Validate folderId is a number or null
       if (folderId !== null && folderId !== undefined && (typeof folderId !== 'number' || isNaN(folderId))) {
         return res.status(400).json({ message: "Invalid folder ID" });
       }
-      // Validate folder exists if not null
+      // Validate folder exists and belongs to user
       if (folderId !== null && folderId !== undefined) {
-        const [folder] = await db.select().from(projectFolders).where(eq(projectFolders.id, folderId));
+        const [folder] = await db.select().from(projectFolders)
+          .where(and(eq(projectFolders.id, folderId), eq(projectFolders.createdBy, userId)));
         if (!folder) {
           return res.status(404).json({ message: "Folder not found" });
         }

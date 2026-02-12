@@ -140,8 +140,9 @@ export type RevealCredential = z.infer<typeof revealCredentialSchema>;
 export const projectFolders = pgTable("project_folders", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  color: text("color"), // Optional color for badge tinting
+  color: text("color"), // Optional hex color for badge tinting
   sortOrder: integer("sort_order").notNull().default(0),
+  createdBy: integer("created_by"), // Owner user ID for scoping
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

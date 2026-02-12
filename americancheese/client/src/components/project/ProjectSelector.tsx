@@ -33,14 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-interface ProjectFolder {
-  id: number;
-  name: string;
-  color: string | null;
-  sortOrder: number;
-  createdAt: string;
-}
+import type { ProjectFolder } from "@/types";
 
 interface ProjectSelectorProps {
   selectedProjectId?: number | string;

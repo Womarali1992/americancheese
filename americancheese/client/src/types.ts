@@ -8,6 +8,7 @@ export interface ProjectFolder {
   name: string;
   color: string | null;
   sortOrder: number;
+  createdBy: number | null;
   createdAt: string;
 }
 
