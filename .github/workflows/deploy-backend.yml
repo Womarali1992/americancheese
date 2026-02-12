@@ -133,22 +133,9 @@ jobs:
 
           # Apply schema via idempotent SQL (db:push hangs on interactive prompts in CI)
           echo "Applying schema migrations via SQL..."
-          sudo -u postgres psql -d americancheese << 'SQLEOF'
-            -- Project Folders feature
-            CREATE TABLE IF NOT EXISTS project_folders (
-              id SERIAL PRIMARY KEY,
-              name TEXT NOT NULL,
-              color TEXT,
-              sort_order INTEGER NOT NULL DEFAULT 0,
-              created_by INTEGER,
-              created_at TIMESTAMP NOT NULL DEFAULT NOW()
-            );
-            DO $$ BEGIN
-              ALTER TABLE projects ADD COLUMN folder_id INTEGER REFERENCES project_folders(id) ON DELETE SET NULL;
-            EXCEPTION WHEN duplicate_column THEN NULL;
-            END $$;
-            CREATE INDEX IF NOT EXISTS projects_folder_id_idx ON projects(folder_id);
-SQLEOF
+          sudo -u postgres psql -d americancheese -c "CREATE TABLE IF NOT EXISTS project_folders (id SERIAL PRIMARY KEY, name TEXT NOT NULL, color TEXT, sort_order INTEGER NOT NULL DEFAULT 0, created_by INTEGER, created_at TIMESTAMP NOT NULL DEFAULT NOW());" 2>&1
+          sudo -u postgres psql -d americancheese -c "DO \$\$BEGIN ALTER TABLE projects ADD COLUMN folder_id INTEGER REFERENCES project_folders(id) ON DELETE SET NULL; EXCEPTION WHEN duplicate_column THEN NULL; END\$\$;" 2>&1
+          sudo -u postgres psql -d americancheese -c "CREATE INDEX IF NOT EXISTS projects_folder_id_idx ON projects(folder_id);" 2>&1
           echo "SQL migrations applied"
 
           # Grant permissions AFTER schema push (to include any new tables)
