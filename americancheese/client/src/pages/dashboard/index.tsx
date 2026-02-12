@@ -91,7 +91,9 @@ import {
   Edit,
   Trash2,
   Home,
-  X
+  X,
+  Folder,
+  ChevronLeft
 } from "lucide-react";
 import {
   AlertDialog,
@@ -174,6 +176,12 @@ export default function DashboardPage() {
   const { data: projects = [], isLoading: projectsLoading } = useQuery<any[]>({
     queryKey: ["/api/projects"],
   });
+
+  const { data: folders = [] } = useQuery<any[]>({
+    queryKey: ["/api/project-folders"],
+  });
+
+  const [expandedFolderId, setExpandedFolderId] = useState<number | null>(null);
 
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<any[]>({
     queryKey: ["/api/tasks"],
@@ -1090,41 +1098,112 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Project Pages Navigation - Above Card Header */}
+        {/* Project Pages Navigation with Folder Support */}
         {filteredProjects.length > 1 && (
           <div className="mb-4">
             <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {filteredProjects.map((project: any, index: number) => {
-                  const projectColor = getProjectColor(project.id);
-                  return (
+                {expandedFolderId ? (
+                  <>
+                    {/* Inside folder view - back button + folder projects */}
                     <Button
-                      key={`name-${project.id}`}
                       variant="outline"
                       size="sm"
-                      className="h-7 px-3 text-xs font-medium whitespace-nowrap flex-shrink-0 rounded-full border transition-all duration-200 hover:shadow-sm"
-                      style={{
-                        backgroundColor: projectColor + '15',
-                        borderColor: projectColor + '40',
-                        color: projectColor
-                      }}
-                      onClick={() => {
-                        // Scroll the carousel to show this project
-                        const carouselItem = document.querySelector(`[data-project-id="${project.id}"]`);
-                        if (carouselItem) {
-                          carouselItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                        }
-                      }}
+                      className="h-7 px-3 text-xs font-medium whitespace-nowrap flex-shrink-0 rounded-full border transition-all duration-200 hover:shadow-sm bg-slate-50 border-slate-300 text-slate-600"
+                      onClick={() => setExpandedFolderId(null)}
                     >
-                      <span className="w-2 h-2 rounded-full mr-2" style={{
-                        backgroundColor: projectColor
-                      }}></span>
-                      {project.name}
+                      <ChevronLeft className="h-3 w-3 mr-1" />
+                      Back
                     </Button>
-                  );
-                })}
-              </div>
+                    <span className="flex items-center gap-1 text-xs font-medium text-slate-500 px-1">
+                      <Folder className="h-3.5 w-3.5" />
+                      {folders.find((f: any) => f.id === expandedFolderId)?.name}
+                    </span>
+                    {filteredProjects
+                      .filter((p: any) => p.folderId === expandedFolderId)
+                      .map((project: any) => {
+                        const projectColor = getProjectColor(project.id);
+                        return (
+                          <Button
+                            key={`name-${project.id}`}
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-3 text-xs font-medium whitespace-nowrap flex-shrink-0 rounded-full border transition-all duration-200 hover:shadow-sm"
+                            style={{
+                              backgroundColor: projectColor + '15',
+                              borderColor: projectColor + '40',
+                              color: projectColor
+                            }}
+                            onClick={() => {
+                              const carouselItem = document.querySelector(`[data-project-id="${project.id}"]`);
+                              if (carouselItem) {
+                                carouselItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                              }
+                            }}
+                          >
+                            <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: projectColor }}></span>
+                            {project.name}
+                          </Button>
+                        );
+                      })}
+                  </>
+                ) : (
+                  <>
+                    {/* Root view - folders + unfiled projects */}
+                    {folders.map((folder: any) => {
+                      const count = filteredProjects.filter((p: any) => p.folderId === folder.id).length;
+                      if (count === 0) return null;
+                      return (
+                        <Button
+                          key={`folder-${folder.id}`}
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-3 text-xs font-medium whitespace-nowrap flex-shrink-0 rounded-full border transition-all duration-200 hover:shadow-sm bg-slate-100 border-slate-300 text-slate-700"
+                          onClick={() => setExpandedFolderId(folder.id)}
+                        >
+                          <Folder className="h-3 w-3 mr-1.5" />
+                          {folder.name}
+                          <span className="ml-1.5 text-slate-400">({count})</span>
+                        </Button>
+                      );
+                    })}
 
+                    {/* Separator between folders and unfiled projects */}
+                    {folders.length > 0 && filteredProjects.some((p: any) => !p.folderId) && (
+                      <span className="text-slate-300 mx-0.5 self-center">|</span>
+                    )}
+
+                    {/* Unfiled projects */}
+                    {filteredProjects
+                      .filter((p: any) => !p.folderId)
+                      .map((project: any) => {
+                        const projectColor = getProjectColor(project.id);
+                        return (
+                          <Button
+                            key={`name-${project.id}`}
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-3 text-xs font-medium whitespace-nowrap flex-shrink-0 rounded-full border transition-all duration-200 hover:shadow-sm"
+                            style={{
+                              backgroundColor: projectColor + '15',
+                              borderColor: projectColor + '40',
+                              color: projectColor
+                            }}
+                            onClick={() => {
+                              const carouselItem = document.querySelector(`[data-project-id="${project.id}"]`);
+                              if (carouselItem) {
+                                carouselItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                              }
+                            }}
+                          >
+                            <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: projectColor }}></span>
+                            {project.name}
+                          </Button>
+                        );
+                      })}
+                  </>
+                )}
+              </div>
             </div>
           </div>
         )}
