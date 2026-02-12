@@ -562,9 +562,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (folderId !== null && folderId !== undefined && (typeof folderId !== 'number' || isNaN(folderId))) {
         return res.status(400).json({ message: "Invalid folder ID" });
       }
-      // Validate folder exists and belongs to user
+      // Validate folder belongs to user (FK constraint enforces existence)
       if (folderId !== null && folderId !== undefined) {
-        const [folder] = await db.select().from(projectFolders)
+        const [folder] = await db.select({ id: projectFolders.id }).from(projectFolders)
           .where(and(eq(projectFolders.id, folderId), eq(projectFolders.createdBy, userId)));
         if (!folder) {
           return res.status(404).json({ message: "Folder not found" });

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, date, timestamp, doublePrecision, time, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, date, timestamp, doublePrecision, time, jsonb, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -179,7 +179,9 @@ export const projects = pgTable("projects", {
   structuredContext: text("structured_context"), // JSON stringified ContextData for AI context
   // Folder organization
   folderId: integer("folder_id").references(() => projectFolders.id, { onDelete: 'set null' }),
-});
+}, (table) => ({
+  folderIdIdx: index("projects_folder_id_idx").on(table.folderId),
+}));
 
 export const insertProjectSchema = createInsertSchema(projects).omit({
   id: true,

@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Building, ChevronDown, ChevronUp, ChevronLeft, Folder, FolderPlus, Pencil, Trash2, FolderInput, FolderMinus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -33,7 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { ProjectFolder } from "@/types";
+import type { Project, ProjectFolder } from "@/types";
 
 interface ProjectSelectorProps {
   selectedProjectId?: number | string;
@@ -64,15 +65,17 @@ export function ProjectSelector({
   const [folderName, setFolderName] = useState("");
   const [targetFolderId, setTargetFolderId] = useState<number | null>(null);
 
-  const handleExpandedChange = (expanded: boolean) => {
+  const { toast } = useToast();
+
+  const handleExpandedChange = useCallback((expanded: boolean) => {
     setIsExpanded(expanded);
     onExpandedChange?.(expanded);
     if (!expanded) {
       setActiveFolderId(null);
     }
-  };
+  }, [onExpandedChange]);
 
-  const { data: projects = [], isLoading: projectsLoading } = useQuery<any[]>({
+  const { data: projects = [], isLoading: projectsLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
   });
 
@@ -82,104 +85,104 @@ export function ProjectSelector({
 
   const isLoading = projectsLoading || foldersLoading;
 
-  const handleProjectClick = (projectId: string) => {
+  // Pre-compute folder-to-project mappings once (O(P) instead of O(F*P))
+  const projectsByFolder = useMemo(() => {
+    const map = new Map<number | null, Project[]>();
+    for (const p of projects) {
+      const key = p.folderId ?? null;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(p);
+    }
+    return map;
+  }, [projects]);
+
+  const unfiledProjects = useMemo(() => projectsByFolder.get(null) ?? [], [projectsByFolder]);
+  const folderProjects = useMemo(
+    () => activeFolderId ? (projectsByFolder.get(activeFolderId) ?? []) : [],
+    [projectsByFolder, activeFolderId]
+  );
+
+  const handleProjectClick = useCallback((projectId: string) => {
     onChange(projectId);
     if (projectId !== "all" && projectId.toString() !== "0") {
       if (window.location.pathname.includes("/projects/")) {
         navigate(`/projects/${projectId}`);
       }
     }
-  };
+  }, [onChange, navigate]);
 
-  // Folder mutations
+  // Folder mutations with error handling
   const createFolder = async () => {
     if (!folderName.trim()) return;
-    await apiRequest("/api/project-folders", "POST", { name: folderName.trim() });
-    queryClient.invalidateQueries({ queryKey: ["/api/project-folders"] });
-    setFolderName("");
-    setCreateFolderOpen(false);
+    try {
+      await apiRequest("/api/project-folders", "POST", { name: folderName.trim() });
+      queryClient.invalidateQueries({ queryKey: ["/api/project-folders"] });
+      setFolderName("");
+      setCreateFolderOpen(false);
+    } catch {
+      toast({ title: "Failed to create folder", variant: "destructive" });
+    }
   };
 
   const renameFolder = async () => {
     if (!folderName.trim() || !targetFolderId) return;
-    await apiRequest(`/api/project-folders/${targetFolderId}`, "PATCH", { name: folderName.trim() });
-    queryClient.invalidateQueries({ queryKey: ["/api/project-folders"] });
-    setFolderName("");
-    setRenameFolderOpen(false);
-    setTargetFolderId(null);
+    try {
+      await apiRequest(`/api/project-folders/${targetFolderId}`, "PATCH", { name: folderName.trim() });
+      queryClient.invalidateQueries({ queryKey: ["/api/project-folders"] });
+      setFolderName("");
+      setRenameFolderOpen(false);
+      setTargetFolderId(null);
+    } catch {
+      toast({ title: "Failed to rename folder", variant: "destructive" });
+    }
   };
 
   const deleteFolder = async () => {
     if (!targetFolderId) return;
-    await apiRequest(`/api/project-folders/${targetFolderId}`, "DELETE");
-    queryClient.invalidateQueries({ queryKey: ["/api/project-folders"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
-    if (activeFolderId === targetFolderId) setActiveFolderId(null);
-    setDeleteFolderOpen(false);
-    setTargetFolderId(null);
+    try {
+      await apiRequest(`/api/project-folders/${targetFolderId}`, "DELETE");
+      queryClient.invalidateQueries({ queryKey: ["/api/project-folders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      if (activeFolderId === targetFolderId) setActiveFolderId(null);
+      setDeleteFolderOpen(false);
+      setTargetFolderId(null);
+    } catch {
+      toast({ title: "Failed to delete folder", variant: "destructive" });
+    }
   };
 
   const moveProjectToFolder = async (projectId: number, folderId: number | null) => {
-    await apiRequest(`/api/projects/${projectId}/folder`, "PATCH", { folderId });
-    queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+    try {
+      await apiRequest(`/api/projects/${projectId}/folder`, "PATCH", { folderId });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+    } catch {
+      toast({ title: "Failed to move project", variant: "destructive" });
+    }
   };
 
-  // Theme-based color helpers
-  const getContainerBg = () => {
-    if (theme === 'orange') return 'bg-orange-50';
-    if (theme === 'blue') return 'bg-blue-50';
-    if (theme === 'slate') return 'bg-slate-100';
-    return 'bg-green-50';
-  };
+  // Theme-based color helpers (memoized on theme prop)
+  const themeColors = useMemo(() => {
+    const t = theme;
+    return {
+      containerBg: t === 'orange' ? 'bg-orange-50' : t === 'blue' ? 'bg-blue-50' : t === 'slate' ? 'bg-slate-100' : 'bg-green-50',
+      hover: t === 'orange' ? 'hover:bg-orange-200' : t === 'blue' ? 'hover:bg-blue-200' : t === 'slate' ? 'hover:bg-slate-200' : 'hover:bg-green-200',
+      selected: t === 'orange' ? 'bg-orange-800 text-white' : t === 'blue' ? 'bg-blue-800 text-white' : t === 'slate' ? 'bg-slate-700 text-white' : 'bg-green-800 text-white',
+      unselected: t === 'orange' ? 'bg-white text-orange-700 border-orange-300' : t === 'blue' ? 'bg-white text-blue-700 border-blue-300' : t === 'slate' ? 'bg-white text-slate-700 border-slate-300' : 'bg-white text-green-700 border-green-300',
+      projectUnselected: t === 'orange' ? 'bg-white text-orange-800 border-orange-200' : t === 'blue' ? 'bg-white text-blue-800 border-blue-200' : t === 'slate' ? 'bg-white text-slate-800 border-slate-200' : 'bg-white text-green-800 border-green-200',
+      folder: t === 'orange' ? 'bg-orange-100 text-orange-900 border-orange-300' : t === 'blue' ? 'bg-blue-100 text-blue-900 border-blue-300' : t === 'slate' ? 'bg-slate-200 text-slate-900 border-slate-400' : 'bg-green-100 text-green-900 border-green-300',
+      addFolder: t === 'orange' ? 'bg-transparent text-orange-500 border-orange-300 border-dashed' : t === 'blue' ? 'bg-transparent text-blue-500 border-blue-300 border-dashed' : t === 'slate' ? 'bg-transparent text-slate-500 border-slate-300 border-dashed' : 'bg-transparent text-green-500 border-green-300 border-dashed',
+      border: t === 'orange' ? '#f97316' : t === 'blue' ? '#3b82f6' : t === 'slate' ? '#64748b' : '#22c55e',
+    };
+  }, [theme]);
 
-  const getHoverColor = () => {
-    if (theme === 'orange') return 'hover:bg-orange-200';
-    if (theme === 'blue') return 'hover:bg-blue-200';
-    if (theme === 'slate') return 'hover:bg-slate-200';
-    return 'hover:bg-green-200';
-  };
-
-  const getSelectedColors = () => {
-    if (theme === 'orange') return 'bg-orange-800 text-white';
-    if (theme === 'blue') return 'bg-blue-800 text-white';
-    if (theme === 'slate') return 'bg-slate-700 text-white';
-    return 'bg-green-800 text-white';
-  };
-
-  const getUnselectedColors = () => {
-    if (theme === 'orange') return 'bg-white text-orange-700 border-orange-300';
-    if (theme === 'blue') return 'bg-white text-blue-700 border-blue-300';
-    if (theme === 'slate') return 'bg-white text-slate-700 border-slate-300';
-    return 'bg-white text-green-700 border-green-300';
-  };
-
-  const getProjectUnselectedColors = () => {
-    if (theme === 'orange') return 'bg-white text-orange-800 border-orange-200';
-    if (theme === 'blue') return 'bg-white text-blue-800 border-blue-200';
-    if (theme === 'slate') return 'bg-white text-slate-800 border-slate-200';
-    return 'bg-white text-green-800 border-green-200';
-  };
-
-  const getFolderColors = () => {
-    if (theme === 'orange') return 'bg-orange-100 text-orange-900 border-orange-300';
-    if (theme === 'blue') return 'bg-blue-100 text-blue-900 border-blue-300';
-    if (theme === 'slate') return 'bg-slate-200 text-slate-900 border-slate-400';
-    return 'bg-green-100 text-green-900 border-green-300';
-  };
-
-  const getAddFolderColors = () => {
-    if (theme === 'orange') return 'bg-transparent text-orange-500 border-orange-300 border-dashed';
-    if (theme === 'blue') return 'bg-transparent text-blue-500 border-blue-300 border-dashed';
-    if (theme === 'slate') return 'bg-transparent text-slate-500 border-slate-300 border-dashed';
-    return 'bg-transparent text-green-500 border-green-300 border-dashed';
-  };
-
-  const getBorderColor = () => {
-    if (theme === 'orange') return '#f97316';
-    if (theme === 'blue') return '#3b82f6';
-    if (theme === 'slate') return '#64748b';
-    return '#22c55e';
-  };
+  const selectedProject = useMemo(
+    () => projects.find(p => p.id.toString() === selectedProjectId?.toString()),
+    [projects, selectedProjectId]
+  );
+  const activeFolder = useMemo(
+    () => folders.find(f => f.id === activeFolderId),
+    [folders, activeFolderId]
+  );
 
   if (isLoading) {
     return (
@@ -187,23 +190,16 @@ export function ProjectSelector({
     );
   }
 
-  const selectedProject = projects.find(p => p.id.toString() === selectedProjectId?.toString());
-  const activeFolder = folders.find(f => f.id === activeFolderId);
-  const unfiledProjects = projects.filter(p => !p.folderId);
-  const folderProjects = activeFolderId
-    ? projects.filter(p => p.folderId === activeFolderId)
-    : [];
-
   // Render a project badge with context menu
-  const renderProjectBadge = (project: any) => (
+  const renderProjectBadge = (project: Project) => (
     <ContextMenu key={project.id}>
       <ContextMenuTrigger>
         <Badge
           variant={selectedProjectId?.toString() === project.id.toString() ? "default" : "secondary"}
-          className={`cursor-pointer transition-colors ${getHoverColor()} ${
+          className={`cursor-pointer transition-colors ${themeColors.hover} ${
             selectedProjectId?.toString() === project.id.toString()
-              ? getSelectedColors()
-              : getProjectUnselectedColors()
+              ? themeColors.selected
+              : themeColors.projectUnselected
           }`}
           onClick={() => handleProjectClick(project.id.toString())}
         >
@@ -244,13 +240,13 @@ export function ProjectSelector({
 
   // Render a folder badge with context menu
   const renderFolderBadge = (folder: ProjectFolder) => {
-    const projectCount = projects.filter(p => p.folderId === folder.id).length;
+    const projectCount = (projectsByFolder.get(folder.id) ?? []).length;
     return (
       <ContextMenu key={folder.id}>
         <ContextMenuTrigger>
           <Badge
             variant="outline"
-            className={`cursor-pointer transition-colors ${getHoverColor()} ${getFolderColors()} flex items-center gap-1`}
+            className={`cursor-pointer transition-colors ${themeColors.hover} ${themeColors.folder} flex items-center gap-1`}
             onClick={() => setActiveFolderId(folder.id)}
           >
             <Folder className="h-3 w-3" />
@@ -286,7 +282,7 @@ export function ProjectSelector({
   return (
     <>
       <div
-        className={`${getContainerBg()} p-2 rounded-lg w-full ${className}`}
+        className={`${themeColors.containerBg} p-2 rounded-lg w-full ${className}`}
         onMouseEnter={() => handleExpandedChange(true)}
         onMouseLeave={() => handleExpandedChange(false)}
       >
@@ -296,10 +292,10 @@ export function ProjectSelector({
           {includeAllOption && (
             <Badge
               variant={selectedProjectId === "all" || !selectedProjectId ? "default" : "outline"}
-              className={`cursor-pointer transition-colors ${getHoverColor()} ${
+              className={`cursor-pointer transition-colors ${themeColors.hover} ${
                 selectedProjectId === "all" || !selectedProjectId
-                  ? getSelectedColors()
-                  : getUnselectedColors()
+                  ? themeColors.selected
+                  : themeColors.unselected
               }`}
               onClick={() => {
                 handleProjectClick("all");
@@ -314,7 +310,7 @@ export function ProjectSelector({
           {!isExpanded && selectedProject && (
             <Badge
               variant="default"
-              className={`cursor-pointer transition-colors ${getSelectedColors()}`}
+              className={`cursor-pointer transition-colors ${themeColors.selected}`}
               onClick={() => handleProjectClick(selectedProject.id.toString())}
             >
               {selectedProject.name}
@@ -325,17 +321,22 @@ export function ProjectSelector({
           {!isExpanded && activeFolder && !selectedProject && (
             <Badge
               variant="outline"
-              className={`${getFolderColors()} flex items-center gap-1`}
+              className={`${themeColors.folder} flex items-center gap-1`}
             >
               <Folder className="h-3 w-3" />
               {activeFolder.name}
             </Badge>
           )}
 
-          {/* Expand/Collapse indicator */}
+          {/* Expand/Collapse indicator - clickable for keyboard accessibility */}
           <Badge
             variant="outline"
-            className={`cursor-pointer transition-colors ${getHoverColor()} ${getUnselectedColors()} flex items-center gap-1`}
+            className={`cursor-pointer transition-colors ${themeColors.hover} ${themeColors.unselected} flex items-center gap-1`}
+            onClick={() => handleExpandedChange(!isExpanded)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleExpandedChange(!isExpanded); } }}
+            aria-expanded={isExpanded}
           >
             {isExpanded ? (
               <ChevronUp className="h-3 w-3" />
@@ -349,19 +350,19 @@ export function ProjectSelector({
 
         {/* Expanded content */}
         {isExpanded && (
-          <div className="flex items-center gap-2 flex-wrap mt-2 pt-2 border-t border-opacity-20" style={{ borderColor: getBorderColor() }}>
+          <div className="flex items-center gap-2 flex-wrap mt-2 pt-2 border-t border-opacity-20" style={{ borderColor: themeColors.border }}>
             {activeFolderId ? (
               <>
                 {/* Inside a folder view */}
                 <Badge
                   variant="outline"
-                  className={`cursor-pointer transition-colors ${getHoverColor()} ${getUnselectedColors()} flex items-center gap-1`}
+                  className={`cursor-pointer transition-colors ${themeColors.hover} ${themeColors.unselected} flex items-center gap-1`}
                   onClick={() => setActiveFolderId(null)}
                 >
                   <ChevronLeft className="h-3 w-3" />
                   Back
                 </Badge>
-                <span className="text-sm font-medium flex items-center gap-1 px-1" style={{ color: getBorderColor() }}>
+                <span className="text-sm font-medium flex items-center gap-1 px-1" style={{ color: themeColors.border }}>
                   <Folder className="h-3.5 w-3.5" />
                   {activeFolder?.name}
                 </span>
@@ -379,7 +380,7 @@ export function ProjectSelector({
                 {/* + Folder button */}
                 <Badge
                   variant="outline"
-                  className={`cursor-pointer transition-colors ${getAddFolderColors()} flex items-center gap-1`}
+                  className={`cursor-pointer transition-colors ${themeColors.addFolder} flex items-center gap-1`}
                   onClick={() => {
                     setFolderName("");
                     setCreateFolderOpen(true);
