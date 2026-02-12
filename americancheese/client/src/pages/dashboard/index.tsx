@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
+import { useNav } from "@/contexts/NavContext";
+import type { NavPillData } from "@/contexts/NavContext";
 import { apiRequest } from "@/lib/queryClient";
 import { hexToRgba, lightenColor, darkenColor, getStatusBgColor, formatTaskStatus, getTier1Color as getUnifiedTier1Color, getTier2Color as getUnifiedTier2Color } from "@/lib/unified-color-system";
 import { COLOR_THEMES as THEMES } from "@/lib/color-themes";
@@ -135,6 +137,7 @@ const convertLinksToHtml = (text: string) => {
 
 export default function DashboardPage() {
   const { navigateToTab } = useTabNavigation();
+  const { setPills, setActions } = useNav();
   const [, navigate] = useLocation();
   const params = useParams();
   const projectIdFromUrl = params.projectId ? Number(params.projectId) : undefined;
@@ -500,6 +503,69 @@ export default function DashboardPage() {
     totalBudget,
     totalSpent
   };
+
+  // Inject nav pills for consolidated TopNav (desktop only)
+  const upcomingEventsCount = useMemo(() => {
+    const now = new Date();
+    const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return tasks.filter((t: any) => {
+      if (t.completed) return false;
+      const end = t.endDate ? new Date(t.endDate) : null;
+      return end && end >= now && end <= weekFromNow;
+    }).length;
+  }, [tasks]);
+
+  useEffect(() => {
+    const pillData: NavPillData[] = [
+      { id: 'projects', icon: Building, count: projects.length, label: 'Projects', navigateTo: '/', color: '#6366f1', isActive: true },
+      { id: 'tasks', icon: CheckSquare, count: metrics.openTasks, label: 'Tasks', navigateTo: '/tasks', color: '#22c55e', isActive: false },
+      { id: 'events', icon: Calendar, count: upcomingEventsCount, label: 'Events', navigateTo: '/calendar', color: '#06b6d4', isActive: false },
+      { id: 'materials', icon: Package, count: metrics.pendingMaterials, label: 'Materials', navigateTo: '/materials', color: '#f97316', isActive: false },
+      { id: 'contacts', icon: Users, count: contacts.length, label: 'Contacts', navigateTo: '/contacts', color: '#64748b', isActive: false },
+    ];
+    setPills(pillData);
+
+    return () => {
+      setPills([]);
+      setActions(null);
+    };
+  }, [projects.length, metrics.openTasks, metrics.pendingMaterials, contacts.length, upcomingEventsCount, setPills, setActions]);
+
+  // Inject nav actions (search, filter, New Project) for consolidated TopNav
+  useEffect(() => {
+    setActions(
+      <>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Input
+            placeholder="Search projects..."
+            className="pl-9 h-9 w-56 bg-white border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all shadow-sm rounded-lg text-sm"
+            value={searchQuery}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[130px] h-9 border-slate-200 shadow-sm rounded-lg bg-white text-sm">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Projects</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="on_hold">On Hold</SelectItem>
+            <SelectItem value="planning">Planning</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button
+          onClick={() => setCreateDialogOpen(true)}
+          className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm hover:shadow transition-all rounded-lg px-3 text-sm"
+        >
+          <Plus className="mr-1.5 h-4 w-4" />
+          New Project
+        </Button>
+      </>
+    );
+  }, [searchQuery, statusFilter, setActions]);
 
   // Upcoming deadlines
   const upcomingDeadlines = tasks.filter((task: any) => !task.completed)
@@ -1012,53 +1078,21 @@ export default function DashboardPage() {
   return (
     <Layout>
       <div className="space-y-3 w-full max-w-full overflow-hidden px-1 sm:px-3">
-        {/* Header - Clean & Minimal */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="bg-indigo-600 p-2 rounded-lg shadow-sm">
-              <Building className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
-              <p className="text-sm text-slate-500">Overview of all active projects</p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            {/* Mini Ticker Metrics - Desktop inline */}
-            <div className="hidden lg:flex items-center gap-1.5 mr-2">
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-full border border-slate-200 shadow-sm">
-                <Building className="h-3 w-3 text-indigo-500" />
-                <span className="text-xs font-semibold text-slate-800">{metrics.activeProjects}</span>
-                <span className="text-xs text-slate-500">Projects</span>
-              </div>
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-full border border-slate-200 shadow-sm">
-                <CheckSquare className="h-3 w-3 text-green-500" />
-                <span className="text-xs font-semibold text-slate-800">{metrics.openTasks}</span>
-                <span className="text-xs text-slate-500">Tasks</span>
-              </div>
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-full border border-slate-200 shadow-sm">
-                <Package className="h-3 w-3 text-orange-500" />
-                <span className="text-xs font-semibold text-slate-800">{metrics.pendingMaterials}</span>
-                <span className="text-xs text-slate-500">Pending</span>
-              </div>
-            </div>
-
-            <div className="relative flex-1 sm:flex-initial">
+        {/* Mobile-only: search, filter, and metrics (desktop uses TopNav pills + actions) */}
+        <div className="md:hidden space-y-3 mb-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
                 placeholder="Search projects..."
-                className="pl-9 h-10 w-full sm:w-64 bg-white border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all shadow-sm rounded-lg"
+                className="pl-9 h-10 w-full bg-white border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all shadow-sm rounded-lg"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
               />
             </div>
-
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[140px] h-10 border-slate-200 shadow-sm rounded-lg bg-white">
-                <div className="flex items-center gap-2">
-                  <SelectValue placeholder="Status" />
-                </div>
+              <SelectTrigger className="w-[130px] h-10 border-slate-200 shadow-sm rounded-lg bg-white">
+                <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Projects</SelectItem>
@@ -1068,33 +1102,30 @@ export default function DashboardPage() {
                 <SelectItem value="planning">Planning</SelectItem>
               </SelectContent>
             </Select>
-
             <Button
               onClick={handleCreateProject}
-              className="h-10 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm hover:shadow transition-all rounded-lg px-4 w-full sm:w-auto"
+              className="h-10 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm rounded-lg px-4 w-full"
             >
               <Plus className="mr-2 h-4 w-4" />
               New Project
             </Button>
           </div>
-        </div>
-
-        {/* Mini Ticker Metrics - Mobile only */}
-        <div className="flex lg:hidden flex-wrap items-center gap-2 mb-6">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
-            <Building className="h-3.5 w-3.5 text-indigo-500" />
-            <span className="text-sm font-semibold text-slate-800">{metrics.activeProjects}</span>
-            <span className="text-xs text-slate-500">Projects</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
-            <CheckSquare className="h-3.5 w-3.5 text-green-500" />
-            <span className="text-sm font-semibold text-slate-800">{metrics.openTasks}</span>
-            <span className="text-xs text-slate-500">Tasks</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
-            <Package className="h-3.5 w-3.5 text-orange-500" />
-            <span className="text-sm font-semibold text-slate-800">{metrics.pendingMaterials}</span>
-            <span className="text-xs text-slate-500">Pending</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
+              <Building className="h-3.5 w-3.5 text-indigo-500" />
+              <span className="text-sm font-semibold text-slate-800">{metrics.activeProjects}</span>
+              <span className="text-xs text-slate-500">Projects</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
+              <CheckSquare className="h-3.5 w-3.5 text-green-500" />
+              <span className="text-sm font-semibold text-slate-800">{metrics.openTasks}</span>
+              <span className="text-xs text-slate-500">Tasks</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
+              <Package className="h-3.5 w-3.5 text-orange-500" />
+              <span className="text-sm font-semibold text-slate-800">{metrics.pendingMaterials}</span>
+              <span className="text-xs text-slate-500">Pending</span>
+            </div>
           </div>
         </div>
 
