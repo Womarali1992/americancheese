@@ -26,7 +26,7 @@ import { CreateProjectDialog } from "./CreateProjectDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { MoreHorizontal, Search, Plus, Building, Pencil, Trash2, Package, Download, Upload } from "lucide-react";
+import { MoreHorizontal, Search, Plus, Building, Pencil, Trash2, Package, Download, Upload, Folder, ChevronDown, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { Project } from "@/types";
@@ -69,7 +69,22 @@ export default function ProjectsPage() {
   const { data: projects = [], isLoading } = useQuery<ProjectWithId[]>({
     queryKey: ["/api/projects"],
   });
-  
+
+  const { data: folders = [] } = useQuery<any[]>({
+    queryKey: ["/api/project-folders"],
+  });
+
+  const [collapsedFolders, setCollapsedFolders] = useState<Set<number>>(new Set());
+
+  const toggleFolder = (folderId: number) => {
+    setCollapsedFolders(prev => {
+      const next = new Set(prev);
+      if (next.has(folderId)) next.delete(folderId);
+      else next.add(folderId);
+      return next;
+    });
+  };
+
   // Fetch all materials to count them by project
   const { data: materials = [] } = useQuery<Material[]>({
     queryKey: ["/api/materials"],
@@ -209,6 +224,104 @@ export default function ProjectsPage() {
     }
   };
 
+  const renderProjectCard = (project: ProjectWithId) => (
+    <Card
+      key={project.id}
+      className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+      onClick={() => navigate(`/projects/${project.id}`)}
+    >
+      <div
+        className="h-36 relative"
+        style={getProjectCardStyle(project.id, project.status)}
+      >
+        <div className="absolute top-3 right-3 bg-white bg-opacity-90 rounded-md px-2 py-1 text-xs font-medium">
+          <StatusBadge status={project.status} />
+        </div>
+        <div className="absolute bottom-3 right-3 bg-white bg-opacity-90 rounded-md px-2 py-1 text-xs font-medium flex items-center">
+          <Package className="h-3 w-3 mr-1" />
+          <span>{getMaterialCountForProject(project.id)} Materials</span>
+        </div>
+      </div>
+      <CardContent className="p-4">
+        <h3 className="text-lg font-semibold mb-1">{project.name}</h3>
+        <p className="text-sm text-slate-500 mb-3">{project.location}</p>
+
+        <div className="flex justify-between text-sm mb-4">
+          <div>
+            <p className="text-slate-500">Start Date</p>
+            <p className="font-medium">{formatDate(project.startDate)}</p>
+          </div>
+          <div>
+            <p className="text-slate-500">End Date</p>
+            <p className="font-medium">{formatDate(project.endDate)}</p>
+          </div>
+        </div>
+
+        <ProgressBar value={project.progress || 0} className="mb-3" />
+
+        <div className="flex justify-between items-center">
+          <AvatarGroup users={mockUsers} />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => { e.stopPropagation(); }}
+              >
+                <MoreHorizontal className="h-5 w-5 text-slate-500 hover:text-slate-700" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedProject(project);
+                  setEditDialogOpen(true);
+                }}
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit Project
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleExportProject(project.id, project.name);
+                }}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-red-600"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
+                    fetch(`/api/projects/${project.id}`, { method: "DELETE" })
+                      .then(res => {
+                        if (res.ok) {
+                          toast({ title: "Project Deleted", description: "The project has been successfully deleted." });
+                          window.location.reload();
+                        } else {
+                          throw new Error("Failed to delete project");
+                        }
+                      })
+                      .catch(err => {
+                        toast({ title: "Error", description: "Failed to delete the project. Please try again.", variant: "destructive" });
+                        console.error(err);
+                      });
+                  }
+                }}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Project
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   if (isLoading) {
     return (
       <Layout>
@@ -343,117 +456,56 @@ export default function ProjectsPage() {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredProjects?.map((project) => (
-              <Card 
-                key={project.id} 
-                className="bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => navigate(`/projects/${project.id}`)}
-              >
-                <div 
-                  className="h-36 relative"
-                  style={getProjectCardStyle(project.id, project.status)}
-                >
-                  <div className="absolute top-3 right-3 bg-white bg-opacity-90 rounded-md px-2 py-1 text-xs font-medium">
-                    <StatusBadge status={project.status} />
-                  </div>
-                  {/* Material count badge */}
-                  <div className="absolute bottom-3 right-3 bg-white bg-opacity-90 rounded-md px-2 py-1 text-xs font-medium flex items-center">
-                    <Package className="h-3 w-3 mr-1" />
-                    <span>{getMaterialCountForProject(project.id)} Materials</span>
+          <div className="space-y-6">
+            {/* Folder sections */}
+            {folders.map((folder: any) => {
+              const folderProjects = filteredProjects.filter((p: any) => p.folderId === folder.id);
+              if (folderProjects.length === 0) return null;
+              const isCollapsed = collapsedFolders.has(folder.id);
+              return (
+                <div key={`folder-${folder.id}`}>
+                  <button
+                    className="flex items-center gap-2 mb-3 text-left w-full group"
+                    onClick={() => toggleFolder(folder.id)}
+                  >
+                    {isCollapsed ? (
+                      <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-slate-400 group-hover:text-slate-600" />
+                    )}
+                    <Folder className="h-4 w-4 text-slate-500" />
+                    <span className="text-sm font-semibold text-slate-700">{folder.name}</span>
+                    <span className="text-xs text-slate-400">({folderProjects.length})</span>
+                  </button>
+                  {!isCollapsed && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {folderProjects.map((project: any) => renderProjectCard(project))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Unfiled projects */}
+            {(() => {
+              const unfiled = filteredProjects.filter((p: any) => !p.folderId);
+              if (unfiled.length === 0) return null;
+              const hasFolders = folders.some((f: any) => filteredProjects.some((p: any) => p.folderId === f.id));
+              return (
+                <div>
+                  {hasFolders && (
+                    <div className="flex items-center gap-2 mb-3">
+                      <Building className="h-4 w-4 text-slate-400" />
+                      <span className="text-sm font-semibold text-slate-500">Unfiled</span>
+                      <span className="text-xs text-slate-400">({unfiled.length})</span>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {unfiled.map((project: any) => renderProjectCard(project))}
                   </div>
                 </div>
-                <CardContent className="p-4">
-                  <h3 className="text-lg font-semibold mb-1">{project.name}</h3>
-                  <p className="text-sm text-slate-500 mb-3">{project.location}</p>
-                  
-                  <div className="flex justify-between text-sm mb-4">
-                    <div>
-                      <p className="text-slate-500">Start Date</p>
-                      <p className="font-medium">{formatDate(project.startDate)}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">End Date</p>
-                      <p className="font-medium">{formatDate(project.endDate)}</p>
-                    </div>
-                  </div>
-                  
-                  <ProgressBar value={project.progress || 0} className="mb-3" />
-                  
-                  <div className="flex justify-between items-center">
-                    <AvatarGroup users={mockUsers} />
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevent the card click event
-                          }}
-                        >
-                          <MoreHorizontal className="h-5 w-5 text-slate-500 hover:text-slate-700" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedProject(project);
-                            setEditDialogOpen(true);
-                          }}
-                        >
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Edit Project
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleExportProject(project.id, project.name);
-                          }}
-                        >
-                          <Download className="mr-2 h-4 w-4" />
-                          Export
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
-                              fetch(`/api/projects/${project.id}`, {
-                                method: "DELETE",
-                              })
-                                .then(res => {
-                                  if (res.ok) {
-                                    toast({
-                                      title: "Project Deleted",
-                                      description: "The project has been successfully deleted.",
-                                    });
-                                    // Refetch projects
-                                    window.location.reload();
-                                  } else {
-                                    throw new Error("Failed to delete project");
-                                  }
-                                })
-                                .catch(err => {
-                                  toast({
-                                    title: "Error",
-                                    description: "Failed to delete the project. Please try again.",
-                                    variant: "destructive",
-                                  });
-                                  console.error(err);
-                                });
-                            }
-                          }}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete Project
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+              );
+            })()}
           </div>
         )}
       </div>
