@@ -3,6 +3,15 @@
  * These types are kept in sync with the database schema in shared/schema.ts
  */
 
+export interface ProjectFolder {
+  id: number;
+  name: string;
+  color: string | null;
+  sortOrder: number;
+  createdBy: number | null;
+  createdAt: string;
+}
+
 export interface Project {
   id: number;
   name: string;
@@ -17,6 +26,7 @@ export interface Project {
   colorTheme: string | null; // Project-specific color theme
   useGlobalTheme: boolean | null; // Whether to use global theme
   presetId: string | null; // Category preset used for this project
+  folderId: number | null; // Folder organization
 }
 
 export interface Task {

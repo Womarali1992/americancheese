@@ -44,7 +44,9 @@ import {
   invoices,
   invoiceLineItems,
   taskCategories,
-  insertTaskCategorySchema
+  insertTaskCategorySchema,
+  projectFolders,
+  insertProjectFolderSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -433,6 +435,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   // Auth middleware is now applied in index.ts for the entire app
+
+  // Project Folder routes
+  const COLOR_HEX_REGEX = /^#[0-9a-fA-F]{3,8}$/;
+
+  app.get("/api/project-folders", async (req: Request, res: Response) => {
+    try {
+      const userId = req.session?.userId;
+      const folders = await db.select().from(projectFolders)
+        .where(eq(projectFolders.createdBy, userId))
+        .orderBy(projectFolders.sortOrder);
+      res.json(folders);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch project folders" });
+    }
+  });
+
+  app.post("/api/project-folders", async (req: Request, res: Response) => {
+    try {
+      const userId = req.session?.userId;
+      const parsed = insertProjectFolderSchema.parse(req.body);
+      if (!parsed.name || !parsed.name.trim()) {
+        return res.status(400).json({ message: "Folder name cannot be empty" });
+      }
+      if (parsed.name.length > 100) {
+        return res.status(400).json({ message: "Folder name cannot exceed 100 characters" });
+      }
+      if (parsed.color !== undefined && parsed.color !== null) {
+        if (typeof parsed.color !== 'string' || !COLOR_HEX_REGEX.test(parsed.color)) {
+          return res.status(400).json({ message: "Invalid color format. Use hex (e.g. #ff0000)" });
+        }
+      }
+      parsed.name = parsed.name.trim();
+      const [folder] = await db.insert(projectFolders).values({ ...parsed, createdBy: userId }).returning();
+      res.status(201).json(folder);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: fromZodError(error).message });
+      }
+      res.status(500).json({ message: "Failed to create project folder" });
+    }
+  });
+
+  app.patch("/api/project-folders/:id", async (req: Request, res: Response) => {
+    try {
+      const userId = req.session?.userId;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid folder ID" });
+      }
+      const updates: Record<string, unknown> = {};
+      if (req.body.name !== undefined) {
+        if (typeof req.body.name !== 'string' || !req.body.name.trim()) {
+          return res.status(400).json({ message: "Folder name cannot be empty" });
+        }
+        if (req.body.name.length > 100) {
+          return res.status(400).json({ message: "Folder name cannot exceed 100 characters" });
+        }
+        updates.name = req.body.name.trim();
+      }
+      if (req.body.color !== undefined) {
+        if (req.body.color !== null && (typeof req.body.color !== 'string' || !COLOR_HEX_REGEX.test(req.body.color))) {
+          return res.status(400).json({ message: "Invalid color format. Use hex (e.g. #ff0000)" });
+        }
+        updates.color = req.body.color;
+      }
+      if (req.body.sortOrder !== undefined) {
+        if (typeof req.body.sortOrder !== 'number' || !Number.isInteger(req.body.sortOrder)) {
+          return res.status(400).json({ message: "Sort order must be an integer" });
+        }
+        updates.sortOrder = req.body.sortOrder;
+      }
+
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ message: "No valid fields to update" });
+      }
+
+      const [folder] = await db.update(projectFolders).set(updates)
+        .where(and(eq(projectFolders.id, id), eq(projectFolders.createdBy, userId)))
+        .returning();
+      if (!folder) {
+        return res.status(404).json({ message: "Folder not found" });
+      }
+      res.json(folder);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update project folder" });
+    }
+  });
+
+  app.delete("/api/project-folders/:id", async (req: Request, res: Response) => {
+    try {
+      const userId = req.session?.userId;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid folder ID" });
+      }
+      // FK onDelete: 'set null' handles unfiling projects automatically
+      const [deleted] = await db.delete(projectFolders)
+        .where(and(eq(projectFolders.id, id), eq(projectFolders.createdBy, userId)))
+        .returning();
+      if (!deleted) {
+        return res.status(404).json({ message: "Folder not found" });
+      }
+      res.json({ message: "Folder deleted", folder: deleted });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete project folder" });
+    }
+  });
+
+  app.patch("/api/projects/:id/folder", async (req: Request, res: Response) => {
+    try {
+      const userId = req.session?.userId;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      // Verify user has access to this project
+      if (userId) {
+        const access = await storage.checkProjectAccess?.(userId, id);
+        if (access === false) {
+          return res.status(403).json({ message: "Access denied" });
+        }
+      }
+      const { folderId } = req.body;
+      // Validate folderId is a number or null
+      if (folderId !== null && folderId !== undefined && (typeof folderId !== 'number' || isNaN(folderId))) {
+        return res.status(400).json({ message: "Invalid folder ID" });
+      }
+      // Validate folder belongs to user (FK constraint enforces existence)
+      if (folderId !== null && folderId !== undefined) {
+        const [folder] = await db.select({ id: projectFolders.id }).from(projectFolders)
+          .where(and(eq(projectFolders.id, folderId), eq(projectFolders.createdBy, userId)));
+        if (!folder) {
+          return res.status(404).json({ message: "Folder not found" });
+        }
+      }
+      const [project] = await db.update(projects).set({ folderId: folderId ?? null }).where(eq(projects.id, id)).returning();
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      res.json(project);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update project folder" });
+    }
+  });
+
   // Project routes
   app.get("/api/projects", async (req: Request, res: Response) => {
     try {
