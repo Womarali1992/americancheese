@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { getProjectTheme, PROJECT_THEMES } from "@/lib/project-themes";
 import {
@@ -26,8 +27,8 @@ import { CreateProjectDialog } from "./CreateProjectDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { MoreHorizontal, Search, Plus, Building, Pencil, Trash2, Package, Download, Upload, Folder, ChevronDown, ChevronRight } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MoreHorizontal, Search, Plus, Building, Pencil, Trash2, Package, Download, Upload, Folder, FolderPlus, FolderInput, FolderMinus, ChevronDown, ChevronRight } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { Project } from "@/types";
 
@@ -83,6 +84,43 @@ export default function ProjectsPage() {
       else next.add(folderId);
       return next;
     });
+  };
+
+  // Folder management state
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [folderName, setFolderName] = useState("");
+
+  const createFolder = async () => {
+    if (!folderName.trim()) return;
+    try {
+      await apiRequest("/api/project-folders", "POST", { name: folderName.trim() });
+      queryClient.invalidateQueries({ queryKey: ["/api/project-folders"] });
+      setFolderName("");
+      setCreateFolderOpen(false);
+      toast({ title: "Folder created" });
+    } catch {
+      toast({ title: "Failed to create folder", variant: "destructive" });
+    }
+  };
+
+  const deleteFolder = async (folderId: number) => {
+    try {
+      await apiRequest(`/api/project-folders/${folderId}`, "DELETE");
+      queryClient.invalidateQueries({ queryKey: ["/api/project-folders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      toast({ title: "Folder deleted" });
+    } catch {
+      toast({ title: "Failed to delete folder", variant: "destructive" });
+    }
+  };
+
+  const moveProjectToFolder = async (projectId: number, folderId: number | null) => {
+    try {
+      await apiRequest(`/api/projects/${projectId}/folder`, "PATCH", { folderId });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+    } catch {
+      toast({ title: "Failed to move project", variant: "destructive" });
+    }
   };
 
   // Fetch all materials to count them by project
@@ -291,6 +329,30 @@ export default function ProjectsPage() {
                 <Download className="mr-2 h-4 w-4" />
                 Export
               </DropdownMenuItem>
+              {folders.length > 0 && folders.map((folder: any) => (
+                <DropdownMenuItem
+                  key={`move-${folder.id}`}
+                  disabled={(project as any).folderId === folder.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    moveProjectToFolder(project.id, folder.id);
+                  }}
+                >
+                  <FolderInput className="mr-2 h-4 w-4" />
+                  Move to {folder.name}
+                </DropdownMenuItem>
+              ))}
+              {(project as any).folderId && (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    moveProjectToFolder(project.id, null);
+                  }}
+                >
+                  <FolderMinus className="mr-2 h-4 w-4" />
+                  Remove from Folder
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 className="text-red-600"
                 onClick={(e) => {
@@ -396,6 +458,10 @@ export default function ProjectsPage() {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold hidden md:block">Projects</h2>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => { setFolderName(""); setCreateFolderOpen(true); }}>
+            <FolderPlus className="mr-1 h-4 w-4" />
+            New Folder
+          </Button>
           <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
             <Upload className="mr-1 h-4 w-4" />
             Import
@@ -460,27 +526,44 @@ export default function ProjectsPage() {
             {/* Folder sections */}
             {folders.map((folder: any) => {
               const folderProjects = filteredProjects.filter((p: any) => p.folderId === folder.id);
-              if (folderProjects.length === 0) return null;
               const isCollapsed = collapsedFolders.has(folder.id);
               return (
                 <div key={`folder-${folder.id}`}>
-                  <button
-                    className="flex items-center gap-2 mb-3 text-left w-full group"
-                    onClick={() => toggleFolder(folder.id)}
-                  >
-                    {isCollapsed ? (
-                      <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 text-slate-400 group-hover:text-slate-600" />
-                    )}
-                    <Folder className="h-4 w-4 text-slate-500" />
-                    <span className="text-sm font-semibold text-slate-700">{folder.name}</span>
-                    <span className="text-xs text-slate-400">({folderProjects.length})</span>
-                  </button>
+                  <div className="flex items-center gap-2 mb-3">
+                    <button
+                      className="flex items-center gap-2 text-left group flex-1"
+                      onClick={() => toggleFolder(folder.id)}
+                    >
+                      {isCollapsed ? (
+                        <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-slate-400 group-hover:text-slate-600" />
+                      )}
+                      <Folder className="h-4 w-4 text-slate-500" />
+                      <span className="text-sm font-semibold text-slate-700">{folder.name}</span>
+                      <span className="text-xs text-slate-400">({folderProjects.length})</span>
+                    </button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-slate-400 hover:text-red-500"
+                      onClick={() => {
+                        if (confirm(`Delete folder "${folder.name}"? Projects inside will be unfiled.`)) {
+                          deleteFolder(folder.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                   {!isCollapsed && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {folderProjects.map((project: any) => renderProjectCard(project))}
-                    </div>
+                    folderProjects.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {folderProjects.map((project: any) => renderProjectCard(project))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-slate-400 italic ml-8 mb-2">No projects in this folder</div>
+                    )
                   )}
                 </div>
               );
@@ -490,7 +573,7 @@ export default function ProjectsPage() {
             {(() => {
               const unfiled = filteredProjects.filter((p: any) => !p.folderId);
               if (unfiled.length === 0) return null;
-              const hasFolders = folders.some((f: any) => filteredProjects.some((p: any) => p.folderId === f.id));
+              const hasFolders = folders.length > 0;
               return (
                 <div>
                   {hasFolders && (
@@ -516,6 +599,28 @@ export default function ProjectsPage() {
         onOpenChange={setEditDialogOpen}
         project={selectedProject}
       />
+
+      {/* Create Folder Dialog */}
+      <Dialog open={createFolderOpen} onOpenChange={setCreateFolderOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Folder</DialogTitle>
+            <DialogDescription>
+              Create a new folder to organize your projects.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            placeholder="Folder name"
+            value={folderName}
+            onChange={(e) => setFolderName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") createFolder(); }}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateFolderOpen(false)}>Cancel</Button>
+            <Button onClick={createFolder} disabled={!folderName.trim()}>Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Import Project Dialog */}
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
