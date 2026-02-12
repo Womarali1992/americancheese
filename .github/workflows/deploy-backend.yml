@@ -131,9 +131,10 @@ jobs:
           chmod 600 .env
           echo "Production .env configured with americancheese database"
 
-          # Apply schema via SQL first (idempotent, no interactive prompts)
+          # Apply schema via idempotent SQL (db:push hangs on interactive prompts in CI)
           echo "Applying schema migrations via SQL..."
-          sudo -u postgres psql -d americancheese -c "
+          sudo -u postgres psql -d americancheese << 'SQLEOF'
+            -- Project Folders feature
             CREATE TABLE IF NOT EXISTS project_folders (
               id SERIAL PRIMARY KEY,
               name TEXT NOT NULL,
@@ -142,18 +143,13 @@ jobs:
               created_by INTEGER,
               created_at TIMESTAMP NOT NULL DEFAULT NOW()
             );
-            DO \$\$ BEGIN
+            DO $$ BEGIN
               ALTER TABLE projects ADD COLUMN folder_id INTEGER REFERENCES project_folders(id) ON DELETE SET NULL;
             EXCEPTION WHEN duplicate_column THEN NULL;
-            END \$\$;
+            END $$;
             CREATE INDEX IF NOT EXISTS projects_folder_id_idx ON projects(folder_id);
-          " 2>&1
+SQLEOF
           echo "SQL migrations applied"
-
-          # Run db:push with timeout (may hang on interactive prompts or fail on expression indexes)
-          echo "Running drizzle db:push (30s timeout)..."
-          timeout 30 npm run db:push 2>&1 || echo "db:push skipped (interactive prompt or expression index issue - SQL fallback already applied)"
-          echo "Schema push complete"
 
           # Grant permissions AFTER schema push (to include any new tables)
           echo "Granting permissions to americancheese user..."
