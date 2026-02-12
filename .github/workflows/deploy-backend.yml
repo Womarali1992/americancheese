@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'americancheese/**'
+      - '.github/workflows/deploy-backend.yml'
   workflow_dispatch: # Allow manual triggering
 
 jobs:
@@ -130,26 +131,28 @@ jobs:
           chmod 600 .env
           echo "Production .env configured with americancheese database"
 
-          # Run database schema push FIRST (creates tables)
-          echo "Pushing database schema to create tables..."
-          npm run db:push 2>&1 || {
-            echo "db:push failed (known issue with expression indexes). Applying schema via SQL..."
-            sudo -u postgres psql -d americancheese -c "
-              CREATE TABLE IF NOT EXISTS project_folders (
-                id SERIAL PRIMARY KEY,
-                name TEXT NOT NULL,
-                color TEXT,
-                sort_order INTEGER NOT NULL DEFAULT 0,
-                created_by INTEGER,
-                created_at TIMESTAMP NOT NULL DEFAULT NOW()
-              );
-              DO \$\$ BEGIN
-                ALTER TABLE projects ADD COLUMN folder_id INTEGER REFERENCES project_folders(id) ON DELETE SET NULL;
-              EXCEPTION WHEN duplicate_column THEN NULL;
-              END \$\$;
-              CREATE INDEX IF NOT EXISTS projects_folder_id_idx ON projects(folder_id);
-            " 2>&1 || echo "SQL fallback also had issues"
-          }
+          # Apply schema via SQL first (idempotent, no interactive prompts)
+          echo "Applying schema migrations via SQL..."
+          sudo -u postgres psql -d americancheese -c "
+            CREATE TABLE IF NOT EXISTS project_folders (
+              id SERIAL PRIMARY KEY,
+              name TEXT NOT NULL,
+              color TEXT,
+              sort_order INTEGER NOT NULL DEFAULT 0,
+              created_by INTEGER,
+              created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            );
+            DO \$\$ BEGIN
+              ALTER TABLE projects ADD COLUMN folder_id INTEGER REFERENCES project_folders(id) ON DELETE SET NULL;
+            EXCEPTION WHEN duplicate_column THEN NULL;
+            END \$\$;
+            CREATE INDEX IF NOT EXISTS projects_folder_id_idx ON projects(folder_id);
+          " 2>&1
+          echo "SQL migrations applied"
+
+          # Run db:push with timeout (may hang on interactive prompts or fail on expression indexes)
+          echo "Running drizzle db:push (30s timeout)..."
+          timeout 30 npm run db:push 2>&1 || echo "db:push skipped (interactive prompt or expression index issue - SQL fallback already applied)"
           echo "Schema push complete"
 
           # Grant permissions AFTER schema push (to include any new tables)
