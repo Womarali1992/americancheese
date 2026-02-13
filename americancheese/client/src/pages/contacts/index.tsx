@@ -58,7 +58,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useNavPills } from "@/hooks/useNavPills";
-import { useNav } from "@/contexts/NavContext";
 import { CreateContactDialog } from "./CreateContactDialog";
 import { Labor } from "@shared/schema";
 import { useMutation } from "@tanstack/react-query";
@@ -1086,50 +1085,24 @@ export default function ContactsPage() {
   const [contractorSpecialty, setContractorSpecialty] = useState("all");
   const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
   const [expandedContactId, setExpandedContactId] = useState<number | null>(null);
+  const [hoveredFolderId, setHoveredFolderId] = useState<number | null>(null);
+  const [searchExpanded, setSearchExpanded] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Inject nav pills and actions for TopNav
+  // Inject nav pills for TopNav
   useNavPills("contacts");
-  const { setActions } = useNav();
-
-  useEffect(() => {
-    setActions(
-      <>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input
-            placeholder="Search contacts..."
-            className="pl-9 h-9 w-48 bg-white border-slate-200 shadow-sm rounded-lg text-sm"
-            value={searchQuery}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-[130px] h-9 border-slate-200 shadow-sm rounded-lg bg-white text-sm">
-            <SelectValue placeholder="Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="contractor">Contractor</SelectItem>
-            <SelectItem value="supplier">Supplier</SelectItem>
-            <SelectItem value="consultant">Consultant</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button
-          onClick={() => setIsCreateContactOpen(true)}
-          className="h-9 bg-slate-600 hover:bg-slate-700 text-white shadow-sm rounded-lg px-3 text-sm"
-        >
-          <Plus className="mr-1.5 h-4 w-4" />
-          Add Contact
-        </Button>
-      </>
-    );
-    return () => { setActions(null); };
-  }, [searchQuery, typeFilter, setActions]);
 
   const { data: contacts = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/contacts"],
+  });
+
+  const { data: projects = [] } = useQuery<any[]>({
+    queryKey: ["/api/projects"],
+  });
+
+  const { data: projectFolders = [] } = useQuery<any[]>({
+    queryKey: ["/api/project-folders"],
   });
 
   // Group contacts by type
@@ -1325,108 +1298,178 @@ export default function ContactsPage() {
   return (
     <Layout>
       <div className="space-y-2 p-4">
-        <div className="bg-white border-2 border-slate-400 rounded-lg shadow-sm">
-          {/* First row with title and buttons */}
-          <div className="flex justify-between items-center p-3 sm:p-4 bg-slate-100 rounded-t-lg">
-            <div className="flex items-center gap-4 flex-1">
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-700">Contacts</h1>
-            </div>
-            <div className="hidden sm:flex items-center gap-2">
-              <Button 
-                variant="ghost"
-                className="bg-transparent border border-slate-500 text-slate-700 hover:bg-slate-200 font-medium h-9 px-4"
-                onClick={() => setIsCreateContactOpen(true)}
-                size="sm"
-              >
-                <Plus className="mr-2 h-4 w-4 text-slate-600" /> 
-                Add Contact
-              </Button>
-              
-              {/* Show All Projects button on desktop only when a project is selected */}
+        {/* Unified Header Card */}
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm w-full min-w-0 overflow-x-hidden"
+          onMouseLeave={() => setHoveredFolderId(null)}
+        >
+          {/* Row 1: Title + Folder badges + Controls */}
+          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-[#64748b] to-[#475569] bg-clip-text text-transparent flex-shrink-0">Contacts</h1>
+
+            {/* Folder badges */}
+            <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+              {projectFolders.map((folder: any) => {
+                const folderProjectCount = projects.filter((p: any) => p.folderId === folder.id).length;
+                const isHovered = hoveredFolderId === folder.id;
+                const hasSelectedProject = projectFilter !== "all" && projects.find((p: any) => p.id === Number(projectFilter))?.folderId === folder.id;
+                return (
+                  <div
+                    key={folder.id}
+                    className="relative"
+                    onMouseEnter={() => setHoveredFolderId(folder.id)}
+                  >
+                    <button
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                        hasSelectedProject
+                          ? 'bg-slate-600 text-white border-slate-600'
+                          : isHovered
+                            ? 'bg-slate-50 text-slate-600 border-slate-600'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-slate-600 hover:text-slate-600'
+                      }`}
+                    >
+                      <Folder className="h-3 w-3" />
+                      {folder.name}
+                      <span className="opacity-60">({folderProjectCount})</span>
+                    </button>
+                  </div>
+                );
+              })}
+              {/* Unfiled projects badge */}
+              {(() => {
+                const unfiledCount = projects.filter((p: any) => !p.folderId).length;
+                if (unfiledCount === 0) return null;
+                const isHovered = hoveredFolderId === -1;
+                const hasSelectedProject = projectFilter !== "all" && !projects.find((p: any) => p.id === Number(projectFilter))?.folderId;
+                return (
+                  <div
+                    className="relative"
+                    onMouseEnter={() => setHoveredFolderId(-1)}
+                  >
+                    <button
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                        hasSelectedProject
+                          ? 'bg-slate-600 text-white border-slate-600'
+                          : isHovered
+                            ? 'bg-slate-50 text-slate-600 border-slate-600'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-slate-600 hover:text-slate-600'
+                      }`}
+                    >
+                      Unfiled
+                      <span className="opacity-60">({unfiledCount})</span>
+                    </button>
+                  </div>
+                );
+              })()}
+
               {projectFilter !== "all" && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="bg-slate-100 text-slate-600 hover:text-slate-700 hover:bg-slate-200 border-slate-400 shadow-sm h-9 px-2"
+                <button
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-slate-500 hover:text-slate-600 hover:bg-slate-50 transition-colors"
                   onClick={() => setProjectFilter("all")}
                 >
-                  <X className="h-4 w-4" />
-                </Button>
+                  <X className="h-3 w-3" />
+                  Clear
+                </button>
               )}
             </div>
-            
-            {/* Add Contact button on mobile */}
-            <div className="sm:hidden flex items-center">
-              <Button 
-                className="bg-slate-600 text-white hover:bg-slate-700 font-medium shadow-sm h-9 px-3"
-                onClick={() => setIsCreateContactOpen(true)}
-                size="sm"
-              >
-                <Plus className="h-4 w-4 text-white" /> 
-              </Button>
-            </div>
-          </div>
-          
-          {/* Second row with project selector - full width like tasks page */}
-          <div className="px-3 sm:px-4 pb-3 bg-slate-100 rounded-b-lg">
-            {/* Desktop - Project selector gets full width */}
-            <div className="hidden sm:block mb-3">
-              <ProjectSelector
-                selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
-                onChange={(projectId) => setProjectFilter(projectId)}
-                className="border-0 rounded-none focus:ring-0 w-full"
-                theme="slate"
-              />
-            </div>
-            
-            {/* Mobile - Project selector gets full width */}
-            <div className="sm:hidden flex flex-col gap-2 mb-3">
-              <ProjectSelector
-                selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
-                onChange={(projectId) => setProjectFilter(projectId)}
-                className="w-full border-0 rounded-none focus:ring-0"
-                theme="slate"
-              />
-              {/* Show All Projects button on mobile only when a project is selected */}
-              {projectFilter !== "all" && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="bg-slate-100 text-slate-600 hover:text-slate-700 hover:bg-slate-200 border-slate-400 shadow-sm w-full"
-                  onClick={() => setProjectFilter("all")}
-                >
-                  <X className="mr-2 h-4 w-4" />
-                  All Projects
-                </Button>
-              )}
-            </div>
-            
-            {/* Search bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
-              <Input 
-                placeholder="Search contacts..." 
-                className="w-full pl-9 border-slate-300 focus:border-slate-500 focus:ring-slate-500 rounded-lg"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
+
+            {/* Right-side controls */}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {/* Search */}
+              {!searchExpanded ? (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="absolute right-1 top-1 h-8 w-8 rounded-md hover:bg-slate-100"
-                  onClick={() => setSearchQuery("")}
+                  className="h-8 w-8 rounded-md hover:bg-slate-100 text-slate-600"
+                  onClick={() => setSearchExpanded(true)}
                 >
-                  <X className="h-4 w-4 text-slate-500" />
+                  <Search className="h-4 w-4" />
                 </Button>
+              ) : (
+                <div className="relative w-44 sm:w-56">
+                  <Search className="absolute left-3 top-2 h-4 w-4 text-slate-600" />
+                  <Input
+                    placeholder="Search contacts..."
+                    className="w-full pl-9 pr-9 border-slate-300 focus:border-slate-600 focus:ring-slate-600 rounded-lg h-8 text-sm"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onBlur={() => { if (!searchQuery) setSearchExpanded(false); }}
+                    autoFocus
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-0.5 h-7 w-7 rounded-md hover:bg-slate-100"
+                    onClick={() => { setSearchQuery(""); setSearchExpanded(false); }}
+                  >
+                    <X className="h-3.5 w-3.5 text-slate-500" />
+                  </Button>
+                </div>
               )}
+
+              {/* Type filter */}
+              <div className="min-w-0 max-w-[120px] sm:max-w-[140px]">
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-full !bg-transparent border-0 rounded-none focus:ring-0 min-w-0 h-8 hover:bg-slate-100 text-slate-600">
+                    <SelectValue placeholder="Type">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs">{typeFilter === "all" ? "All Types" : typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}</span>
+                      </div>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="contractor">Contractor</SelectItem>
+                    <SelectItem value="supplier">Supplier</SelectItem>
+                    <SelectItem value="consultant">Consultant</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Add Contact */}
+              <Button
+                variant="ghost"
+                className="bg-slate-600 hover:bg-slate-700 text-white font-medium h-8 px-3 sm:px-4 rounded-md shadow-sm text-xs"
+                onClick={() => setIsCreateContactOpen(true)}
+                size="sm"
+              >
+                <Plus className="h-3.5 w-3.5 sm:mr-1.5" />
+                <span className="hidden sm:inline">Add Contact</span>
+              </Button>
             </div>
           </div>
+
+          {/* Hover dropdown: projects in selected folder */}
+          {hoveredFolderId !== null && (() => {
+            const folderProjects = hoveredFolderId === -1
+              ? projects.filter((p: any) => !p.folderId)
+              : projects.filter((p: any) => p.folderId === hoveredFolderId);
+            if (folderProjects.length === 0) return null;
+            return (
+              <div className="px-3 sm:px-4 pb-3 flex items-center gap-1.5 flex-wrap border-t border-slate-100 pt-2">
+                {folderProjects.map((project: any) => {
+                  const isSelected = projectFilter === project.id.toString();
+                  return (
+                    <button
+                      key={project.id}
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border transition-colors cursor-pointer ${
+                        isSelected
+                          ? 'bg-slate-600 text-white border-slate-600'
+                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-600 hover:text-slate-600'
+                      }`}
+                      onClick={() => setProjectFilter(project.id.toString())}
+                    >
+                      {project.name}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
-        
+
         {/* Create Contact Dialog */}
-        <CreateContactDialog 
-          open={isCreateContactOpen} 
+        <CreateContactDialog
+          open={isCreateContactOpen}
           onOpenChange={setIsCreateContactOpen}
           projectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
         />
@@ -1438,14 +1481,14 @@ export default function ContactsPage() {
           const tabParam = urlParams.get('tab');
           return tabParam || "categories";
         })()}>
-          <div className="bg-white border-2 border-slate-400 rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
             {/* View Bar Header */}
-            <div className="p-3 sm:p-4 bg-slate-100 border-b border-slate-300">
+            <div className="p-3 sm:p-4 border-b border-slate-200">
               <div className="flex items-center gap-3 mb-3">
                 <List className="h-5 w-5 text-slate-600" />
                 <span className="text-sm font-medium text-slate-700">View</span>
               </div>
-              <TabsList className="grid w-full grid-cols-4 bg-slate-200 p-1 rounded-lg h-auto">
+              <TabsList className="grid w-full grid-cols-4 bg-slate-100 p-1 rounded-lg h-auto">
                 <TabsTrigger
                   value="categories"
                   className="data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-sm text-slate-600 rounded-md py-2 text-sm font-medium transition-all"
