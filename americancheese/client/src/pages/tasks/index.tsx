@@ -14,6 +14,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { hexToRgba, getTier1Color as getUnifiedTier1Color, getTier2Color as getUnifiedTier2Color, getStatusBgColor, formatTaskStatus } from "@/lib/unified-color-system";
 import { useUnifiedColors } from "@/hooks/useUnifiedColors";
+import { getProjectTheme } from "@/lib/project-themes";
 import { Task, Project } from "@/types";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -1994,18 +1995,42 @@ export default function TasksPage() {
             </div>
           </div>
 
-          {/* Show selected project name if a project is selected - with modern design */}
-          {projectFilter !== "all" && (
-            <div className="p-4 sm:p-5 mb-4 bg-[#fdf6e7] rounded-lg shadow-sm shadow-[#d2b48c]/50 overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                <div className="flex items-start sm:items-center gap-2 flex-1">
-                  <div className="h-full w-1 rounded-full bg-green-500 mr-2 self-stretch hidden sm:block"></div>
-                  <div className="w-1 h-12 rounded-full bg-green-500 mr-2 self-start block sm:hidden"></div>
-                  <div className="flex-1">
-                    <h3 className="text-lg sm:text-xl font-semibold text-slate-800 leading-tight">
-                      {getProjectName(Number(projectFilter))}
+          {/* Show selected project name if a project is selected - themed card design */}
+          {projectFilter !== "all" && (() => {
+            const selectedProject = projects?.find(p => p.id === Number(projectFilter));
+            const accentColor = selectedTier1
+              ? getTier1Color(selectedTier1)
+              : selectedProject?.colorTheme
+                ? getProjectTheme(selectedProject.colorTheme).primary
+                : '#6366f1';
+
+            return (
+              <div
+                className="mb-4 border rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
+                style={{
+                  backgroundColor: hexToRgba(accentColor, 0.08),
+                  borderColor: hexToRgba(accentColor, 0.125),
+                }}
+              >
+                {/* Header */}
+                <div
+                  className="px-4 py-3 border-b flex items-start gap-3"
+                  style={{
+                    backgroundColor: hexToRgba(accentColor, 0.12),
+                    borderColor: hexToRgba(accentColor, 0.25),
+                  }}
+                >
+                  <div
+                    className="mt-1 shrink-0 rounded-sm w-3 h-3"
+                    style={{ backgroundColor: accentColor }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-base font-semibold text-slate-900 leading-tight">
+                        {getProjectName(Number(projectFilter))}
+                      </h3>
                       {selectedTier1 && (
-                        <span className="text-sm font-normal text-slate-600 ml-2">
+                        <span className="text-sm font-normal text-slate-600">
                           → {formatCategoryNameWithProject(selectedTier1)}
                           {selectedTier2 && (
                             <span className="ml-1">
@@ -2014,67 +2039,57 @@ export default function TasksPage() {
                           )}
                         </span>
                       )}
-                    </h3>
-                    {/* Show project description when not viewing any categories */}
-                    {!selectedTier1 && (
-                      <div className="mt-2">
-                        <ProjectDescriptionEditor
-                          project={projects?.find(p => p.id === Number(projectFilter)) as any}
-                          onDescriptionUpdate={() => {
-                            // Refresh projects data after description update
-                            queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-                          }}
-                        />
-                      </div>
-                    )}
-                    {/* Show tier2 description when viewing a specific tier2 category */}
-                    {selectedTier1 && selectedTier2 && (
-                      <div className="mt-2">
-                        <CategoryDescriptionEditor
-                          categoryName={selectedTier2}
-                          categoryType="tier2"
-                          projectId={parseInt(projectFilter)}
-                          showType="category"
-                          onDescriptionUpdate={() => {
-                            // Refresh categories data or update local state if needed
-                          }}
-                        />
-                      </div>
-                    )}
-                    {/* Show tier1 description when viewing tier1 but no tier2 selected */}
-                    {selectedTier1 && !selectedTier2 && (
-                      <div className="mt-2">
-                        <CategoryDescriptionEditor
-                          categoryName={selectedTier1}
-                          categoryType="tier1"
-                          projectId={parseInt(projectFilter)}
-                          showType="category"
-                          onDescriptionUpdate={() => {
-                            // Refresh categories data or update local state if needed
-                          }}
-                        />
-                      </div>
-                    )}
+                    </div>
                   </div>
                 </div>
-
-
+                {/* Body - description editors */}
+                <div className="p-4">
+                  {/* Show project description when not viewing any categories */}
+                  {!selectedTier1 && (
+                    <ProjectDescriptionEditor
+                      project={selectedProject as any}
+                      onDescriptionUpdate={() => {
+                        queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+                      }}
+                    />
+                  )}
+                  {/* Show tier2 description when viewing a specific tier2 category */}
+                  {selectedTier1 && selectedTier2 && (
+                    <CategoryDescriptionEditor
+                      categoryName={selectedTier2}
+                      categoryType="tier2"
+                      projectId={parseInt(projectFilter)}
+                      showType="category"
+                      onDescriptionUpdate={() => {}}
+                    />
+                  )}
+                  {/* Show tier1 description when viewing tier1 but no tier2 selected */}
+                  {selectedTier1 && !selectedTier2 && (
+                    <CategoryDescriptionEditor
+                      categoryName={selectedTier1}
+                      categoryType="tier1"
+                      projectId={parseInt(projectFilter)}
+                      showType="category"
+                      onDescriptionUpdate={() => {}}
+                    />
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0">
-          <TabsList className="grid w-full grid-cols-2 border-[#4a7c59] min-w-0">
+          <TabsList className="grid w-full grid-cols-2 min-w-0">
             <TabsTrigger
               value="list"
-              className="data-[state=active]:bg-[#fdf6e7] data-[state=active]:text-[#8b4513]"
+              className="data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900"
             >
               List View
             </TabsTrigger>
             <TabsTrigger
               value="timeline"
-              className="data-[state=active]:bg-[#fdf6e7] data-[state=active]:text-[#8b4513]"
+              className="data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900"
             >
               Timeline View
             </TabsTrigger>
