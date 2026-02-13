@@ -1051,7 +1051,7 @@ export default function DashboardPage() {
 
   return (
     <Layout>
-      <div className="space-y-2 w-full max-w-full overflow-hidden px-1 sm:px-3 -mt-1 sm:-mt-2 md:-mt-4 lg:-mt-6">
+      <div className="space-y-2 w-full max-w-full overflow-hidden px-1 sm:px-3 md:-mt-2 lg:-mt-4">
         {/* Mobile-only: search, filter, and metrics (desktop uses TopNav pills + actions) */}
         <div className="md:hidden space-y-3 mb-4">
           <div className="flex flex-wrap items-center gap-2">
