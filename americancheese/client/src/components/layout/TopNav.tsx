@@ -29,12 +29,12 @@ export function TopNav() {
 
   // Lighter module colors for nav bar background (softer than getDynamicModuleColor)
   const navColors: Record<string, { bg: string; border: string; subtitle: string }> = {
-    dashboard: { bg: '#818cf8', border: '#6366f1', subtitle: 'text-indigo-200' },    // Light indigo
-    tasks:     { bg: '#4ade80', border: '#22c55e', subtitle: 'text-green-200' },      // Light green
-    calendar:  { bg: '#22d3ee', border: '#06b6d4', subtitle: 'text-cyan-200' },       // Light cyan
-    materials: { bg: '#fb923c', border: '#f97316', subtitle: 'text-orange-200' },     // Light orange
-    contacts:  { bg: '#94a3b8', border: '#64748b', subtitle: 'text-slate-200' },      // Light slate
-    admin:     { bg: '#a78bfa', border: '#8b5cf6', subtitle: 'text-purple-200' },     // Light purple
+    dashboard: { bg: '#a5b4fc', border: '#6366f1', subtitle: 'text-indigo-200' },    // Indigo-300
+    tasks:     { bg: '#86efac', border: '#22c55e', subtitle: 'text-green-200' },      // Green-300
+    calendar:  { bg: '#67e8f9', border: '#06b6d4', subtitle: 'text-cyan-200' },       // Cyan-300
+    materials: { bg: '#fdba74', border: '#f97316', subtitle: 'text-orange-200' },     // Orange-300
+    contacts:  { bg: '#cbd5e1', border: '#64748b', subtitle: 'text-slate-200' },      // Slate-300
+    admin:     { bg: '#c4b5fd', border: '#8b5cf6', subtitle: 'text-purple-200' },     // Purple-300
   };
   const activeColors = navColors[currentTab] || navColors.dashboard;
 

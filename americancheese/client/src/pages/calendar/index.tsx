@@ -10,7 +10,8 @@ import { CalendarGanttView } from "@/components/calendar/CalendarGanttView";
 import { QuickAddTaskDialog } from "@/components/calendar/QuickAddTaskDialog";
 import { ScheduleSubtaskDialog } from "@/components/calendar/ScheduleSubtaskDialog";
 import { Button } from "@/components/ui/button";
-import { Plus, ListTree, Folder, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, ListTree, Folder, X, Search } from "lucide-react";
 import { useNavPills } from "@/hooks/useNavPills";
 import type { Task, Project, Subtask } from "@shared/schema";
 
@@ -22,6 +23,8 @@ export default function CalendarPage() {
   const [addSubtaskDialogOpen, setAddSubtaskDialogOpen] = useState(false);
   const [addTaskDate, setAddTaskDate] = useState<Date>(new Date());
   const [hoveredFolderId, setHoveredFolderId] = useState<number | null>(null);
+  const [searchExpanded, setSearchExpanded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Inject nav pills for TopNav
   useNavPills("events");
@@ -144,13 +147,15 @@ export default function CalendarPage() {
     }
   }, [currentDate, view]);
 
-  // Filter tasks based on project selection, calendarActive flag, and visible date range
+  // Filter tasks based on project selection, calendarActive flag, search query, and visible date range
   const filteredTasks = useMemo(() => {
+    const q = searchQuery.toLowerCase();
     return tasks.filter((task) => {
       if (task.calendarActive === false) return false;
       if (selectedProjectId !== undefined && task.projectId !== selectedProjectId) {
         return false;
       }
+      if (q && !task.name.toLowerCase().includes(q)) return false;
       const effectiveStartDate = task.calendarStartDate || task.startDate;
       const effectiveEndDate = task.calendarEndDate || task.endDate;
       if (!effectiveStartDate || !effectiveEndDate) return false;
@@ -166,16 +171,18 @@ export default function CalendarPage() {
         return false;
       }
     });
-  }, [tasks, selectedProjectId, dateRange]);
+  }, [tasks, selectedProjectId, dateRange, searchQuery]);
 
-  // Filter subtasks based on project selection, calendarActive flag, and visible date range
+  // Filter subtasks based on project selection, calendarActive flag, search query, and visible date range
   const filteredSubtasks = useMemo(() => {
+    const q = searchQuery.toLowerCase();
     return subtasks.filter((subtask) => {
       if (subtask.calendarActive === false) return false;
       const projectId = taskProjectMap.get(subtask.parentTaskId);
       if (selectedProjectId !== undefined && projectId !== selectedProjectId) {
         return false;
       }
+      if (q && !subtask.title.toLowerCase().includes(q)) return false;
       const effectiveStartDate = subtask.calendarStartDate || subtask.startDate;
       const effectiveEndDate = subtask.calendarEndDate || subtask.endDate;
       if (!effectiveStartDate || !effectiveEndDate) return false;
@@ -191,19 +198,19 @@ export default function CalendarPage() {
         return false;
       }
     });
-  }, [subtasks, selectedProjectId, dateRange, taskProjectMap]);
+  }, [subtasks, selectedProjectId, dateRange, taskProjectMap, searchQuery]);
 
   const isLoading = tasksLoading || subtasksLoading || projectsLoading;
 
   return (
     <Layout title="Calendar" fullWidth>
-      <div className="space-y-4">
+      <div className="space-y-3 w-full min-w-0">
         {/* Unified Header Card */}
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm w-full min-w-0 overflow-x-hidden"
           onMouseLeave={() => setHoveredFolderId(null)}
         >
           {/* Row 1: Title + Folder badges + Controls */}
-          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 px-3 py-2 sm:px-4 sm:py-2.5 flex-wrap">
             <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-[#0891b2] to-[#0e7490] bg-clip-text text-transparent flex-shrink-0">Calendar</h1>
 
             {/* Folder badges */}
@@ -272,8 +279,40 @@ export default function CalendarPage() {
               )}
             </div>
 
-            {/* Right-side controls: Quick Add + Calendar Nav */}
+            {/* Right-side controls: Search + Quick Add */}
             <div className="flex items-center gap-1.5 flex-shrink-0">
+              {/* Expandable search */}
+              {!searchExpanded ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 rounded-md hover:bg-cyan-50 text-cyan-600"
+                  onClick={() => setSearchExpanded(true)}
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              ) : (
+                <div className="relative w-44 sm:w-56">
+                  <Search className="absolute left-3 top-2 h-4 w-4 text-cyan-600" />
+                  <Input
+                    placeholder="Search events..."
+                    className="w-full pl-9 pr-9 border-slate-300 focus:border-cyan-600 focus:ring-cyan-600 rounded-lg h-8 text-sm"
+                    value={searchQuery}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                    onBlur={() => { if (!searchQuery) setSearchExpanded(false); }}
+                    autoFocus
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-0.5 h-7 w-7 rounded-md hover:bg-slate-100"
+                    onClick={() => { setSearchQuery(""); setSearchExpanded(false); }}
+                  >
+                    <X className="h-3.5 w-3.5 text-slate-500" />
+                  </Button>
+                </div>
+              )}
+
               <Button
                 size="sm"
                 variant="outline"

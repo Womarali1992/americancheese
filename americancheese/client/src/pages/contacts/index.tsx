@@ -1297,13 +1297,13 @@ export default function ContactsPage() {
 
   return (
     <Layout>
-      <div className="space-y-2 p-4">
+      <div className="space-y-3 w-full min-w-0">
         {/* Unified Header Card */}
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm w-full min-w-0 overflow-x-hidden"
           onMouseLeave={() => setHoveredFolderId(null)}
         >
           {/* Row 1: Title + Folder badges + Controls */}
-          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 px-3 py-2 sm:px-4 sm:py-2.5 flex-wrap">
             <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-[#64748b] to-[#475569] bg-clip-text text-transparent flex-shrink-0">Contacts</h1>
 
             {/* Folder badges */}

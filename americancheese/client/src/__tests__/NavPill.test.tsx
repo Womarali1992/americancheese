@@ -54,4 +54,25 @@ describe('NavPill', () => {
 
     expect(onClick).toHaveBeenCalledOnce();
   });
+
+  it('uses tabular-nums for consistent digit widths', () => {
+    render(<NavPill {...defaultProps} />);
+
+    const countEl = screen.getByText('12');
+    expect(countEl.className).toContain('tabular-nums');
+  });
+
+  it('has minimum width for layout stability', () => {
+    const { container } = render(<NavPill {...defaultProps} />);
+
+    const button = container.querySelector('button');
+    expect(button?.className).toContain('min-w-');
+  });
+
+  it('uses pill color prop for active pill text color', () => {
+    const { container } = render(<NavPill {...defaultProps} isActive={true} color="#6366f1" />);
+
+    const button = container.querySelector('button');
+    expect(button?.style.color).toBe('rgb(99, 102, 241)');
+  });
 });
