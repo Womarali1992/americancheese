@@ -1051,7 +1051,7 @@ export default function DashboardPage() {
 
   return (
     <Layout>
-      <div className="space-y-3 w-full max-w-full overflow-hidden px-1 sm:px-3">
+      <div className="space-y-2 w-full max-w-full overflow-hidden px-1 sm:px-3 -mt-1 sm:-mt-2 md:-mt-4 lg:-mt-6">
         {/* Mobile-only: search, filter, and metrics (desktop uses TopNav pills + actions) */}
         <div className="md:hidden space-y-3 mb-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -1105,9 +1105,10 @@ export default function DashboardPage() {
 
         {/* Project Pages Navigation with Folder Support */}
         {filteredProjects.length > 1 && (
-          <div className="mb-4">
+          <div className="mb-2">
             <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="flex items-center gap-2 w-full">
+                <div className="flex gap-2 overflow-x-auto pb-1 flex-1 min-w-0">
                 {expandedFolderId ? (
                   <>
                     {/* Inside folder view - back button + folder projects */}
@@ -1208,19 +1209,22 @@ export default function DashboardPage() {
                       })}
                   </>
                 )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 flex-shrink-0 text-xs h-7 px-2 whitespace-nowrap"
+                  onClick={() => navigate('/projects')}
+                >
+                  View All <ChevronRight className="ml-0.5 h-3 w-3" />
+                </Button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Projects Overview - Modern & Clean */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Active Projects</h2>
-            <Button variant="ghost" className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50" onClick={() => navigate('/projects')}>
-              View All <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
+        {/* Projects Overview */}
+        <div className="mb-4">
 
           {filteredProjects.length === 0 ? (
             <div className="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center">
@@ -1244,80 +1248,80 @@ export default function DashboardPage() {
                       onClick={() => navigate(`/tasks?projectId=${project.id}`)}
                     >
                       <div className="p-5 border-b border-slate-50">
-                        <div className="flex justify-between items-start mb-4">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="h-10 w-10 rounded-lg flex items-center justify-center text-white font-bold shadow-sm"
-                              style={{ backgroundColor: getProjectColor(project.id) }}
-                            >
-                              {project.name.substring(0, 2).toUpperCase()}
-                            </div>
-                            <div>
-                              <h3 className="text-lg font-semibold text-slate-900 leading-tight">{project.name}</h3>
-                              <div className="flex items-center text-sm text-slate-500 mt-0.5">
-                                <MapPin className="h-3 w-3 mr-1" />
-                                {project.location || "No location"}
+                        <div className="flex items-start gap-3 mb-3">
+                          <div
+                            className="h-10 w-10 rounded-lg flex items-center justify-center text-white font-bold shadow-sm flex-shrink-0"
+                            style={{ backgroundColor: getProjectColor(project.id) }}
+                          >
+                            {project.name.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <h3 className="text-lg font-semibold text-slate-900 leading-tight">{project.name}</h3>
+                                <div className="flex items-center text-sm text-slate-500 mt-0.5">
+                                  <MapPin className="h-3 w-3 mr-1" />
+                                  {project.location || "No location"}
+                                </div>
                               </div>
+                              <div className="flex items-center gap-1.5 flex-shrink-0">
+                                {(() => {
+                                  // Get tier 1 categories code (simplified for brevity, logic remains same)
+                                  const projectConfiguredCategoryObjects = allProjectCategories
+                                    .filter((cat: any) => cat.projectId === project.id && cat.type === 'tier1')
+                                    .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                                  const projectTasks = tasks.filter((task: any) => task.projectId === project.id);
+                                  const preferredOrder = ['pull', 'push', 'legs', 'cardio', 'structural', 'systems', 'software engineering', 'product management', 'design / ux', 'marketing / go-to-market (gtm)'];
+                                  const taskCategoryObjects: any[] = [];
+                                  const seenCategories = new Set<string>();
+                                  projectTasks.forEach((task: any) => {
+                                    const cat = task.tier1Category;
+                                    if (cat && !seenCategories.has(cat)) {
+                                      seenCategories.add(cat);
+                                      taskCategoryObjects.push({ name: cat, color: null });
+                                    }
+                                  });
+                                  // Sort tasks...
+                                  taskCategoryObjects.sort((a, b) => { // same sort logic
+                                    const indexA = preferredOrder.indexOf(a.name.toLowerCase());
+                                    const indexB = preferredOrder.indexOf(b.name.toLowerCase());
+                                    if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                                    if (indexA !== -1) return -1;
+                                    if (indexB !== -1) return 1;
+                                    return a.name.localeCompare(b.name);
+                                  });
+                                  const displayedCategoryObjects = (projectConfiguredCategoryObjects.length > 0 ? projectConfiguredCategoryObjects : taskCategoryObjects).slice(0, 4);
+
+                                  return displayedCategoryObjects.map((categoryObj: any, categoryIndex: number) => {
+                                    const tier1Category = categoryObj.name;
+                                    const computedColor = getSimpleTier1Color(tier1Category, project.id, categoryIndex);
+                                    const baseColor = categoryObj.color || computedColor || '#6b7280';
+
+                                    return (
+                                      <div
+                                        key={tier1Category}
+                                        className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border flex items-center bg-white"
+                                        style={{ color: baseColor, borderColor: `${baseColor}40` }}
+                                      >
+                                        <span className="w-1.5 h-1.5 rounded-full mr-1.5" style={{ backgroundColor: baseColor }}></span>
+                                        {formatCategoryName(tier1Category, project.id)}
+                                      </div>
+                                    );
+                                  });
+                                })()}
+                              </div>
+                              <button
+                                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors flex-shrink-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/projects/${project.id}`);
+                                }}
+                                title="Project Settings"
+                              >
+                                <Settings className="h-4 w-4" />
+                              </button>
                             </div>
                           </div>
-
-                          <button
-                            className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/projects/${project.id}`);
-                            }}
-                            title="Project Settings"
-                          >
-                            <Settings className="h-5 w-5" />
-                          </button>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {(() => {
-                            // Get tier 1 categories code (simplified for brevity, logic remains same)
-                            const projectConfiguredCategoryObjects = allProjectCategories
-                              .filter((cat: any) => cat.projectId === project.id && cat.type === 'tier1')
-                              .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
-                            const projectTasks = tasks.filter((task: any) => task.projectId === project.id);
-                            const preferredOrder = ['pull', 'push', 'legs', 'cardio', 'structural', 'systems', 'software engineering', 'product management', 'design / ux', 'marketing / go-to-market (gtm)'];
-                            const taskCategoryObjects: any[] = [];
-                            const seenCategories = new Set<string>();
-                            projectTasks.forEach((task: any) => {
-                              const cat = task.tier1Category;
-                              if (cat && !seenCategories.has(cat)) {
-                                seenCategories.add(cat);
-                                taskCategoryObjects.push({ name: cat, color: null });
-                              }
-                            });
-                            // Sort tasks...
-                            taskCategoryObjects.sort((a, b) => { // same sort logic 
-                              const indexA = preferredOrder.indexOf(a.name.toLowerCase());
-                              const indexB = preferredOrder.indexOf(b.name.toLowerCase());
-                              if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-                              if (indexA !== -1) return -1;
-                              if (indexB !== -1) return 1;
-                              return a.name.localeCompare(b.name);
-                            });
-                            const displayedCategoryObjects = (projectConfiguredCategoryObjects.length > 0 ? projectConfiguredCategoryObjects : taskCategoryObjects).slice(0, 4);
-
-                            return displayedCategoryObjects.map((categoryObj: any, categoryIndex: number) => {
-                              const tier1Category = categoryObj.name;
-                              const computedColor = getSimpleTier1Color(tier1Category, project.id, categoryIndex);
-                              const baseColor = categoryObj.color || computedColor || '#6b7280';
-
-                              return (
-                                <div
-                                  key={tier1Category}
-                                  className="px-2 py-1 rounded-md text-xs font-medium border flex items-center bg-white"
-                                  style={{ color: baseColor, borderColor: `${baseColor}40` }}
-                                >
-                                  <span className="w-1.5 h-1.5 rounded-full mr-1.5" style={{ backgroundColor: baseColor }}></span>
-                                  {formatCategoryName(tier1Category, project.id)}
-                                </div>
-                              );
-                            });
-                          })()}
                         </div>
 
                         <div className="bg-slate-50 rounded-lg p-3">
