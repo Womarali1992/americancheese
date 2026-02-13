@@ -6,7 +6,6 @@ import { TaskAttachments } from "@/components/task/TaskAttachments";
 import { TaskLabor } from "@/components/task/TaskLabor";
 import { TaskMaterials } from "@/components/task/TaskMaterials";
 import { TaskMaterialsView } from "@/components/materials/TaskMaterialsView";
-import { ProjectSelector } from "@/components/project/ProjectSelector";
 import { getMergedTasks } from "@/components/task/TaskTemplateService";
 import { CategoryDescriptionEditor } from "@/components/task/CategoryDescriptionEditor";
 import { AllProjectsCategoryDescriptions } from "@/components/task/AllProjectsCategoryDescriptions";
@@ -75,7 +74,6 @@ import {
   Home,
   PanelTop,
   Sofa,
-  ArrowLeft,
   Trash2,
   CheckSquare,
   Square,
@@ -84,7 +82,8 @@ import {
   CheckCircle2,
   Circle,
   Filter,
-  Upload
+  Upload,
+  Folder
 } from "lucide-react";
 import { useNavPills } from "@/hooks/useNavPills";
 import { useNav } from "@/contexts/NavContext";
@@ -589,6 +588,12 @@ export default function TasksPage() {
   const { data: projects = [], isLoading: projectsLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
   });
+
+  const { data: projectFolders = [] } = useQuery<import("@/types").ProjectFolder[]>({
+    queryKey: ["/api/project-folders"],
+  });
+
+  const [hoveredFolderId, setHoveredFolderId] = useState<number | null>(null);
 
   // Determine whether to fetch all tasks or just tasks for a selected project
   const tasksQueryKey = projectFilter !== "all"
@@ -1676,324 +1681,261 @@ export default function TasksPage() {
           </div>
         )}
 
-        {/* URL Filter Indicator */}
-        {(selectedTier1 || selectedTier2) && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-            <div className="flex items-center gap-2 text-blue-800 text-sm">
-              <Filter className="h-4 w-4" />
-              <span>Filtered by:</span>
-              <div className="flex items-center gap-2">
-                {selectedTier1 && (
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
-                    {selectedTier1}
-                  </span>
-                )}
-                {selectedTier1 && selectedTier2 && (
-                  <span className="text-blue-600">→</span>
-                )}
-                {selectedTier2 && (
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
-                    {selectedTier2}
-                  </span>
-                )}
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm w-full min-w-0 overflow-x-hidden"
+          onMouseLeave={() => setHoveredFolderId(null)}
+        >
+          {/* Row 1: Title + Folder badges + Controls */}
+          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-[#4a7c59] to-[#3a6346] bg-clip-text text-transparent flex-shrink-0">Tasks</h1>
+
+            {/* Folder badges */}
+            <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+              {projectFolders.map(folder => {
+                const folderProjectCount = projects.filter(p => p.folderId === folder.id).length;
+                const isHovered = hoveredFolderId === folder.id;
+                const hasSelectedProject = projectFilter !== "all" && projects.find(p => p.id === Number(projectFilter))?.folderId === folder.id;
+                return (
+                  <div
+                    key={folder.id}
+                    className="relative"
+                    onMouseEnter={() => setHoveredFolderId(folder.id)}
+                  >
+                    <button
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                        hasSelectedProject
+                          ? 'bg-[#4a7c59] text-white border-[#4a7c59]'
+                          : isHovered
+                            ? 'bg-green-50 text-[#4a7c59] border-[#4a7c59]'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-[#4a7c59] hover:text-[#4a7c59]'
+                      }`}
+                    >
+                      <Folder className="h-3 w-3" />
+                      {folder.name}
+                      <span className="opacity-60">({folderProjectCount})</span>
+                    </button>
+                  </div>
+                );
+              })}
+              {/* Unfiled projects badge */}
+              {(() => {
+                const unfiledCount = projects.filter(p => !p.folderId).length;
+                if (unfiledCount === 0) return null;
+                const isHovered = hoveredFolderId === -1;
+                const hasSelectedProject = projectFilter !== "all" && !projects.find(p => p.id === Number(projectFilter))?.folderId;
+                return (
+                  <div
+                    className="relative"
+                    onMouseEnter={() => setHoveredFolderId(-1)}
+                  >
+                    <button
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                        hasSelectedProject
+                          ? 'bg-[#4a7c59] text-white border-[#4a7c59]'
+                          : isHovered
+                            ? 'bg-green-50 text-[#4a7c59] border-[#4a7c59]'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-[#4a7c59] hover:text-[#4a7c59]'
+                      }`}
+                    >
+                      Unfiled
+                      <span className="opacity-60">({unfiledCount})</span>
+                    </button>
+                  </div>
+                );
+              })()}
+
+              {projectFilter !== "all" && (
+                <button
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-slate-500 hover:text-[#4a7c59] hover:bg-slate-50 transition-colors"
+                  onClick={() => handleProjectChange("all")}
+                >
+                  <X className="h-3 w-3" />
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {/* Right-side controls */}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {/* Search */}
+              {!searchExpanded ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 rounded-md hover:bg-[#d1e7dd] text-[#4a7c59]"
+                  onClick={() => setSearchExpanded(true)}
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              ) : (
+                <div className="relative w-44 sm:w-56">
+                  <Search className="absolute left-3 top-2 h-4 w-4 text-[#4a7c59]" />
+                  <Input
+                    placeholder="Search tasks..."
+                    className="w-full pl-9 pr-9 border-slate-300 focus:border-[#4a7c59] focus:ring-[#4a7c59] rounded-lg h-8 text-sm"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onBlur={() => { if (!searchQuery) setSearchExpanded(false); }}
+                    autoFocus
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-0.5 h-7 w-7 rounded-md hover:bg-slate-100"
+                    onClick={() => { setSearchQuery(""); setSearchExpanded(false); }}
+                  >
+                    <X className="h-3.5 w-3.5 text-slate-500" />
+                  </Button>
+                </div>
+              )}
+
+              {/* Status filter */}
+              <div className="min-w-0 max-w-[120px] sm:max-w-[140px]">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full !bg-transparent border-0 rounded-none focus:ring-0 min-w-0 h-8 hover:bg-[#d1e7dd] text-[#4a7c59]">
+                    <SelectValue placeholder="Status">
+                      {statusFilter === "all" ? (
+                        <div className="flex items-center gap-1.5">
+                          <Circle className="h-3.5 w-3.5 text-[#4a7c59]" />
+                          <span className="text-xs">All</span>
+                        </div>
+                      ) : statusFilter === "not_started" ? (
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="h-3.5 w-3.5 text-slate-500" />
+                          <span className="text-xs">Not Started</span>
+                        </div>
+                      ) : statusFilter === "in_progress" ? (
+                        <div className="flex items-center gap-1.5">
+                          <Play className="h-3.5 w-3.5 text-yellow-500" />
+                          <span className="text-xs">In Progress</span>
+                        </div>
+                      ) : statusFilter === "completed" ? (
+                        <div className="flex items-center gap-1.5">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                          <span className="text-xs">Completed</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <Circle className="h-3.5 w-3.5 text-[#4a7c59]" />
+                          <span className="text-xs">Status</span>
+                        </div>
+                      )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all"><div className="flex items-center gap-2"><Circle className="h-4 w-4 text-slate-500" /><span>All Status</span></div></SelectItem>
+                    <SelectItem value="not_started"><div className="flex items-center gap-2"><Clock className="h-4 w-4 text-slate-500" /><span>Not Started</span></div></SelectItem>
+                    <SelectItem value="in_progress"><div className="flex items-center gap-2"><Play className="h-4 w-4 text-yellow-500" /><span>In Progress</span></div></SelectItem>
+                    <SelectItem value="completed"><div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-500" /><span>Completed</span></div></SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+
+              {/* Add Task */}
+              <Button
+                variant="ghost"
+                className="bg-[#4a7c59] hover:bg-[#3a6346] text-white font-medium h-8 px-3 sm:px-4 rounded-md shadow-sm text-xs"
+                onClick={() => setCreateDialogOpen(true)}
+                size="sm"
+              >
+                <Plus className="h-3.5 w-3.5 sm:mr-1.5" />
+                <span className="hidden sm:inline">Add Task</span>
+              </Button>
             </div>
           </div>
-        )}
 
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm w-full min-w-0 overflow-x-hidden">
-          {/* First row with title and main actions */}
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 sm:p-4 rounded-t-lg gap-3">
-            {/* Desktop layout */}
-            <div className="hidden sm:flex items-center gap-4 flex-1">
-              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-[#4a7c59] to-[#3a6346] bg-clip-text text-transparent">Tasks</h1>
-              {/* Expandable search */}
-              <div className="flex items-center justify-end flex-1">
-                {!searchExpanded ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-9 w-9 rounded-md hover:bg-[#d1e7dd] text-[#4a7c59]"
-                    onClick={() => setSearchExpanded(true)}
-                  >
-                    <Search className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#8b4513]" />
-                    <Input
-                      placeholder="Search tasks..."
-                      className="w-full pl-9 pr-9 border-[#d2b48c] focus:border-[#8b4513] focus:ring-[#8b4513] rounded-lg h-9"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onBlur={() => {
-                        if (!searchQuery) {
-                          setSearchExpanded(false);
-                        }
-                      }}
-                      autoFocus
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-1 top-1 h-7 w-7 rounded-md hover:bg-[#d1e7dd]"
-                      onClick={() => {
-                        setSearchQuery("");
-                        setSearchExpanded(false);
-                      }}
+          {/* Hover dropdown: projects in selected folder */}
+          {hoveredFolderId !== null && (() => {
+            const folderProjects = hoveredFolderId === -1
+              ? projects.filter(p => !p.folderId)
+              : projects.filter(p => p.folderId === hoveredFolderId);
+            if (folderProjects.length === 0) return null;
+            return (
+              <div className="px-3 sm:px-4 pb-3 flex items-center gap-1.5 flex-wrap border-t border-slate-100 pt-2">
+                {folderProjects.map(project => {
+                  const isSelected = projectFilter === project.id.toString();
+                  return (
+                    <button
+                      key={project.id}
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border transition-colors cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#4a7c59] text-white border-[#4a7c59]'
+                          : 'bg-white text-slate-700 border-slate-200 hover:bg-green-50 hover:border-[#4a7c59] hover:text-[#4a7c59]'
+                      }`}
+                      onClick={() => handleProjectChange(project.id.toString())}
                     >
-                      <X className="h-4 w-4 text-[#4a7c59]" />
-                    </Button>
-                  </div>
-                )}
+                      {project.name}
+                    </button>
+                  );
+                })}
               </div>
-            </div>
+            );
+          })()}
 
-            {/* Mobile layout - title, search, and buttons in one row */}
-            <div className="sm:hidden flex items-center gap-2 w-full">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-[#4a7c59] to-[#3a6346] bg-clip-text text-transparent flex-shrink-0">Tasks</h1>
-
-              {/* Search functionality */}
-              <div className="flex items-center flex-1">
-                {!searchExpanded ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-9 w-9 rounded-md hover:bg-[#d1e7dd] text-[#4a7c59]"
-                    onClick={() => setSearchExpanded(true)}
-                  >
-                    <Search className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-green-600" />
-                    <Input
-                      placeholder="Search tasks..."
-                      className="w-full pl-9 pr-9 border-green-300 focus:border-green-500 focus:ring-green-500 rounded-lg h-9"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onBlur={() => {
-                        if (!searchQuery) {
-                          setSearchExpanded(false);
-                        }
-                      }}
-                      autoFocus
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-1 top-1 h-7 w-7 rounded-md hover:bg-[#d1e7dd]"
-                      onClick={() => {
-                        setSearchQuery("");
-                        setSearchExpanded(false);
-                      }}
-                    >
-                      <X className="h-4 w-4 text-[#4a7c59]" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              {/* Mobile buttons */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <div className="w-full min-w-0 max-w-[120px]">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full !bg-transparent border-0 rounded-none focus:ring-0 min-w-0 h-9 hover:bg-[#d1e7dd] text-[#4a7c59]">
-                      <SelectValue placeholder="Status">
-                        {statusFilter === "all" ? (
-                          <div className="flex items-center gap-2">
-                            <Circle className="h-4 w-4 text-[#4a7c59]" />
-                            <span className="text-xs">All</span>
-                          </div>
-                        ) : statusFilter === "not_started" ? (
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-slate-500" />
-                            <span className="text-xs">Not Started</span>
-                          </div>
-                        ) : statusFilter === "in_progress" ? (
-                          <div className="flex items-center gap-2">
-                            <Play className="h-4 w-4 text-yellow-500" />
-                            <span className="text-xs">In Progress</span>
-                          </div>
-                        ) : statusFilter === "completed" ? (
-                          <div className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            <span className="text-xs">Completed</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <Circle className="h-4 w-4 text-[#4a7c59]" />
-                            <span className="text-xs">Status</span>
-                          </div>
-                        )}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">
-                        <div className="flex items-center gap-2">
-                          <Circle className="h-4 w-4 text-slate-500" />
-                          <span>All Status</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="not_started">
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-slate-500" />
-                          <span>Not Started</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="in_progress">
-                        <div className="flex items-center gap-2">
-                          <Play className="h-4 w-4 text-yellow-500" />
-                          <span>In Progress</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="completed">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-500" />
-                          <span>Completed</span>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button
-                  variant="ghost"
-                  className="bg-transparent border border-green-600 text-green-600 hover:bg-green-50 font-medium h-9 px-3"
-                  onClick={() => setCreateDialogOpen(true)}
-                  size="sm"
-                >
-                  <Plus className="h-4 w-4 text-green-600" />
-                </Button>
-
-              </div>
-            </div>
-
-            {/* Desktop controls */}
-            <div className="hidden sm:flex items-center gap-2">
-              <div className="flex items-center gap-2">
-                <div className="w-full min-w-0 max-w-[140px]">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full !bg-transparent border-0 rounded-none focus:ring-0 min-w-0 h-9 hover:bg-[#d1e7dd] text-[#4a7c59]">
-                      <SelectValue placeholder="Status">
-                        {statusFilter === "all" ? (
-                          <div className="flex items-center gap-2">
-                            <Circle className="h-4 w-4 text-[#4a7c59]" />
-                            <span className="text-xs">All</span>
-                          </div>
-                        ) : statusFilter === "not_started" ? (
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-slate-500" />
-                            <span className="text-xs">Not Started</span>
-                          </div>
-                        ) : statusFilter === "in_progress" ? (
-                          <div className="flex items-center gap-2">
-                            <Play className="h-4 w-4 text-yellow-500" />
-                            <span className="text-xs">In Progress</span>
-                          </div>
-                        ) : statusFilter === "completed" ? (
-                          <div className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            <span className="text-xs">Completed</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <Circle className="h-4 w-4 text-[#4a7c59]" />
-                            <span className="text-xs">Status</span>
-                          </div>
-                        )}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">
-                        <div className="flex items-center gap-2">
-                          <Circle className="h-4 w-4 text-slate-500" />
-                          <span>All Status</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="not_started">
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-slate-500" />
-                          <span>Not Started</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="in_progress">
-                        <div className="flex items-center gap-2">
-                          <Play className="h-4 w-4 text-yellow-500" />
-                          <span>In Progress</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="completed">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-500" />
-                          <span>Completed</span>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button
-                  variant="ghost"
-                  className="bg-[#8b4513] hover:bg-[#6b3410] text-white font-medium h-9 px-4 rounded-md shadow-sm"
-                  onClick={() => setCreateDialogOpen(true)}
-                  size="sm"
-                >
-                  <Plus className="mr-2 h-4 w-4 text-white" />
-                  Add Task
-                </Button>
-
-
-                {projectFilter !== "all" && (
+          {/* Breadcrumb navigation for category drill-down */}
+          {(selectedTier1 || selectedTier2) && (
+            <div className="flex items-center gap-3 px-3 sm:px-4 py-2 border-t border-slate-100">
+              {selectedTier1 && !selectedTier2 ? (
+                <>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="bg-[#e6f2ea] text-[#4a7c59] hover:text-[#3a6346] hover:bg-[#d1e7dd] border-[#b3d1c1] shadow-sm h-9 px-2"
-                    onClick={() => handleProjectChange("all")}
+                    onClick={() => navigateWithParams(null, null)}
+                    className="flex items-center gap-1 text-black border-black hover:bg-gray-50 w-fit h-7 text-xs"
                   >
-                    <ArrowLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Back to main categories</span>
+                    <span className="sm:hidden">Back</span>
                   </Button>
-                )}
-              </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigateWithParams(selectedTier1, null)}
+                    className="px-2 py-0.5 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-xs font-medium flex items-center gap-1 hover:bg-gray-200 w-fit h-7"
+                  >
+                    {getTier1Icon(selectedTier1, "h-3.5 w-3.5 text-gray-800")}
+                    <span className="truncate max-w-[120px] sm:max-w-none">
+                      {formatCategoryNameWithProject(selectedTier1)}
+                    </span>
+                  </Button>
+                </>
+              ) : selectedTier1 && selectedTier2 ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigateWithParams(selectedTier1, null)}
+                    className="flex items-center gap-1 text-[#080800] hover:text-orange-600 hover:bg-orange-50 w-fit h-7 text-xs"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Back to {formatCategoryNameWithProject(selectedTier1)} categories</span>
+                    <span className="sm:hidden">Back</span>
+                  </Button>
+                  <div className="flex flex-row items-center gap-2 sm:gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigateWithParams(selectedTier1, null)}
+                      className="px-2 py-0.5 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-xs font-medium flex items-center gap-1 hover:bg-gray-200 w-fit h-7"
+                    >
+                      {getTier1Icon(selectedTier1, "h-3.5 w-3.5 text-gray-800")}
+                      {formatCategoryNameWithProject(selectedTier1)}
+                    </Button>
+                    <span className="text-gray-400 mx-1 hidden sm:inline">→</span>
+                    <span className="text-gray-400 text-xs sm:hidden">then</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigateWithParams(selectedTier1, selectedTier2)}
+                      className="px-2 py-0.5 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-xs font-medium flex items-center gap-1 hover:bg-gray-200 w-fit h-7"
+                    >
+                      {getTier2Icon(selectedTier2, "h-3.5 w-3.5 text-gray-800")}
+                      {formatCategoryNameWithProject(selectedTier2)}
+                    </Button>
+                  </div>
+                </>
+              ) : null}
             </div>
-          </div>
-
-          {/* Second row with filters and search */}
-          <div className="px-3 sm:px-4 pb-3 rounded-b-lg">
-            {/* Desktop filters - Project selector gets full width */}
-            <div className="hidden sm:block">
-              <div className="mb-3">
-                <ProjectSelector
-                  selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
-                  onChange={handleProjectChange}
-                  className="border-0 rounded-none focus:ring-0 w-full"
-                />
-              </div>
-            </div>
-
-            {/* Mobile filters - Project selector gets full width */}
-            <div className="sm:hidden flex flex-col gap-2">
-              <ProjectSelector
-                selectedProjectId={projectFilter !== "all" ? Number(projectFilter) : undefined}
-                onChange={handleProjectChange}
-                className="w-full border-0 rounded-none focus:ring-0"
-              />
-            </div>
-            <div className="sm:hidden flex flex-col gap-2">
-
-              {projectFilter !== "all" && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-[#e6f2ea] text-[#4a7c59] hover:text-[#3a6346] hover:bg-[#d1e7dd] border-[#b3d1c1] shadow-sm w-full"
-                  onClick={() => handleProjectChange("all")}
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  All Projects
-                </Button>
-              )}
-            </div>
-          </div>
+          )}
 
           {/* Show selected project name if a project is selected - themed card design */}
           {projectFilter !== "all" && (() => {
@@ -2006,7 +1948,7 @@ export default function TasksPage() {
 
             return (
               <div
-                className="mb-4 border rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
+                className="mb-2 border rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
                 style={{
                   backgroundColor: hexToRgba(accentColor, 0.08),
                   borderColor: hexToRgba(accentColor, 0.125),
@@ -2014,7 +1956,7 @@ export default function TasksPage() {
               >
                 {/* Header */}
                 <div
-                  className="px-4 py-3 border-b flex items-start gap-3"
+                  className="px-4 py-2 border-b flex items-start gap-3"
                   style={{
                     backgroundColor: hexToRgba(accentColor, 0.12),
                     borderColor: hexToRgba(accentColor, 0.25),
@@ -2043,7 +1985,7 @@ export default function TasksPage() {
                   </div>
                 </div>
                 {/* Body - description editors */}
-                <div className="p-4">
+                <div className="p-3">
                   {/* Show project description when not viewing any categories */}
                   {!selectedTier1 && (
                     <ProjectDescriptionEditor
@@ -2289,50 +2231,6 @@ export default function TasksPage() {
             ) : selectedTier1 && !selectedTier2 ? (
               /* TIER 2: Display specific categories within the selected Tier 1 */
               <>
-                <div className="mb-4">
-                  {/* Back button and category tag on the same row */}
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigateWithParams(null, null)}
-                        className="flex items-center gap-1 text-black border-black hover:bg-gray-50 w-fit"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        <span className="hidden sm:inline">Back to main categories</span>
-                        <span className="sm:hidden">Back</span>
-                      </Button>
-
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigateWithParams(selectedTier1, null)}
-                        className="px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-gray-200 w-fit"
-                      >
-                        {getTier1Icon(selectedTier1, "h-4 w-4 text-gray-800")}
-                        <span className="truncate max-w-[120px] sm:max-w-none">
-                          {formatCategoryNameWithProject(selectedTier1)}
-                        </span>
-                      </Button>
-                    </div>
-
-                    {/* Manage Categories and All Projects buttons */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-white text-slate-600 hover:text-slate-800 border-slate-200 shadow-sm h-9"
-                        onClick={() => handleProjectChange("all")}
-                      >
-                        <ArrowLeft className="h-4 w-4 sm:mr-1" />
-                        <span className="hidden sm:inline">All Projects</span>
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-
 
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 px-0 w-full min-w-0">
                   {/* Show all tier2 categories */}
@@ -2470,45 +2368,8 @@ export default function TasksPage() {
             ) : (
               /* TIER 3: Display specific tasks for the selected Tier 2 */
               <>
-                <div className="mb-4 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigateWithParams(selectedTier1, null)}
-                        className="flex items-center gap-1 text-[#080800] hover:text-orange-600 hover:bg-orange-50 w-fit"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        Back to {formatCategoryNameWithProject(selectedTier1)} categories
-                      </Button>
-
-                      <div className="flex flex-row items-center gap-2 sm:gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigateWithParams(selectedTier1, null)}
-                          className="px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-gray-200 w-fit"
-                        >
-                          {getTier1Icon(selectedTier1, "h-4 w-4 text-gray-800")}
-                          {formatCategoryNameWithProject(selectedTier1)}
-                        </Button>
-                        <span className="text-gray-400 mx-1 hidden sm:inline">→</span>
-                        <span className="text-gray-400 text-xs sm:hidden">then</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigateWithParams(selectedTier1, null)}
-                          className="px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-gray-200 w-fit"
-                        >
-                          {getTier2Icon(selectedTier2, "h-4 w-4 text-gray-800")}
-                          {formatCategoryNameWithProject(selectedTier2)}
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Add Task and Select Categories buttons */}
-                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <div className="mb-4">
+                  <div className="flex flex-wrap items-center gap-2">
                       <Button
                         onClick={() => {
                           console.log('Add Task button clicked', { selectedTier1, selectedTier2 });
@@ -2588,7 +2449,6 @@ export default function TasksPage() {
                           </Button>
                         </div>
                       )}
-                    </div>
                   </div>
                 </div>
 

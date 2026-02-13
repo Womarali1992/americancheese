@@ -37,7 +37,7 @@ export function TopNav() {
   ];
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-100 px-4 py-3">
+    <nav className="bg-[#4a7c59] shadow-sm border-b border-[#3a6346] px-4 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo and brand */}
         <div
@@ -46,8 +46,8 @@ export function TopNav() {
         >
           <Logo className="h-8 w-8 text-primary mr-3" />
           <div className="hidden sm:block">
-            <h1 className="text-xl font-bold text-gray-800 tracking-tight">SiteSetups</h1>
-            <p className="text-xs text-gray-500 hidden md:block">Automated Development Platform</p>
+            <h1 className="text-xl font-bold text-white tracking-tight">SiteSetups</h1>
+            <p className="text-xs text-green-200 hidden md:block">Automated Development Platform</p>
           </div>
         </div>
 
@@ -89,7 +89,6 @@ export function TopNav() {
             <>
               {navItems.filter(item => !item.isAdmin).map((item) => {
                 const isActive = currentTab === item.id;
-                const moduleColors = getDynamicModuleColor(item.id);
 
                 return (
                   <button
@@ -100,24 +99,18 @@ export function TopNav() {
                     }}
                     className={cn(
                       "group flex items-center px-3 py-2 text-sm rounded-md transition-colors duration-150",
-                      "hover:bg-gray-50 hover:text-gray-900",
-                      isActive ? "bg-white border-2 font-medium shadow-sm" : "text-gray-600",
-                      "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      isActive
+                        ? "bg-white text-[#4a7c59] font-medium shadow-sm"
+                        : "text-white/80 hover:bg-white/15 hover:text-white",
+                      "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-300"
                     )}
-                    style={{
-                      ...(isActive ? {
-                        borderColor: moduleColors.borderColor,
-                        color: moduleColors.textColor
-                      } : {})
-                    }}
                   >
                     <i
                       className={cn(
                         item.icon,
                         "text-lg mr-2",
-                        isActive ? "text-current" : "text-gray-400"
+                        isActive ? "text-[#4a7c59]" : "text-white/60"
                       )}
-                      style={isActive ? { color: moduleColors.primaryColor } : {}}
                     />
                     <span className="hidden sm:block">{item.label}</span>
                   </button>
@@ -128,10 +121,9 @@ export function TopNav() {
 
           {/* Admin section - visible in standard nav mode */}
           {!hasPills && !actions && (
-            <div className="ml-4 pl-4 border-l border-gray-200">
+            <div className="ml-4 pl-4 border-l border-green-700/50">
               {navItems.filter(item => item.isAdmin).map((item) => {
                 const isActive = currentTab === item.id;
-                const moduleColors = getDynamicModuleColor(item.id);
 
                 return (
                   <button
@@ -142,24 +134,18 @@ export function TopNav() {
                     }}
                     className={cn(
                       "group flex items-center px-3 py-2 text-sm rounded-md transition-colors duration-150",
-                      "hover:bg-gray-50 hover:text-gray-900",
-                      isActive ? "bg-white border-2 font-medium shadow-sm" : "text-gray-600",
-                      "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                      isActive
+                        ? "bg-white text-[#4a7c59] font-medium shadow-sm"
+                        : "text-white/80 hover:bg-white/15 hover:text-white",
+                      "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-300"
                     )}
-                    style={{
-                      ...(isActive ? {
-                        borderColor: moduleColors.borderColor,
-                        color: moduleColors.textColor
-                      } : {})
-                    }}
                   >
                     <i
                       className={cn(
                         item.icon,
                         "text-lg mr-2",
-                        isActive ? "text-current" : "text-gray-400"
+                        isActive ? "text-[#4a7c59]" : "text-white/60"
                       )}
-                      style={isActive ? { color: moduleColors.primaryColor } : {}}
                     />
                     <span className="hidden sm:block">{item.label}</span>
                   </button>
@@ -172,7 +158,7 @@ export function TopNav() {
           <InvitationsBadge />
 
           {/* User profile with dropdown */}
-          <div className="ml-4 pl-4 border-l border-gray-200">
+          <div className="ml-4 pl-4 border-l border-green-700/50">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none">
