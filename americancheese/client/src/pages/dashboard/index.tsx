@@ -181,6 +181,7 @@ export default function DashboardPage() {
   });
 
   const [hoveredFolderId, setHoveredFolderId] = useState<number | null>(null);
+  const [mobileFoldersExpanded, setMobileFoldersExpanded] = useState(false);
   const [searchExpanded, setSearchExpanded] = useState(false);
 
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<any[]>({
@@ -1074,13 +1075,28 @@ export default function DashboardPage() {
 
             {/* Folder badges */}
             <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+              {/* Mobile: Collapsible toggle */}
+              <button
+                className={`sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                  mobileFoldersExpanded
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-600 hover:text-indigo-600'
+                }`}
+                onClick={() => setMobileFoldersExpanded(!mobileFoldersExpanded)}
+              >
+                <Folder className="h-3 w-3" />
+                Projects
+                <span className="opacity-60">({projects.length})</span>
+                {mobileFoldersExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              </button>
+
               {folders.map((folder: any) => {
                 const folderProjectCount = projects.filter((p: any) => p.folderId === folder.id).length;
                 const isHovered = hoveredFolderId === folder.id;
                 return (
                   <div
                     key={folder.id}
-                    className="relative"
+                    className={`relative ${mobileFoldersExpanded ? '' : 'hidden sm:block'}`}
                     onMouseEnter={() => setHoveredFolderId(folder.id)}
                   >
                     <button
@@ -1104,7 +1120,7 @@ export default function DashboardPage() {
                 const isHovered = hoveredFolderId === -1;
                 return (
                   <div
-                    className="relative"
+                    className={`relative ${mobileFoldersExpanded ? '' : 'hidden sm:block'}`}
                     onMouseEnter={() => setHoveredFolderId(-1)}
                   >
                     <button
@@ -1261,7 +1277,7 @@ export default function DashboardPage() {
                                   {project.location || "No location"}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-1.5 flex-shrink-0">
+                              <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center flex-shrink-0">
                                 {(() => {
                                   // Get tier 1 categories code (simplified for brevity, logic remains same)
                                   const projectConfiguredCategoryObjects = allProjectCategories
