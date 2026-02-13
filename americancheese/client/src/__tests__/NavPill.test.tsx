@@ -38,11 +38,13 @@ describe('NavPill', () => {
     expect(button?.className).toContain('font-semibold');
   });
 
-  it('applies inactive styling when isActive is false', () => {
+  it('applies frosted glass inactive styling (dark text on subtle bg)', () => {
     const { container } = render(<NavPill {...defaultProps} isActive={false} />);
 
     const button = container.querySelector('button');
-    expect(button?.className).toContain('bg-white');
+    // Inactive pills on frosted glass should use dark text, not white
+    expect(button?.className).toContain('text-slate-600');
+    expect(button?.className).not.toContain('text-white');
   });
 
   it('calls onClick when clicked', async () => {

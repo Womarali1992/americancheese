@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
@@ -37,7 +37,7 @@ export function GlobalSearch() {
     enabled: searchQuery.trim().length > 0,
   });
 
-  // Fetch projects for displaying project names
+  // Fetch projects for displaying project names and project search
   const { data: projects = [] } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
     queryFn: async () => {
@@ -48,13 +48,20 @@ export function GlobalSearch() {
   });
 
   // Create a map of project IDs to names
-  const projectMap = React.useMemo(() => {
+  const projectMap = useMemo(() => {
     const map: Record<number, string> = {};
     projects.forEach((p) => {
       map[p.id] = p.name;
     });
     return map;
   }, [projects]);
+
+  // Filter projects client-side by search query
+  const matchingProjects = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return projects.filter((p) => p.name.toLowerCase().includes(q));
+  }, [projects, searchQuery]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -86,7 +93,13 @@ export function GlobalSearch() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const handleResultClick = (task: Task) => {
+  const handleProjectClick = (project: Project) => {
+    setIsOpen(false);
+    setSearchQuery("");
+    setLocation(`/?project=${project.id}`);
+  };
+
+  const handleTaskClick = (task: Task) => {
     setIsOpen(false);
     setSearchQuery("");
     setLocation(`/projects/${task.projectId}/tasks/${task.id}`);
@@ -107,6 +120,8 @@ export function GlobalSearch() {
     );
   };
 
+  const hasResults = matchingProjects.length > 0 || searchResults.length > 0;
+
   return (
     <div ref={containerRef} className="relative">
       <div className="relative">
@@ -120,11 +135,11 @@ export function GlobalSearch() {
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
-          placeholder="Search tasks..."
+          placeholder="Search projects & tasks..."
           className={cn(
             "w-48 sm:w-64 pl-9 pr-8 py-1.5 text-sm",
-            "border border-gray-200 rounded-lg",
-            "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+            "border border-gray-200 rounded-lg bg-white",
+            "focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent",
             "placeholder:text-gray-400"
           )}
         />
@@ -135,72 +150,100 @@ export function GlobalSearch() {
 
       {/* Dropdown results */}
       {isOpen && searchQuery.trim() && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
-          {isLoading ? (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto min-w-[280px]">
+          {isLoading && !hasResults ? (
             <div className="px-4 py-3 text-sm text-gray-500 flex items-center gap-2">
               <i className="ri-loader-4-line animate-spin" />
               Searching...
             </div>
-          ) : searchResults.length === 0 ? (
+          ) : !hasResults ? (
             <div className="px-4 py-3 text-sm text-gray-500">
-              No tasks found for "{searchQuery}"
+              No results found for "{searchQuery}"
             </div>
           ) : (
             <div>
-              <div className="px-3 py-2 text-xs text-gray-500 border-b border-gray-100">
-                {searchResults.length} result{searchResults.length !== 1 ? "s" : ""} found
-              </div>
-              {searchResults.slice(0, 10).map((task) => (
-                <button
-                  key={task.id}
-                  onClick={() => handleResultClick(task)}
-                  className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors"
-                >
-                  <div className="flex items-start gap-3">
-                    <i className="ri-task-line text-gray-400 mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 truncate">
-                        {highlightMatch(task.title, searchQuery)}
-                      </div>
-                      {task.description && (
-                        <div className="text-xs text-gray-500 truncate mt-0.5">
-                          {highlightMatch(task.description.slice(0, 100), searchQuery)}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <i className="ri-folder-line" />
-                          {projectMap[task.projectId] || `Project #${task.projectId}`}
-                        </span>
-                        {task.tier2Category && (
-                          <span className="flex items-center gap-1">
-                            <i className="ri-price-tag-3-line" />
-                            {task.tier2Category}
-                          </span>
-                        )}
-                        {task.status && (
-                          <span
-                            className={cn(
-                              "px-1.5 py-0.5 rounded text-xs",
-                              task.status === "completed"
-                                ? "bg-green-100 text-green-700"
-                                : task.status === "in_progress"
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-gray-100 text-gray-600"
-                            )}
-                          >
-                            {task.status.replace("_", " ")}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+              {/* Projects section */}
+              {matchingProjects.length > 0 && (
+                <>
+                  <div className="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-50 border-b border-gray-100">
+                    Projects
                   </div>
-                </button>
-              ))}
-              {searchResults.length > 10 && (
-                <div className="px-4 py-2 text-xs text-gray-500 bg-gray-50">
-                  Showing first 10 of {searchResults.length} results
-                </div>
+                  {matchingProjects.slice(0, 5).map((project) => (
+                    <button
+                      key={`project-${project.id}`}
+                      onClick={() => handleProjectClick(project)}
+                      className="w-full px-4 py-2.5 text-left hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <i className="ri-folder-line text-indigo-500" />
+                        <div className="text-sm font-medium text-gray-900 truncate">
+                          {highlightMatch(project.name, searchQuery)}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </>
+              )}
+
+              {/* Tasks section */}
+              {searchResults.length > 0 && (
+                <>
+                  <div className="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-50 border-b border-gray-100">
+                    Tasks
+                  </div>
+                  {searchResults.slice(0, 10).map((task) => (
+                    <button
+                      key={`task-${task.id}`}
+                      onClick={() => handleTaskClick(task)}
+                      className="w-full px-4 py-2.5 text-left hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <i className="ri-task-line text-gray-400 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate">
+                            {highlightMatch(task.title, searchQuery)}
+                          </div>
+                          {task.description && (
+                            <div className="text-xs text-gray-500 truncate mt-0.5">
+                              {highlightMatch(task.description.slice(0, 100), searchQuery)}
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
+                            <span className="flex items-center gap-1">
+                              <i className="ri-folder-line" />
+                              {projectMap[task.projectId] || `Project #${task.projectId}`}
+                            </span>
+                            {task.tier2Category && (
+                              <span className="flex items-center gap-1">
+                                <i className="ri-price-tag-3-line" />
+                                {task.tier2Category}
+                              </span>
+                            )}
+                            {task.status && (
+                              <span
+                                className={cn(
+                                  "px-1.5 py-0.5 rounded text-xs",
+                                  task.status === "completed"
+                                    ? "bg-green-100 text-green-700"
+                                    : task.status === "in_progress"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-gray-100 text-gray-600"
+                                )}
+                              >
+                                {task.status.replace("_", " ")}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                  {searchResults.length > 10 && (
+                    <div className="px-4 py-2 text-xs text-gray-500 bg-gray-50">
+                      Showing first 10 of {searchResults.length} results
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
