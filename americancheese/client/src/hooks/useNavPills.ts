@@ -9,7 +9,8 @@ type ActivePill = "projects" | "tasks" | "events" | "materials" | "contacts";
 /**
  * Shared hook that injects nav pills into TopNav via NavContext.
  * Each page calls this with its own `activePill` id.
- * Fetches counts for all 5 sections and cleans up on unmount.
+ * Fetches counts for all 5 sections. No cleanup on unmount to prevent
+ * flash when switching between pages (new page overwrites pills immediately).
  */
 export function useNavPills(activePill: ActivePill) {
   const { setPills } = useNav();
@@ -59,9 +60,5 @@ export function useNavPills(activePill: ActivePill) {
       { id: "contacts", icon: Users, count: contacts.length, label: "Contacts", navigateTo: "/contacts", color: "#64748b", isActive: activePill === "contacts" },
     ];
     setPills(pillData);
-
-    return () => {
-      setPills([]);
-    };
   }, [activePill, projects.length, openTasks, upcomingEventsCount, pendingMaterials, contacts.length, setPills]);
 }

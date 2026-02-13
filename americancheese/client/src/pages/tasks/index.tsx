@@ -1673,7 +1673,7 @@ export default function TasksPage() {
 
   return (
     <Layout>
-      <div className="p-2 sm:p-4 w-full min-w-0 overflow-x-hidden">
+      <div className="space-y-3 w-full min-w-0">
         {/* Success Message Alert */}
         {successMessage && (
           <div className="bg-green-100 border border-green-300 text-green-700 px-4 py-3 rounded relative mb-2">
@@ -1685,7 +1685,7 @@ export default function TasksPage() {
           onMouseLeave={() => setHoveredFolderId(null)}
         >
           {/* Row 1: Title + Folder badges + Controls */}
-          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 px-3 py-2 sm:px-4 sm:py-2.5 flex-wrap">
             <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-[#4a7c59] to-[#3a6346] bg-clip-text text-transparent flex-shrink-0">Tasks</h1>
 
             {/* Folder badges */}

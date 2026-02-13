@@ -16,14 +16,15 @@ export function NavPill({ icon: Icon, count, label, color, isActive, onClick }: 
     <button
       onClick={onClick}
       className={cn(
-        'flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors duration-150 cursor-pointer',
+        'flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors duration-150 cursor-pointer min-w-[4.5rem]',
         isActive
-          ? 'bg-white text-[#4a7c59] border-white font-semibold shadow-sm'
+          ? 'bg-white border-white font-semibold shadow-sm'
           : 'bg-white/15 border-white/25 text-white hover:bg-white/25'
       )}
+      style={isActive ? { color } : undefined}
     >
       <Icon className="h-3 w-3" />
-      <span className="text-xs font-semibold">{count}</span>
+      <span className="text-xs font-semibold tabular-nums">{count}</span>
       <span className="text-xs">{label}</span>
     </button>
   );

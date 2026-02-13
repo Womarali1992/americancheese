@@ -25,13 +25,13 @@ export function Layout({ children, title, fullWidth = false }: LayoutProps) {
       `}>
         <div className={`
           h-full overflow-y-auto overflow-x-hidden overscroll-contain w-full min-w-0
-          px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-6 lg:px-8 lg:py-8
+          px-3 py-2 sm:px-4 sm:py-3 md:px-6 md:py-4 lg:px-8 lg:py-4
           ${fullWidth ? 'max-w-none' : 'max-w-7xl mx-auto'}
         `}>
           <div className={`
             ${isMobile ? "pb-4" : ""}
             min-h-[calc(100vh-120px)]
-            focus:outline-none space-y-4 sm:space-y-6 w-full min-w-0
+            focus:outline-none space-y-3 sm:space-y-4 w-full min-w-0
           `}>
             {children}
           </div>

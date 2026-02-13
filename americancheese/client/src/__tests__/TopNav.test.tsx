@@ -137,4 +137,17 @@ describe('TopNav', () => {
     expect(screen.getByTestId('logo')).toBeInTheDocument();
     expect(screen.getByText('T')).toBeInTheDocument(); // Avatar initials
   });
+
+  it('uses softer 300-level pastel colors for dashboard nav background', () => {
+    const { container } = render(
+      <NavProvider>
+        <TopNav />
+      </NavProvider>
+    );
+
+    const nav = container.querySelector('nav');
+    // Dashboard (default tab) should use indigo-300 (#a5b4fc) not indigo-400 (#818cf8)
+    // jsdom converts hex to rgb format
+    expect(nav?.style.backgroundColor).toBe('rgb(165, 180, 252)');
+  });
 });

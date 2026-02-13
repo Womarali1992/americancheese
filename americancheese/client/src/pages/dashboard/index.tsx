@@ -1012,7 +1012,7 @@ export default function DashboardPage() {
 
   return (
     <Layout>
-      <div className="space-y-2 w-full max-w-full overflow-hidden px-1 sm:px-3 md:-mt-2 lg:-mt-4">
+      <div className="space-y-3 w-full min-w-0">
         {/* Mobile-only: search, filter, and metrics (desktop uses TopNav pills + actions) */}
         <div className="md:hidden space-y-3 mb-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -1069,7 +1069,7 @@ export default function DashboardPage() {
           onMouseLeave={() => setHoveredFolderId(null)}
         >
           {/* Row 1: Title + Folder badges + Controls */}
-          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 px-3 py-2 sm:px-4 sm:py-2.5 flex-wrap">
             <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-[#6366f1] to-[#4f46e5] bg-clip-text text-transparent flex-shrink-0">Dashboard</h1>
 
             {/* Folder badges */}
