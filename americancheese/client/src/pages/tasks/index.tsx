@@ -1701,9 +1701,9 @@ export default function TasksPage() {
           </div>
         )}
 
-        <div className="bg-white border-2 border-[#4a7c59] rounded-lg shadow-sm w-full min-w-0 overflow-x-hidden">
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm w-full min-w-0 overflow-x-hidden">
           {/* First row with title and main actions */}
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 sm:p-4 bg-[#e6f2ea] rounded-t-lg gap-3">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 sm:p-4 rounded-t-lg gap-3">
             {/* Desktop layout */}
             <div className="hidden sm:flex items-center gap-4 flex-1">
               <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-[#4a7c59] to-[#3a6346] bg-clip-text text-transparent">Tasks</h1>
@@ -1959,7 +1959,7 @@ export default function TasksPage() {
           </div>
 
           {/* Second row with filters and search */}
-          <div className="px-3 sm:px-4 pb-3 bg-[#e6f2ea] rounded-b-lg">
+          <div className="px-3 sm:px-4 pb-3 rounded-b-lg">
             {/* Desktop filters - Project selector gets full width */}
             <div className="hidden sm:block">
               <div className="mb-3">
