@@ -19,7 +19,7 @@ export function NavPill({ icon: Icon, count, label, color, isActive, onClick }: 
         'flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors duration-150 cursor-pointer min-w-[4.5rem]',
         isActive
           ? 'bg-white border-white font-semibold shadow-sm'
-          : 'bg-white/15 border-white/25 text-white hover:bg-white/25'
+          : 'bg-black/5 border-black/10 text-slate-600 hover:bg-black/10'
       )}
       style={isActive ? { color } : undefined}
     >

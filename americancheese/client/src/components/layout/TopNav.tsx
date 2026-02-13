@@ -27,14 +27,14 @@ export function TopNav() {
 
   const hasPills = pills.length > 0;
 
-  // Lighter module colors for nav bar background (softer than getDynamicModuleColor)
-  const navColors: Record<string, { bg: string; border: string; subtitle: string }> = {
-    dashboard: { bg: '#a5b4fc', border: '#6366f1', subtitle: 'text-indigo-200' },    // Indigo-300
-    tasks:     { bg: '#86efac', border: '#22c55e', subtitle: 'text-green-200' },      // Green-300
-    calendar:  { bg: '#67e8f9', border: '#06b6d4', subtitle: 'text-cyan-200' },       // Cyan-300
-    materials: { bg: '#fdba74', border: '#f97316', subtitle: 'text-orange-200' },     // Orange-300
-    contacts:  { bg: '#cbd5e1', border: '#64748b', subtitle: 'text-slate-200' },      // Slate-300
-    admin:     { bg: '#c4b5fd', border: '#8b5cf6', subtitle: 'text-purple-200' },     // Purple-300
+  // Frosted glass module colors: subtle tint + backdrop-blur for professional look
+  const navColors: Record<string, { bg: string; border: string; subtitle: string; text: string }> = {
+    dashboard: { bg: 'rgba(99, 102, 241, 0.08)',  border: 'rgba(99, 102, 241, 0.20)',  subtitle: 'text-indigo-400', text: 'text-indigo-800' },
+    tasks:     { bg: 'rgba(34, 197, 94, 0.08)',   border: 'rgba(34, 197, 94, 0.20)',   subtitle: 'text-green-400',  text: 'text-green-800' },
+    calendar:  { bg: 'rgba(6, 182, 212, 0.08)',   border: 'rgba(6, 182, 212, 0.20)',   subtitle: 'text-cyan-400',   text: 'text-cyan-800' },
+    materials: { bg: 'rgba(249, 115, 22, 0.08)',  border: 'rgba(249, 115, 22, 0.20)',  subtitle: 'text-orange-400', text: 'text-orange-800' },
+    contacts:  { bg: 'rgba(100, 116, 139, 0.08)', border: 'rgba(100, 116, 139, 0.20)', subtitle: 'text-slate-400',  text: 'text-slate-700' },
+    admin:     { bg: 'rgba(139, 92, 246, 0.08)',  border: 'rgba(139, 92, 246, 0.20)',  subtitle: 'text-purple-400', text: 'text-purple-800' },
   };
   const activeColors = navColors[currentTab] || navColors.dashboard;
 
@@ -48,7 +48,7 @@ export function TopNav() {
   ];
 
   return (
-    <nav className="shadow-sm border-b px-4 py-3 transition-colors duration-300" style={{ backgroundColor: activeColors.bg, borderColor: activeColors.border }}>
+    <nav className="shadow-sm border-b px-4 py-3 transition-colors duration-300 backdrop-blur-md bg-white/85" style={{ backgroundColor: activeColors.bg, borderColor: activeColors.border }}>
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo and brand */}
         <div
@@ -57,13 +57,13 @@ export function TopNav() {
         >
           <Logo className="h-8 w-8 text-primary mr-3" />
           <div className="hidden sm:block">
-            <h1 className="text-xl font-bold text-white tracking-tight">SiteSetups</h1>
+            <h1 className={cn("text-xl font-bold tracking-tight", activeColors.text)}>SiteSetups</h1>
             <p className={cn("text-xs hidden md:block", activeColors.subtitle)}>Automated Development Platform</p>
           </div>
         </div>
 
-        {/* Center zone: Pills OR Global Search (hidden when actions override) */}
-        {hasPills ? (
+        {/* Center zone: Pills */}
+        {hasPills && (
           <div className="hidden md:flex items-center gap-1.5">
             {pills.map((pill) => (
               <NavPill
@@ -78,23 +78,14 @@ export function TopNav() {
               />
             ))}
           </div>
-        ) : !actions ? (
-          <div className="hidden md:block">
-            <GlobalSearch />
-          </div>
-        ) : null}
+        )}
 
-        {/* Right zone: Custom actions OR standard nav + always avatar */}
+        {/* Right zone: Search + avatar (pills mode) OR standard nav tabs */}
         <div className="flex items-center space-x-1">
-          {(hasPills || actions) ? (
-            /* When pills or actions are set, render custom actions instead of nav tabs */
-            <>
-              {actions && (
-                <div className="hidden md:flex items-center gap-2">
-                  {actions}
-                </div>
-              )}
-            </>
+          {hasPills ? (
+            <div className="hidden md:flex items-center gap-2">
+              <GlobalSearch />
+            </div>
           ) : (
             /* Standard navigation tabs */
             <>
@@ -113,8 +104,8 @@ export function TopNav() {
                       "group flex items-center px-3 py-2 text-sm rounded-md transition-colors duration-150",
                       isActive
                         ? "bg-white font-medium shadow-sm"
-                        : "text-white/80 hover:bg-white/15 hover:text-white",
-                      "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/50"
+                        : "text-slate-600 hover:bg-black/5 hover:text-slate-900",
+                      "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-300"
                     )}
                     style={isActive ? { color: itemColor } : undefined}
                   >
@@ -122,7 +113,7 @@ export function TopNav() {
                       className={cn(
                         item.icon,
                         "text-lg mr-2",
-                        isActive ? "" : "text-white/60"
+                        isActive ? "" : "text-slate-400"
                       )}
                       style={isActive ? { color: itemColor } : undefined}
                     />
@@ -134,8 +125,8 @@ export function TopNav() {
           )}
 
           {/* Admin section - visible in standard nav mode */}
-          {!hasPills && !actions && (
-            <div className="ml-4 pl-4 border-l border-white/25">
+          {!hasPills && (
+            <div className="ml-4 pl-4 border-l border-slate-200">
               {navItems.filter(item => item.isAdmin).map((item) => {
                 const isActive = currentTab === item.id;
                 const itemColor = navColors[item.id]?.border || activeColors.border;
@@ -151,8 +142,8 @@ export function TopNav() {
                       "group flex items-center px-3 py-2 text-sm rounded-md transition-colors duration-150",
                       isActive
                         ? "bg-white font-medium shadow-sm"
-                        : "text-white/80 hover:bg-white/15 hover:text-white",
-                      "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/50"
+                        : "text-slate-600 hover:bg-black/5 hover:text-slate-900",
+                      "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-300"
                     )}
                     style={isActive ? { color: itemColor } : undefined}
                   >
@@ -160,7 +151,7 @@ export function TopNav() {
                       className={cn(
                         item.icon,
                         "text-lg mr-2",
-                        isActive ? "" : "text-white/60"
+                        isActive ? "" : "text-slate-400"
                       )}
                       style={isActive ? { color: itemColor } : undefined}
                     />
@@ -175,7 +166,7 @@ export function TopNav() {
           <InvitationsBadge />
 
           {/* User profile with dropdown */}
-          <div className="ml-4 pl-4 border-l border-white/25">
+          <div className="ml-4 pl-4 border-l border-slate-200">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none">

@@ -107,24 +107,16 @@ describe('TopNav', () => {
     expect(screen.queryByText('Calendar')).not.toBeInTheDocument();
   });
 
-  it('renders custom actions instead of GlobalSearch when actions set', () => {
-    const customActions = <button data-testid="custom-action">New Project</button>;
-
-    render(<TopNavWithPills actions={customActions} />);
-
-    expect(screen.getByTestId('custom-action')).toBeInTheDocument();
-    // Global search should not render when custom actions are set
-    expect(screen.queryByTestId('global-search')).not.toBeInTheDocument();
-  });
-
-  it('renders GlobalSearch when no custom actions are set', () => {
+  it('renders GlobalSearch in standard nav mode (no pills)', () => {
     render(
       <NavProvider>
         <TopNav />
       </NavProvider>
     );
 
-    expect(screen.getByTestId('global-search')).toBeInTheDocument();
+    // GlobalSearch should not render in standard nav mode (no pills = tab navigation)
+    // GlobalSearch only appears in pill mode in the right zone
+    expect(screen.queryByTestId('global-search')).not.toBeInTheDocument();
   });
 
   it('always renders logo and user avatar regardless of pills', () => {
@@ -138,7 +130,7 @@ describe('TopNav', () => {
     expect(screen.getByText('T')).toBeInTheDocument(); // Avatar initials
   });
 
-  it('uses softer 300-level pastel colors for dashboard nav background', () => {
+  it('uses frosted glass background with low-opacity module color tint', () => {
     const { container } = render(
       <NavProvider>
         <TopNav />
@@ -146,8 +138,35 @@ describe('TopNav', () => {
     );
 
     const nav = container.querySelector('nav');
-    // Dashboard (default tab) should use indigo-300 (#a5b4fc) not indigo-400 (#818cf8)
-    // jsdom converts hex to rgb format
-    expect(nav?.style.backgroundColor).toBe('rgb(165, 180, 252)');
+    // Dashboard should use frosted glass: rgba(99, 102, 241, 0.08) tint
+    // The nav bg should be a low-opacity rgba value, not a solid pastel
+    expect(nav?.style.backgroundColor).toContain('rgba');
+    expect(nav?.style.backgroundColor).toContain('0.08');
+    // Should have backdrop-blur for glass effect
+    expect(nav?.className).toContain('backdrop-blur');
+  });
+
+  it('uses dark text instead of white on frosted glass background', () => {
+    render(
+      <NavProvider>
+        <TopNav />
+      </NavProvider>
+    );
+
+    const title = screen.getByText('SiteSetups');
+    // Title should NOT have text-white class on frosted glass
+    expect(title.className).not.toContain('text-white');
+  });
+
+  it('renders GlobalSearch in right zone when pills are active', () => {
+    const testPills = [
+      { id: 'projects', icon: StubIcon, count: 5, label: 'Projects', navigateTo: '/', color: '#6366f1', isActive: true },
+      { id: 'tasks', icon: StubIcon, count: 10, label: 'Tasks', navigateTo: '/tasks', color: '#22c55e', isActive: false },
+    ];
+
+    render(<TopNavWithPills pills={testPills} />);
+
+    // GlobalSearch should be visible when pills are active (in right zone)
+    expect(screen.getByTestId('global-search')).toBeInTheDocument();
   });
 });
