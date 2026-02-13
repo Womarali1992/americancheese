@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { Layout } from "@/components/layout/Layout";
-import { useNav } from "@/contexts/NavContext";
 import { useNavPills } from "@/hooks/useNavPills";
 import { apiRequest } from "@/lib/queryClient";
 import { hexToRgba, lightenColor, darkenColor, getStatusBgColor, formatTaskStatus, getTier1Color as getUnifiedTier1Color, getTier2Color as getUnifiedTier2Color } from "@/lib/unified-color-system";
@@ -65,7 +64,6 @@ import {
   DollarSign,
   ArrowUp,
   ArrowDown,
-  ArrowLeft,
   Settings,
   Plus,
   MoreHorizontal,
@@ -93,8 +91,7 @@ import {
   Trash2,
   Home,
   X,
-  Folder,
-  ChevronLeft
+  Folder
 } from "lucide-react";
 import {
   AlertDialog,
@@ -136,7 +133,6 @@ const convertLinksToHtml = (text: string) => {
 
 export default function DashboardPage() {
   const { navigateToTab } = useTabNavigation();
-  const { setActions } = useNav();
   useNavPills("projects");
   const [, navigate] = useLocation();
   const params = useParams();
@@ -184,7 +180,8 @@ export default function DashboardPage() {
     queryKey: ["/api/project-folders"],
   });
 
-  const [expandedFolderId, setExpandedFolderId] = useState<number | null>(null);
+  const [hoveredFolderId, setHoveredFolderId] = useState<number | null>(null);
+  const [searchExpanded, setSearchExpanded] = useState(false);
 
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<any[]>({
     queryKey: ["/api/tasks"],
@@ -504,42 +501,6 @@ export default function DashboardPage() {
     totalSpent
   };
 
-  // Inject nav actions (search, filter, New Project) for consolidated TopNav
-  useEffect(() => {
-    setActions(
-      <>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input
-            placeholder="Search projects..."
-            className="pl-9 h-9 w-56 bg-white border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all shadow-sm rounded-lg text-sm"
-            value={searchQuery}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[130px] h-9 border-slate-200 shadow-sm rounded-lg bg-white text-sm">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Projects</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="on_hold">On Hold</SelectItem>
-            <SelectItem value="planning">Planning</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button
-          onClick={() => setCreateDialogOpen(true)}
-          className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm hover:shadow transition-all rounded-lg px-3 text-sm"
-        >
-          <Plus className="mr-1.5 h-4 w-4" />
-          New Project
-        </Button>
-      </>
-    );
-    return () => { setActions(null); };
-  }, [searchQuery, statusFilter, setActions]);
 
   // Upcoming deadlines
   const upcomingDeadlines = tasks.filter((task: any) => !task.completed)
@@ -1103,125 +1064,161 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Project Pages Navigation with Folder Support */}
-        {filteredProjects.length > 1 && (
-          <div className="mb-2">
-            <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
-              <div className="flex items-center gap-2 w-full">
-                <div className="flex gap-2 overflow-x-auto pb-1 flex-1 min-w-0">
-                {expandedFolderId ? (
-                  <>
-                    {/* Inside folder view - back button + folder projects */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 px-3 text-xs font-medium whitespace-nowrap flex-shrink-0 rounded-full border transition-all duration-200 hover:shadow-sm bg-slate-50 border-slate-300 text-slate-600"
-                      onClick={() => setExpandedFolderId(null)}
+        {/* Unified Header Card */}
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm w-full min-w-0 overflow-x-hidden"
+          onMouseLeave={() => setHoveredFolderId(null)}
+        >
+          {/* Row 1: Title + Folder badges + Controls */}
+          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-[#6366f1] to-[#4f46e5] bg-clip-text text-transparent flex-shrink-0">Dashboard</h1>
+
+            {/* Folder badges */}
+            <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+              {folders.map((folder: any) => {
+                const folderProjectCount = projects.filter((p: any) => p.folderId === folder.id).length;
+                const isHovered = hoveredFolderId === folder.id;
+                return (
+                  <div
+                    key={folder.id}
+                    className="relative"
+                    onMouseEnter={() => setHoveredFolderId(folder.id)}
+                  >
+                    <button
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                        isHovered
+                          ? 'bg-indigo-50 text-indigo-600 border-indigo-600'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-600 hover:text-indigo-600'
+                      }`}
                     >
-                      <ChevronLeft className="h-3 w-3 mr-1" />
-                      Back
-                    </Button>
-                    <span className="flex items-center gap-1 text-xs font-medium text-slate-500 px-1">
-                      <Folder className="h-3.5 w-3.5" />
-                      {folders.find((f: any) => f.id === expandedFolderId)?.name}
-                    </span>
-                    {filteredProjects
-                      .filter((p: any) => p.folderId === expandedFolderId)
-                      .map((project: any) => {
-                        const projectColor = getProjectColor(project.id);
-                        return (
-                          <Button
-                            key={`name-${project.id}`}
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-3 text-xs font-medium whitespace-nowrap flex-shrink-0 rounded-full border transition-all duration-200 hover:shadow-sm"
-                            style={{
-                              backgroundColor: projectColor + '15',
-                              borderColor: projectColor + '40',
-                              color: projectColor
-                            }}
-                            onClick={() => {
-                              const carouselItem = document.querySelector(`[data-project-id="${project.id}"]`);
-                              if (carouselItem) {
-                                carouselItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                              }
-                            }}
-                          >
-                            <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: projectColor }}></span>
-                            {project.name}
-                          </Button>
-                        );
-                      })}
-                  </>
-                ) : (
-                  <>
-                    {/* Root view - folders + unfiled projects */}
-                    {folders.map((folder: any) => {
-                      const count = filteredProjects.filter((p: any) => p.folderId === folder.id).length;
-                      if (count === 0) return null;
-                      return (
-                        <Button
-                          key={`folder-${folder.id}`}
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-3 text-xs font-medium whitespace-nowrap flex-shrink-0 rounded-full border transition-all duration-200 hover:shadow-sm bg-slate-100 border-slate-300 text-slate-700"
-                          onClick={() => setExpandedFolderId(folder.id)}
-                        >
-                          <Folder className="h-3 w-3 mr-1.5" />
-                          {folder.name}
-                          <span className="ml-1.5 text-slate-400">({count})</span>
-                        </Button>
-                      );
-                    })}
+                      <Folder className="h-3 w-3" />
+                      {folder.name}
+                      <span className="opacity-60">({folderProjectCount})</span>
+                    </button>
+                  </div>
+                );
+              })}
+              {/* Unfiled projects badge */}
+              {(() => {
+                const unfiledCount = projects.filter((p: any) => !p.folderId).length;
+                if (unfiledCount === 0) return null;
+                const isHovered = hoveredFolderId === -1;
+                return (
+                  <div
+                    className="relative"
+                    onMouseEnter={() => setHoveredFolderId(-1)}
+                  >
+                    <button
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                        isHovered
+                          ? 'bg-indigo-50 text-indigo-600 border-indigo-600'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-600 hover:text-indigo-600'
+                      }`}
+                    >
+                      Unfiled
+                      <span className="opacity-60">({unfiledCount})</span>
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
 
-                    {/* Separator between folders and unfiled projects */}
-                    {folders.length > 0 && filteredProjects.some((p: any) => !p.folderId) && (
-                      <span className="text-slate-300 mx-0.5 self-center">|</span>
-                    )}
-
-                    {/* Unfiled projects */}
-                    {filteredProjects
-                      .filter((p: any) => !p.folderId)
-                      .map((project: any) => {
-                        const projectColor = getProjectColor(project.id);
-                        return (
-                          <Button
-                            key={`name-${project.id}`}
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-3 text-xs font-medium whitespace-nowrap flex-shrink-0 rounded-full border transition-all duration-200 hover:shadow-sm"
-                            style={{
-                              backgroundColor: projectColor + '15',
-                              borderColor: projectColor + '40',
-                              color: projectColor
-                            }}
-                            onClick={() => {
-                              const carouselItem = document.querySelector(`[data-project-id="${project.id}"]`);
-                              if (carouselItem) {
-                                carouselItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                              }
-                            }}
-                          >
-                            <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: projectColor }}></span>
-                            {project.name}
-                          </Button>
-                        );
-                      })}
-                  </>
-                )}
-                </div>
+            {/* Right-side controls */}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {/* Search */}
+              {!searchExpanded ? (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 flex-shrink-0 text-xs h-7 px-2 whitespace-nowrap"
-                  onClick={() => navigate('/projects')}
+                  className="h-8 w-8 rounded-md hover:bg-indigo-50 text-indigo-600"
+                  onClick={() => setSearchExpanded(true)}
                 >
-                  View All <ChevronRight className="ml-0.5 h-3 w-3" />
+                  <Search className="h-4 w-4" />
                 </Button>
+              ) : (
+                <div className="relative w-44 sm:w-56">
+                  <Search className="absolute left-3 top-2 h-4 w-4 text-indigo-600" />
+                  <Input
+                    placeholder="Search projects..."
+                    className="w-full pl-9 pr-9 border-slate-300 focus:border-indigo-600 focus:ring-indigo-600 rounded-lg h-8 text-sm"
+                    value={searchQuery}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                    onBlur={() => { if (!searchQuery) setSearchExpanded(false); }}
+                    autoFocus
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-0.5 h-7 w-7 rounded-md hover:bg-slate-100"
+                    onClick={() => { setSearchQuery(""); setSearchExpanded(false); }}
+                  >
+                    <X className="h-3.5 w-3.5 text-slate-500" />
+                  </Button>
+                </div>
+              )}
+
+              {/* Status filter */}
+              <div className="min-w-0 max-w-[120px] sm:max-w-[140px]">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full !bg-transparent border-0 rounded-none focus:ring-0 min-w-0 h-8 hover:bg-indigo-50 text-indigo-600">
+                    <SelectValue placeholder="Status">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs">{statusFilter === "all" ? "All" : statusFilter === "active" ? "Active" : statusFilter === "completed" ? "Completed" : statusFilter === "on_hold" ? "On Hold" : "Planning"}</span>
+                      </div>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Projects</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="on_hold">On Hold</SelectItem>
+                    <SelectItem value="planning">Planning</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+
+              {/* New Project */}
+              <Button
+                variant="ghost"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium h-8 px-3 sm:px-4 rounded-md shadow-sm text-xs"
+                onClick={handleCreateProject}
+                size="sm"
+              >
+                <Plus className="h-3.5 w-3.5 sm:mr-1.5" />
+                <span className="hidden sm:inline">New Project</span>
+              </Button>
             </div>
           </div>
-        )}
+
+          {/* Hover dropdown: projects in selected folder */}
+          {hoveredFolderId !== null && (() => {
+            const folderProjects = hoveredFolderId === -1
+              ? projects.filter((p: any) => !p.folderId)
+              : projects.filter((p: any) => p.folderId === hoveredFolderId);
+            if (folderProjects.length === 0) return null;
+            return (
+              <div className="px-3 sm:px-4 pb-3 flex items-center gap-1.5 flex-wrap border-t border-slate-100 pt-2">
+                {folderProjects.map((project: any) => {
+                  const projectColor = getProjectColor(project.id);
+                  return (
+                    <button
+                      key={project.id}
+                      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border transition-colors cursor-pointer bg-white text-slate-700 border-slate-200 hover:bg-indigo-50 hover:border-indigo-600 hover:text-indigo-600"
+                      onClick={() => {
+                        const carouselItem = document.querySelector(`[data-project-id="${project.id}"]`);
+                        if (carouselItem) {
+                          carouselItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        }
+                      }}
+                    >
+                      <span className="w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: projectColor }}></span>
+                      {project.name}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
 
         {/* Projects Overview */}
         <div className="mb-4">

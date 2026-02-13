@@ -27,6 +27,17 @@ export function TopNav() {
 
   const hasPills = pills.length > 0;
 
+  // Lighter module colors for nav bar background (softer than getDynamicModuleColor)
+  const navColors: Record<string, { bg: string; border: string; subtitle: string }> = {
+    dashboard: { bg: '#818cf8', border: '#6366f1', subtitle: 'text-indigo-200' },    // Light indigo
+    tasks:     { bg: '#4ade80', border: '#22c55e', subtitle: 'text-green-200' },      // Light green
+    calendar:  { bg: '#22d3ee', border: '#06b6d4', subtitle: 'text-cyan-200' },       // Light cyan
+    materials: { bg: '#fb923c', border: '#f97316', subtitle: 'text-orange-200' },     // Light orange
+    contacts:  { bg: '#94a3b8', border: '#64748b', subtitle: 'text-slate-200' },      // Light slate
+    admin:     { bg: '#a78bfa', border: '#8b5cf6', subtitle: 'text-purple-200' },     // Light purple
+  };
+  const activeColors = navColors[currentTab] || navColors.dashboard;
+
   const navItems: { id: TabName; icon: string; label: string; isAdmin?: boolean }[] = [
     { id: "dashboard", icon: "ri-dashboard-line", label: "Dashboard" },
     { id: "tasks", icon: "ri-task-line", label: "Tasks" },
@@ -37,7 +48,7 @@ export function TopNav() {
   ];
 
   return (
-    <nav className="bg-[#4a7c59] shadow-sm border-b border-[#3a6346] px-4 py-3">
+    <nav className="shadow-sm border-b px-4 py-3 transition-colors duration-300" style={{ backgroundColor: activeColors.bg, borderColor: activeColors.border }}>
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo and brand */}
         <div
@@ -47,7 +58,7 @@ export function TopNav() {
           <Logo className="h-8 w-8 text-primary mr-3" />
           <div className="hidden sm:block">
             <h1 className="text-xl font-bold text-white tracking-tight">SiteSetups</h1>
-            <p className="text-xs text-green-200 hidden md:block">Automated Development Platform</p>
+            <p className={cn("text-xs hidden md:block", activeColors.subtitle)}>Automated Development Platform</p>
           </div>
         </div>
 
@@ -89,6 +100,7 @@ export function TopNav() {
             <>
               {navItems.filter(item => !item.isAdmin).map((item) => {
                 const isActive = currentTab === item.id;
+                const itemColor = navColors[item.id]?.border || activeColors.border;
 
                 return (
                   <button
@@ -100,17 +112,19 @@ export function TopNav() {
                     className={cn(
                       "group flex items-center px-3 py-2 text-sm rounded-md transition-colors duration-150",
                       isActive
-                        ? "bg-white text-[#4a7c59] font-medium shadow-sm"
+                        ? "bg-white font-medium shadow-sm"
                         : "text-white/80 hover:bg-white/15 hover:text-white",
-                      "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-300"
+                      "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/50"
                     )}
+                    style={isActive ? { color: itemColor } : undefined}
                   >
                     <i
                       className={cn(
                         item.icon,
                         "text-lg mr-2",
-                        isActive ? "text-[#4a7c59]" : "text-white/60"
+                        isActive ? "" : "text-white/60"
                       )}
+                      style={isActive ? { color: itemColor } : undefined}
                     />
                     <span className="hidden sm:block">{item.label}</span>
                   </button>
@@ -121,9 +135,10 @@ export function TopNav() {
 
           {/* Admin section - visible in standard nav mode */}
           {!hasPills && !actions && (
-            <div className="ml-4 pl-4 border-l border-green-700/50">
+            <div className="ml-4 pl-4 border-l border-white/25">
               {navItems.filter(item => item.isAdmin).map((item) => {
                 const isActive = currentTab === item.id;
+                const itemColor = navColors[item.id]?.border || activeColors.border;
 
                 return (
                   <button
@@ -135,17 +150,19 @@ export function TopNav() {
                     className={cn(
                       "group flex items-center px-3 py-2 text-sm rounded-md transition-colors duration-150",
                       isActive
-                        ? "bg-white text-[#4a7c59] font-medium shadow-sm"
+                        ? "bg-white font-medium shadow-sm"
                         : "text-white/80 hover:bg-white/15 hover:text-white",
-                      "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-300"
+                      "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/50"
                     )}
+                    style={isActive ? { color: itemColor } : undefined}
                   >
                     <i
                       className={cn(
                         item.icon,
                         "text-lg mr-2",
-                        isActive ? "text-[#4a7c59]" : "text-white/60"
+                        isActive ? "" : "text-white/60"
                       )}
+                      style={isActive ? { color: itemColor } : undefined}
                     />
                     <span className="hidden sm:block">{item.label}</span>
                   </button>
@@ -158,7 +175,7 @@ export function TopNav() {
           <InvitationsBadge />
 
           {/* User profile with dropdown */}
-          <div className="ml-4 pl-4 border-l border-green-700/50">
+          <div className="ml-4 pl-4 border-l border-white/25">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none">

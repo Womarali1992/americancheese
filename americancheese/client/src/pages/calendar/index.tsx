@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, parseISO, isWithinInterval, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfDay, endOfDay } from "date-fns";
 import { Layout } from "@/components/layout/Layout";
@@ -9,11 +9,9 @@ import { DayView } from "@/components/calendar/DayView";
 import { CalendarGanttView } from "@/components/calendar/CalendarGanttView";
 import { QuickAddTaskDialog } from "@/components/calendar/QuickAddTaskDialog";
 import { ScheduleSubtaskDialog } from "@/components/calendar/ScheduleSubtaskDialog";
-import { ProjectSelector } from "@/components/project/ProjectSelector";
 import { Button } from "@/components/ui/button";
-import { Plus, ListTree } from "lucide-react";
+import { Plus, ListTree, Folder, X } from "lucide-react";
 import { useNavPills } from "@/hooks/useNavPills";
-import { useNav } from "@/contexts/NavContext";
 import type { Task, Project, Subtask } from "@shared/schema";
 
 export default function CalendarPage() {
@@ -23,36 +21,10 @@ export default function CalendarPage() {
   const [addTaskDialogOpen, setAddTaskDialogOpen] = useState(false);
   const [addSubtaskDialogOpen, setAddSubtaskDialogOpen] = useState(false);
   const [addTaskDate, setAddTaskDate] = useState<Date>(new Date());
+  const [hoveredFolderId, setHoveredFolderId] = useState<number | null>(null);
 
-  // Inject nav pills and actions for TopNav
+  // Inject nav pills for TopNav
   useNavPills("events");
-  const { setActions } = useNav();
-
-  useEffect(() => {
-    setActions(
-      <>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-9 text-sm"
-          onClick={() => { setAddTaskDate(new Date()); setAddTaskDialogOpen(true); }}
-        >
-          <Plus className="mr-1.5 h-4 w-4" />
-          Task
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-9 text-sm"
-          onClick={() => { setAddTaskDate(new Date()); setAddSubtaskDialogOpen(true); }}
-        >
-          <ListTree className="mr-1.5 h-4 w-4" />
-          Subtask
-        </Button>
-      </>
-    );
-    return () => { setActions(null); };
-  }, [setActions]);
 
   const handleAddTask = (date: Date) => {
     setAddTaskDate(date);
@@ -77,6 +49,10 @@ export default function CalendarPage() {
   // Fetch all projects for filter and color lookup
   const { data: projects = [], isLoading: projectsLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
+  });
+
+  const { data: projectFolders = [] } = useQuery<any[]>({
+    queryKey: ["/api/project-folders"],
   });
 
   // Create a map of taskId -> projectId for subtask filtering
@@ -169,31 +145,18 @@ export default function CalendarPage() {
   }, [currentDate, view]);
 
   // Filter tasks based on project selection, calendarActive flag, and visible date range
-  // Uses calendarStartDate/calendarEndDate when available (actual schedule),
-  // falls back to startDate/endDate (planned schedule)
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
-      // Hide tasks only if explicitly set to calendarActive = false
-      // Show tasks if calendarActive is true, null, or undefined (backwards compatible)
       if (task.calendarActive === false) return false;
-
-      // Filter by project
       if (selectedProjectId !== undefined && task.projectId !== selectedProjectId) {
         return false;
       }
-
-      // Use calendar dates if available (actual schedule), otherwise use task dates (planned schedule)
       const effectiveStartDate = task.calendarStartDate || task.startDate;
       const effectiveEndDate = task.calendarEndDate || task.endDate;
-
-      // Filter by date range
       if (!effectiveStartDate || !effectiveEndDate) return false;
-
       try {
         const taskStart = parseISO(effectiveStartDate);
         const taskEnd = parseISO(effectiveEndDate);
-
-        // Check if task overlaps with visible range
         return (
           isWithinInterval(taskStart, dateRange) ||
           isWithinInterval(taskEnd, dateRange) ||
@@ -206,34 +169,19 @@ export default function CalendarPage() {
   }, [tasks, selectedProjectId, dateRange]);
 
   // Filter subtasks based on project selection, calendarActive flag, and visible date range
-  // Uses calendarStartDate/calendarEndDate when available (actual schedule),
-  // falls back to startDate/endDate (planned schedule)
   const filteredSubtasks = useMemo(() => {
     return subtasks.filter((subtask) => {
-      // Hide subtasks only if explicitly set to calendarActive = false
-      // Show subtasks if calendarActive is true, null, or undefined (backwards compatible)
       if (subtask.calendarActive === false) return false;
-
-      // Get parent task's project ID
       const projectId = taskProjectMap.get(subtask.parentTaskId);
-
-      // Filter by project
       if (selectedProjectId !== undefined && projectId !== selectedProjectId) {
         return false;
       }
-
-      // Use calendar dates if available (actual schedule), otherwise use subtask dates (planned schedule)
       const effectiveStartDate = subtask.calendarStartDate || subtask.startDate;
       const effectiveEndDate = subtask.calendarEndDate || subtask.endDate;
-
-      // Subtasks need dates to appear on calendar
       if (!effectiveStartDate || !effectiveEndDate) return false;
-
       try {
         const subtaskStart = parseISO(effectiveStartDate);
         const subtaskEnd = parseISO(effectiveEndDate);
-
-        // Check if subtask overlaps with visible range
         return (
           isWithinInterval(subtaskStart, dateRange) ||
           isWithinInterval(subtaskEnd, dateRange) ||
@@ -250,46 +198,105 @@ export default function CalendarPage() {
   return (
     <Layout title="Calendar" fullWidth>
       <div className="space-y-4">
-        {/* Header section */}
-        <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-4">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            {/* Left: Title & Project Filter */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-cyan-700 bg-clip-text text-transparent shrink-0">
-                Calendar
-              </h1>
-              <div className="w-full sm:max-w-xs">
-                <ProjectSelector
-                  selectedProjectId={selectedProjectId}
-                  onChange={handleProjectChange}
-                  className="w-full border-slate-200"
-                  theme="slate"
-                />
-              </div>
-              {/* Quick Add Buttons */}
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setAddTaskDialogOpen(true)}
-                  className="gap-1"
+        {/* Unified Header Card */}
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm w-full min-w-0 overflow-x-hidden"
+          onMouseLeave={() => setHoveredFolderId(null)}
+        >
+          {/* Row 1: Title + Folder badges + Controls */}
+          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-[#0891b2] to-[#0e7490] bg-clip-text text-transparent flex-shrink-0">Calendar</h1>
+
+            {/* Folder badges */}
+            <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+              {projectFolders.map((folder: any) => {
+                const folderProjectCount = projects.filter((p: any) => p.folderId === folder.id).length;
+                const isHovered = hoveredFolderId === folder.id;
+                const hasSelectedProject = selectedProjectId !== undefined && projects.find((p: any) => p.id === selectedProjectId)?.folderId === folder.id;
+                return (
+                  <div
+                    key={folder.id}
+                    className="relative"
+                    onMouseEnter={() => setHoveredFolderId(folder.id)}
+                  >
+                    <button
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                        hasSelectedProject
+                          ? 'bg-cyan-600 text-white border-cyan-600'
+                          : isHovered
+                            ? 'bg-cyan-50 text-cyan-600 border-cyan-600'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-cyan-600 hover:text-cyan-600'
+                      }`}
+                    >
+                      <Folder className="h-3 w-3" />
+                      {folder.name}
+                      <span className="opacity-60">({folderProjectCount})</span>
+                    </button>
+                  </div>
+                );
+              })}
+              {/* Unfiled projects badge */}
+              {(() => {
+                const unfiledCount = projects.filter((p: any) => !p.folderId).length;
+                if (unfiledCount === 0) return null;
+                const isHovered = hoveredFolderId === -1;
+                const hasSelectedProject = selectedProjectId !== undefined && !projects.find((p: any) => p.id === selectedProjectId)?.folderId;
+                return (
+                  <div
+                    className="relative"
+                    onMouseEnter={() => setHoveredFolderId(-1)}
+                  >
+                    <button
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                        hasSelectedProject
+                          ? 'bg-cyan-600 text-white border-cyan-600'
+                          : isHovered
+                            ? 'bg-cyan-50 text-cyan-600 border-cyan-600'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-cyan-600 hover:text-cyan-600'
+                      }`}
+                    >
+                      Unfiled
+                      <span className="opacity-60">({unfiledCount})</span>
+                    </button>
+                  </div>
+                );
+              })()}
+
+              {selectedProjectId !== undefined && (
+                <button
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-slate-500 hover:text-cyan-600 hover:bg-slate-50 transition-colors"
+                  onClick={() => handleProjectChange("all")}
                 >
-                  <Plus className="h-4 w-4" />
-                  Task
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setAddSubtaskDialogOpen(true)}
-                  className="gap-1"
-                >
-                  <ListTree className="h-4 w-4" />
-                  Schedule Subtask
-                </Button>
-              </div>
+                  <X className="h-3 w-3" />
+                  Clear
+                </button>
+              )}
             </div>
 
-            {/* Right: Calendar Navigation & View Toggle */}
+            {/* Right-side controls: Quick Add + Calendar Nav */}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setAddTaskDialogOpen(true)}
+                className="gap-1 h-8 text-xs"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Task
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setAddSubtaskDialogOpen(true)}
+                className="gap-1 h-8 text-xs"
+              >
+                <ListTree className="h-3.5 w-3.5" />
+                Subtask
+              </Button>
+            </div>
+          </div>
+
+          {/* Row 2: Calendar navigation controls */}
+          <div className="px-3 sm:px-4 pb-3 border-t border-slate-100 pt-2">
             <CalendarHeader
               currentDate={currentDate}
               view={view}
@@ -299,6 +306,34 @@ export default function CalendarPage() {
               onViewChange={handleViewChange}
             />
           </div>
+
+          {/* Hover dropdown: projects in selected folder */}
+          {hoveredFolderId !== null && (() => {
+            const folderProjects = hoveredFolderId === -1
+              ? projects.filter((p: any) => !p.folderId)
+              : projects.filter((p: any) => p.folderId === hoveredFolderId);
+            if (folderProjects.length === 0) return null;
+            return (
+              <div className="px-3 sm:px-4 pb-3 flex items-center gap-1.5 flex-wrap border-t border-slate-100 pt-2">
+                {folderProjects.map((project: any) => {
+                  const isSelected = selectedProjectId === project.id;
+                  return (
+                    <button
+                      key={project.id}
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border transition-colors cursor-pointer ${
+                        isSelected
+                          ? 'bg-cyan-600 text-white border-cyan-600'
+                          : 'bg-white text-slate-700 border-slate-200 hover:bg-cyan-50 hover:border-cyan-600 hover:text-cyan-600'
+                      }`}
+                      onClick={() => handleProjectChange(project.id.toString())}
+                    >
+                      {project.name}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Calendar View */}
