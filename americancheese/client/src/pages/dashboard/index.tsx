@@ -1026,27 +1026,29 @@ export default function DashboardPage() {
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[130px] h-10 border-slate-200 shadow-sm rounded-lg bg-white">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Projects</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="on_hold">On Hold</SelectItem>
-                <SelectItem value="planning">Planning</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="hidden sm:block">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[130px] h-10 border-slate-200 shadow-sm rounded-lg bg-white">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Projects</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="on_hold">On Hold</SelectItem>
+                  <SelectItem value="planning">Planning</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Button
               onClick={handleCreateProject}
-              className="hidden sm:inline-flex h-10 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm rounded-lg px-4 w-full"
+              className="h-10 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm rounded-lg px-4"
             >
-              <Plus className="mr-2 h-4 w-4" />
-              New Project
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">New Project</span>
             </Button>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="hidden sm:flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
               <Building className="h-3.5 w-3.5 text-indigo-500" />
               <span className="text-sm font-semibold text-slate-800">{metrics.activeProjects}</span>
@@ -1263,7 +1265,7 @@ export default function DashboardPage() {
                       <div className="p-5 border-b border-slate-50">
                         <div className="flex items-start gap-3 mb-3">
                           <div
-                            className="h-10 w-10 rounded-lg flex items-center justify-center text-white font-bold shadow-sm flex-shrink-0"
+                            className="hidden sm:flex h-10 w-10 rounded-lg items-center justify-center text-white font-bold shadow-sm flex-shrink-0"
                             style={{ backgroundColor: getProjectColor(project.id) }}
                           >
                             {project.name.substring(0, 2).toUpperCase()}
@@ -1273,12 +1275,12 @@ export default function DashboardPage() {
                               <div className="min-w-0 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
                                 <div className="min-w-0">
                                   <h3 className="text-lg font-semibold text-slate-900 leading-tight">{project.name}</h3>
-                                  <div className="flex items-center text-sm text-slate-500 mt-0.5">
+                                  <div className="hidden sm:flex items-center text-sm text-slate-500 mt-0.5">
                                     <MapPin className="h-3 w-3 mr-1" />
                                     {project.location || "No location"}
                                   </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center flex-shrink-0">
+                                <div className="grid grid-cols-2 gap-1.5 w-full sm:w-auto sm:flex sm:items-center flex-shrink-0">
                                 {(() => {
                                   // Get tier 1 categories code (simplified for brevity, logic remains same)
                                   const projectConfiguredCategoryObjects = allProjectCategories
