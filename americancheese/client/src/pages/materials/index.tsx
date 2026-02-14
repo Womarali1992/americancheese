@@ -5,7 +5,7 @@ import { ResourcesTabNew } from "@/components/project/ResourcesTabNew";
 import { CreateMaterialDialog } from "./CreateMaterialDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Folder, Plus, Search, X } from "lucide-react";
+import { Folder, Plus, Search, X, ChevronDown, ChevronUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavPills } from "@/hooks/useNavPills";
 
@@ -20,6 +20,7 @@ export default function MaterialsPage() {
   const [selectedTier1, setSelectedTier1] = useState<string | null>(null);
   const [selectedTier2, setSelectedTier2] = useState<string | null>(null);
   const [hoveredFolderId, setHoveredFolderId] = useState<number | null>(null);
+  const [mobileFoldersExpanded, setMobileFoldersExpanded] = useState(false);
   const [searchExpanded, setSearchExpanded] = useState(false);
 
   // Inject nav pills for TopNav
@@ -55,6 +56,7 @@ export default function MaterialsPage() {
     } else {
       setProjectId(Number(selectedId));
       setLocation(`/materials?projectId=${selectedId}`);
+      setMobileFoldersExpanded(false);
     }
   };
 
@@ -71,6 +73,21 @@ export default function MaterialsPage() {
 
             {/* Folder badges */}
             <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+              {/* Mobile: Collapsible "Projects" button */}
+              <button
+                className={`sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                  mobileFoldersExpanded
+                    ? 'bg-orange-600 text-white border-orange-600'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-orange-600 hover:text-orange-600'
+                }`}
+                onClick={() => setMobileFoldersExpanded(!mobileFoldersExpanded)}
+              >
+                <Folder className="h-3 w-3" />
+                Projects
+                <span className="opacity-60">({projects.length})</span>
+                {mobileFoldersExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              </button>
+
               {projectFolders.map((folder: any) => {
                 const folderProjectCount = projects.filter((p: any) => p.folderId === folder.id).length;
                 const isHovered = hoveredFolderId === folder.id;
@@ -78,7 +95,7 @@ export default function MaterialsPage() {
                 return (
                   <div
                     key={folder.id}
-                    className="relative"
+                    className={`relative ${mobileFoldersExpanded ? '' : 'hidden sm:block'}`}
                     onMouseEnter={() => setHoveredFolderId(folder.id)}
                   >
                     <button
@@ -105,7 +122,7 @@ export default function MaterialsPage() {
                 const hasSelectedProject = projectId !== undefined && !projects.find((p: any) => p.id === projectId)?.folderId;
                 return (
                   <div
-                    className="relative"
+                    className={`relative ${mobileFoldersExpanded ? '' : 'hidden sm:block'}`}
                     onMouseEnter={() => setHoveredFolderId(-1)}
                   >
                     <button
@@ -126,7 +143,7 @@ export default function MaterialsPage() {
 
               {projectId !== undefined && (
                 <button
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-slate-500 hover:text-orange-600 hover:bg-slate-50 transition-colors"
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-slate-500 hover:text-orange-600 hover:bg-slate-50 transition-colors ${mobileFoldersExpanded ? '' : 'hidden sm:inline-flex'}`}
                   onClick={() => handleProjectChange("all")}
                 >
                   <X className="h-3 w-3" />

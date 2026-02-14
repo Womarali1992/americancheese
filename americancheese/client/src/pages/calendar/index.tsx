@@ -11,7 +11,7 @@ import { QuickAddTaskDialog } from "@/components/calendar/QuickAddTaskDialog";
 import { ScheduleSubtaskDialog } from "@/components/calendar/ScheduleSubtaskDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, ListTree, Folder, X, Search } from "lucide-react";
+import { Plus, ListTree, Folder, X, Search, ChevronDown, ChevronUp } from "lucide-react";
 import { useNavPills } from "@/hooks/useNavPills";
 import type { Task, Project, Subtask } from "@shared/schema";
 
@@ -23,6 +23,7 @@ export default function CalendarPage() {
   const [addSubtaskDialogOpen, setAddSubtaskDialogOpen] = useState(false);
   const [addTaskDate, setAddTaskDate] = useState<Date>(new Date());
   const [hoveredFolderId, setHoveredFolderId] = useState<number | null>(null);
+  const [mobileFoldersExpanded, setMobileFoldersExpanded] = useState(false);
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -121,6 +122,7 @@ export default function CalendarPage() {
       setSelectedProjectId(undefined);
     } else {
       setSelectedProjectId(Number(projectIdStr));
+      setMobileFoldersExpanded(false);
     }
   };
 
@@ -215,6 +217,21 @@ export default function CalendarPage() {
 
             {/* Folder badges */}
             <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+              {/* Mobile: Collapsible "Projects" button */}
+              <button
+                className={`sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                  mobileFoldersExpanded
+                    ? 'bg-cyan-600 text-white border-cyan-600'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-cyan-600 hover:text-cyan-600'
+                }`}
+                onClick={() => setMobileFoldersExpanded(!mobileFoldersExpanded)}
+              >
+                <Folder className="h-3 w-3" />
+                Projects
+                <span className="opacity-60">({projects.length})</span>
+                {mobileFoldersExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              </button>
+
               {projectFolders.map((folder: any) => {
                 const folderProjectCount = projects.filter((p: any) => p.folderId === folder.id).length;
                 const isHovered = hoveredFolderId === folder.id;
@@ -222,7 +239,7 @@ export default function CalendarPage() {
                 return (
                   <div
                     key={folder.id}
-                    className="relative"
+                    className={`relative ${mobileFoldersExpanded ? '' : 'hidden sm:block'}`}
                     onMouseEnter={() => setHoveredFolderId(folder.id)}
                   >
                     <button
@@ -249,7 +266,7 @@ export default function CalendarPage() {
                 const hasSelectedProject = selectedProjectId !== undefined && !projects.find((p: any) => p.id === selectedProjectId)?.folderId;
                 return (
                   <div
-                    className="relative"
+                    className={`relative ${mobileFoldersExpanded ? '' : 'hidden sm:block'}`}
                     onMouseEnter={() => setHoveredFolderId(-1)}
                   >
                     <button
@@ -270,7 +287,7 @@ export default function CalendarPage() {
 
               {selectedProjectId !== undefined && (
                 <button
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-slate-500 hover:text-cyan-600 hover:bg-slate-50 transition-colors"
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-slate-500 hover:text-cyan-600 hover:bg-slate-50 transition-colors ${mobileFoldersExpanded ? '' : 'hidden sm:inline-flex'}`}
                   onClick={() => handleProjectChange("all")}
                 >
                   <X className="h-3 w-3" />
