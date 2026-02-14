@@ -1015,7 +1015,7 @@ export default function DashboardPage() {
     <Layout>
       <div className="space-y-3 w-full min-w-0">
         {/* Mobile-only: search, filter, and metrics (desktop uses TopNav pills + actions) */}
-        <div className="md:hidden space-y-3 mb-4">
+        <div className="hidden md:hidden space-y-3 mb-4">
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -1194,10 +1194,10 @@ export default function DashboardPage() {
                 </Select>
               </div>
 
-              {/* New Project - hidden on mobile, already in mobile search bar */}
+              {/* New Project */}
               <Button
                 variant="ghost"
-                className="hidden sm:inline-flex bg-indigo-600 hover:bg-indigo-700 text-white font-medium h-8 px-3 sm:px-4 rounded-md shadow-sm text-xs"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium h-8 px-3 sm:px-4 rounded-md shadow-sm text-xs"
                 onClick={handleCreateProject}
                 size="sm"
               >
