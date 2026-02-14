@@ -47,6 +47,7 @@ import {
   ClipboardList,
   ChevronRight,
   ChevronDown,
+  ChevronUp,
   FolderOpen,
   Folder,
   X,
@@ -1086,6 +1087,7 @@ export default function ContactsPage() {
   const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
   const [expandedContactId, setExpandedContactId] = useState<number | null>(null);
   const [hoveredFolderId, setHoveredFolderId] = useState<number | null>(null);
+  const [mobileFoldersExpanded, setMobileFoldersExpanded] = useState(false);
   const [searchExpanded, setSearchExpanded] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -1308,6 +1310,21 @@ export default function ContactsPage() {
 
             {/* Folder badges */}
             <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+              {/* Mobile: Collapsible "Projects" button */}
+              <button
+                className={`sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                  mobileFoldersExpanded
+                    ? 'bg-slate-600 text-white border-slate-600'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-slate-600 hover:text-slate-600'
+                }`}
+                onClick={() => setMobileFoldersExpanded(!mobileFoldersExpanded)}
+              >
+                <Folder className="h-3 w-3" />
+                Projects
+                <span className="opacity-60">({projects.length})</span>
+                {mobileFoldersExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              </button>
+
               {projectFolders.map((folder: any) => {
                 const folderProjectCount = projects.filter((p: any) => p.folderId === folder.id).length;
                 const isHovered = hoveredFolderId === folder.id;
@@ -1315,7 +1332,7 @@ export default function ContactsPage() {
                 return (
                   <div
                     key={folder.id}
-                    className="relative"
+                    className={`relative ${mobileFoldersExpanded ? '' : 'hidden sm:block'}`}
                     onMouseEnter={() => setHoveredFolderId(folder.id)}
                   >
                     <button
@@ -1342,7 +1359,7 @@ export default function ContactsPage() {
                 const hasSelectedProject = projectFilter !== "all" && !projects.find((p: any) => p.id === Number(projectFilter))?.folderId;
                 return (
                   <div
-                    className="relative"
+                    className={`relative ${mobileFoldersExpanded ? '' : 'hidden sm:block'}`}
                     onMouseEnter={() => setHoveredFolderId(-1)}
                   >
                     <button
@@ -1363,8 +1380,8 @@ export default function ContactsPage() {
 
               {projectFilter !== "all" && (
                 <button
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-slate-500 hover:text-slate-600 hover:bg-slate-50 transition-colors"
-                  onClick={() => setProjectFilter("all")}
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-slate-500 hover:text-slate-600 hover:bg-slate-50 transition-colors ${mobileFoldersExpanded ? '' : 'hidden sm:inline-flex'}`}
+                  onClick={() => { setProjectFilter("all"); setMobileFoldersExpanded(false); }}
                 >
                   <X className="h-3 w-3" />
                   Clear
@@ -1456,7 +1473,7 @@ export default function ContactsPage() {
                           ? 'bg-slate-600 text-white border-slate-600'
                           : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-600 hover:text-slate-600'
                       }`}
-                      onClick={() => setProjectFilter(project.id.toString())}
+                      onClick={() => { setProjectFilter(project.id.toString()); setMobileFoldersExpanded(false); }}
                     >
                       {project.name}
                     </button>

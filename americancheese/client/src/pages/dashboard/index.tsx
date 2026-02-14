@@ -1040,7 +1040,7 @@ export default function DashboardPage() {
             </Select>
             <Button
               onClick={handleCreateProject}
-              className="h-10 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm rounded-lg px-4 w-full"
+              className="hidden sm:inline-flex h-10 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm rounded-lg px-4 w-full"
             >
               <Plus className="mr-2 h-4 w-4" />
               New Project
@@ -1270,14 +1270,15 @@ export default function DashboardPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                <h3 className="text-lg font-semibold text-slate-900 leading-tight">{project.name}</h3>
-                                <div className="flex items-center text-sm text-slate-500 mt-0.5">
-                                  <MapPin className="h-3 w-3 mr-1" />
-                                  {project.location || "No location"}
+                              <div className="min-w-0 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                                <div className="min-w-0">
+                                  <h3 className="text-lg font-semibold text-slate-900 leading-tight">{project.name}</h3>
+                                  <div className="flex items-center text-sm text-slate-500 mt-0.5">
+                                    <MapPin className="h-3 w-3 mr-1" />
+                                    {project.location || "No location"}
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center flex-shrink-0">
+                                <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center flex-shrink-0">
                                 {(() => {
                                   // Get tier 1 categories code (simplified for brevity, logic remains same)
                                   const projectConfiguredCategoryObjects = allProjectCategories
@@ -1322,6 +1323,7 @@ export default function DashboardPage() {
                                     );
                                   });
                                 })()}
+                              </div>
                               </div>
                               <button
                                 className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors flex-shrink-0"
