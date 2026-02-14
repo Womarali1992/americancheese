@@ -1194,10 +1194,10 @@ export default function DashboardPage() {
                 </Select>
               </div>
 
-              {/* New Project */}
+              {/* New Project - hidden on mobile, already in mobile search bar */}
               <Button
                 variant="ghost"
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium h-8 px-3 sm:px-4 rounded-md shadow-sm text-xs"
+                className="hidden sm:inline-flex bg-indigo-600 hover:bg-indigo-700 text-white font-medium h-8 px-3 sm:px-4 rounded-md shadow-sm text-xs"
                 onClick={handleCreateProject}
                 size="sm"
               >
@@ -1272,7 +1272,7 @@ export default function DashboardPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                              <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
                                 <div className="min-w-0">
                                   <h3 className="text-lg font-semibold text-slate-900 leading-tight">{project.name}</h3>
                                   <div className="hidden sm:flex items-center text-sm text-slate-500 mt-0.5">
